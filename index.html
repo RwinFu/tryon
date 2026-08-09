@@ -95,10 +95,12 @@ const FRAMES=[
  {id:4,name:'خلبانی',style:'aviator',colors:[['طلایی','#d4af37',1],['مشکی','#141414',0]]},
  /* {id:5,name:'فریم اسکنی',glb:'frames/f1.glb',colors:[]}, */
 ];
+const SELF='https://rwinfu.github.io/tryon';
 const MP_URL='https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14';
 const MP_URL2='https://unpkg.com/@mediapipe/tasks-vision@0.10.14';
-const MODEL='https://rwinfu.github.io/tryon/face_landmarker.task';
+const MODEL=SELF+'/face_landmarker.task';
 const SEGM='https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_multiclass_256x256.tflite';
+let curStage='';
 /* ═════════════════════════════ */
 try{(function(){
 window.__ok=true;
@@ -118,7 +120,7 @@ function friendly(e){
  if(e&&e.name==='NotAllowedError')return '🚫 اجازه دوربین داده نشد.<br>از تنظیمات مرورگر، دسترسی دوربین رو برای این سایت روشن کن.';
  if(e&&e.name==='NotFoundError')return '📷 دوربینی روی این دستگاه پیدا نشد.';
  const s=e?(e.message||String(e)):'';
- return '🌐 دانلود مدل هوش مصنوعی کامل نشد؛ اینترنت رو چک کن و دکمه زیر رو بزن.<br><span style="font-size:10px;opacity:.6">'+s+'</span><br><button onclick="location.reload()">🔄 تلاش دوباره</button>';
+ return '🌐 مشکل در مرحله «'+curStage+'» — اینترنت رو چک کن و دوباره تلاش کن.<br><span style="font-size:10px;opacity:.6">'+s+'</span><br><button onclick="location.reload()">🔄 تلاش دوباره</button>';
 }
 
 const renderer=new THREE.WebGLRenderer({canvas:glc,alpha:true,antialias:true,preserveDrawingBuffer:true});
@@ -179,16 +181,20 @@ document.addEventListener('visibilitychange',()=>{const was=running;running=!doc
 async function start(){
  load.style.display='flex';
  try{
-  setLoad('⏳ دانلود کتابخانه هوش مصنوعی…');
-  let TV,base=MP_URL;
-  try{TV=await import(MP_URL);}catch(e1){base=MP_URL2;TV=await import(MP_URL2);}
-  setLoad('⏳ آماده‌سازی موتور تشخیص…');
-  const vision=await TV.FilesetResolver.forVisionTasks(base);
+  setLoad('⏳ دانلود کتابخانه هوش مصنوعی…');curStage='کتابخانه AI';
+  let TV,wb;
+  try{TV=await import(MP_URL);wb=MP_URL+'/wasm';}
+  catch(eA){try{TV=await import(MP_URL2);wb=MP_URL2+'/wasm';}
+   catch(eB){TV=await import(MP_URL);wb=MP_URL+'/wasm';}}
+  setLoad('⏳ آماده‌سازی موتور…');curStage='موتور wasm';
+  const vision=await TV.FilesetResolver.forVisionTasks(wb);
+  curStage='مدل تشخیص صورت';
   const opt=d=>({baseOptions:{modelAssetPath:MODEL,delegate:d},runningMode:'VIDEO',numFaces:1,refineLandmarks:true});
   try{lm=await TV.FaceLandmarker.createFromOptions(vision,opt('GPU'));}catch(e){lm=await TV.FaceLandmarker.createFromOptions(vision,opt('CPU'));}
+  curStage='مدل مو';
   const sopt=d=>({baseOptions:{modelAssetPath:SEGM,delegate:d},runningMode:'VIDEO',outputCategoryMask:true});
   try{seg=await TV.ImageSegmenter.createFromOptions(vision,sopt('GPU'));}catch(e){try{seg=await TV.ImageSegmenter.createFromOptions(vision,sopt('CPU'));}catch(e2){seg=null;}}
-  setLoad('📷 آماده‌سازی دوربین…');
+  setLoad('📷 آماده‌سازی دوربین…');curStage='دوربین';
   if(!navigator.mediaDevices)throw {name:'NotFoundError'};
   video.srcObject=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'}});
   await new Promise(r=>video.onloadedmetadata=r);
