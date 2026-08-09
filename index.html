@@ -153,9 +153,9 @@ function procedural(){
   const rim=new THREE.Mesh(rimG,mat);rim.position.set(sd*0.40,0,-0.03);
   const lens=new THREE.Mesh(lensG,lensMat);lens.position.set(sd*0.40,0,0);
   if(frame.style==='cat'){rim.rotation.z=sd*-0.15;lens.rotation.z=sd*-0.15;}
-  const arm=new THREE.Mesh(new THREE.BoxGeometry(0.035,0.07,1.0),mat);arm.position.set(sd*0.72,0.10,-0.5);
-  const tip=new THREE.Mesh(new THREE.BoxGeometry(0.035,0.3,0.045),mat);tip.position.set(sd*0.72,-0.05,-0.98);tip.rotation.x=0.5;
-  const hinge=new THREE.Mesh(new THREE.SphereGeometry(0.045,12,12),mat);hinge.position.set(sd*0.71,0.08,-0.01);
+  const arm=new THREE.Mesh(new THREE.BoxGeometry(0.035,0.07,1.0),mat);arm.position.set(sd*0.72,0.12,-0.5);
+  const tip=new THREE.Mesh(new THREE.BoxGeometry(0.035,0.3,0.045),mat);tip.position.set(sd*0.72,-0.02,-0.98);tip.rotation.x=0.5;
+  const hinge=new THREE.Mesh(new THREE.SphereGeometry(0.045,12,12),mat);hinge.position.set(sd*0.71,0.12,-0.01);
   glasses.add(rim,lens,arm,tip,hinge);
  }
  glasses.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.QuadraticBezierCurve3(new THREE.Vector3(-0.10,0.08,0.01),new THREE.Vector3(0,0.14,0.02),new THREE.Vector3(0.10,0.08,0.01)),12,0.03,8),mat));
@@ -245,7 +245,7 @@ function loop(){
   const target=(140*(irisD/pdMM))/1.44;
   if(target<W*0.16)showHint('یه کم نزدیک‌تر بیا 📏');
   const ex=eLc.clone().sub(eRc).normalize();
-  const up0=mid.clone().sub(V(4)).normalize();
+  const up0=V(10).sub(V(152)).normalize();
   const up=up0.sub(ex.clone().multiplyScalar(up0.dot(ex))).normalize();
   const ez=ex.clone().cross(up).normalize();
   const q=new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(ex,up,ez));
@@ -258,11 +258,11 @@ function loop(){
     smQ.copy(samples[0].q);for(let i=1;i<n;i++)smQ.slerp(samples[i].q,1/(i+1));
     scanning=false;scanEl.style.display='none';toast('✅ صورت اسکن شد؛ عینک تنظیم شد');}
   }else{
-   const a=sm.on?0.4:1;
-   sm.x+=(t.x-sm.x)*a;sm.y+=(t.y-sm.y)*a;sm.z+=(t.z-sm.z)*a;sm.sc+=(target-sm.sc)*a;
-   sm.on?smQ.slerp(q,0.4):smQ.copy(q);
+   const a=sm.on?0.3:1, as=sm.on?0.12:1;
+   sm.x+=(t.x-sm.x)*a;sm.y+=(t.y-sm.y)*a;sm.z+=(t.z-sm.z)*a;sm.sc+=(target-sm.sc)*as;
+   sm.on?smQ.slerp(q,0.3):smQ.copy(q);
    sm.on=true;glasses.visible=true;
-   glasses.position.set(sm.x,sm.y,sm.z+sm.sc*0.15);
+   glasses.position.set(sm.x,sm.y,sm.z+sm.sc*0.05);
    glasses.quaternion.copy(smQ);
    glasses.scale.setScalar(sm.sc);
    glasses.updateMatrixWorld();
