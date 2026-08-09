@@ -242,7 +242,7 @@ function loop(){
   const eRc=V(263).add(V(363)).multiplyScalar(0.5);
   const mid=eLc.clone().add(eRc).multiplyScalar(0.5);
   const irisD=Math.hypot((p[468].x-p[473].x)*W,(p[468].y-p[473].y)*H)||1;
-  const target=(140*(pdMM/irisD))/1.44;
+  const target=(140*(irisD/pdMM))/1.44;
   if(target<W*0.16)showHint('یه کم نزدیک‌تر بیا 📏');
   const ex=eLc.clone().sub(eRc).normalize();
   const up0=mid.clone().sub(V(4)).normalize();
