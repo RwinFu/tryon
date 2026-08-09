@@ -39,6 +39,7 @@ canvas{position:fixed;inset:0;width:100vw;height:100vh;object-fit:cover}
 #start{width:100%;border:none;border-radius:16px;padding:14px;font-size:15px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--acc),#7c4dff);cursor:pointer;box-shadow:0 8px 24px rgba(77,163,255,.35);font-family:Vazirmatn}
 #intro .priv{color:#7d8ca0;font-size:10.5px;margin-top:12px}
 #load{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;flex-direction:column;gap:14px;align-items:center;justify-content:center;z-index:9;color:#fff;text-align:center;padding:20px}
+#load button{border:none;background:var(--acc);color:#fff;border-radius:12px;padding:10px 22px;font-size:13px;font-weight:700;font-family:Vazirmatn;cursor:pointer}
 .spin{width:42px;height:42px;border:4px solid rgba(255,255,255,.15);border-top-color:var(--acc);border-radius:50%;animation:s 1s linear infinite}
 @keyframes s{to{transform:rotate(1turn)}}
 #scan{position:fixed;inset:0;z-index:6;display:none;flex-direction:column;gap:18px;align-items:center;justify-content:center;pointer-events:none}
@@ -78,7 +79,7 @@ canvas{position:fixed;inset:0;width:100vw;height:100vh;object-fit:cover}
 </div></div>
 <div id="load"><div class="spin"></div><div id="loadTxt">در حال آماده‌سازی…</div></div>
 <script>
-setTimeout(function(){if(!window.__ok){document.getElementById('intro').style.display='none';document.getElementById('load').style.display='flex';document.getElementById('loadTxt').innerHTML='⚠️ اینترنت یا مرورگر مشکل داره.<br>با کروم و اینترنت پایدار باز کن.';}},20000);
+setTimeout(function(){if(!window.__ok){document.getElementById('intro').style.display='none';document.getElementById('load').style.display='flex';document.getElementById('loadTxt').innerHTML='⚠️ اینترنت یا مرورگر مشکل داره.<br>با کروم و اینترنت پایدار باز کن.';}},30000);
 if(/Instagram/.test(navigator.userAgent))document.getElementById('ig').style.display='flex';
 function toast(m){const t=document.createElement('div');t.innerHTML=m;t.style.cssText='position:fixed;top:64px;left:50%;transform:translateX(-50%);background:rgba(15,15,20,.92);color:#fff;padding:10px 18px;border-radius:12px;z-index:9;font-size:12px;border:1px solid rgba(255,255,255,.3);text-align:center;font-family:Vazirmatn';document.body.appendChild(t);setTimeout(()=>t.remove(),2600);}
 </script>
@@ -95,6 +96,7 @@ const FRAMES=[
  /* {id:5,name:'فریم اسکنی',glb:'frames/f1.glb',colors:[]}, */
 ];
 const MP_URL='https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14';
+const MP_URL2='https://unpkg.com/@mediapipe/tasks-vision@0.10.14';
 const MODEL='https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task';
 const SEGM='https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_multiclass_256x256.tflite';
 /* ═════════════════════════════ */
@@ -112,6 +114,12 @@ let frame=FRAMES[0],colorHex=frame.colors[0][1],metal=frame.colors[0][2];
 const mh=location.hash.match(/f=(\d+)/);if(mh){const f=FRAMES.find(x=>x.id==mh[1]);if(f)frame=f;}
 function showHint(m){const n=performance.now();if(n-hintT<3500)return;hintT=n;hint.textContent=m;hint.style.opacity=1;setTimeout(()=>hint.style.opacity=0,2500);}
 function setLoad(m){loadTxt.innerHTML=m;}
+function friendly(e){
+ if(e&&e.name==='NotAllowedError')return '🚫 اجازه دوربین داده نشد.<br>از تنظیمات مرورگر، دسترسی دوربین رو برای این سایت روشن کن.';
+ if(e&&e.name==='NotFoundError')return '📷 دوربینی روی این دستگاه پیدا نشد.';
+ const s=e?(e.message||String(e)):'';
+ return '🌐 دانلود مدل هوش مصنوعی کامل نشد؛ اینترنت رو چک کن و دکمه زیر رو بزن.<br><span style="font-size:10px;opacity:.6">'+s+'</span><br><button onclick="location.reload()">🔄 تلاش دوباره</button>';
+}
 
 const renderer=new THREE.WebGLRenderer({canvas:glc,alpha:true,antialias:true,preserveDrawingBuffer:true});
 renderer.outputEncoding=THREE.sRGBEncoding;
@@ -169,23 +177,29 @@ const video=document.createElement('video');video.autoplay=true;video.playsInlin
 let lm=null,seg=null,running=true;
 document.addEventListener('visibilitychange',()=>{const was=running;running=!document.hidden;if(running&&!was)requestAnimationFrame(loop);});
 async function start(){
- load.style.display='flex';setLoad('⏳ دانلود مدل هوش مصنوعی…');
- const TV=await import(MP_URL);
- const vision=await TV.FilesetResolver.forVisionTasks(MP_URL);
- const opt=d=>({baseOptions:{modelAssetPath:MODEL,delegate:d},runningMode:'VIDEO',numFaces:1,refineLandmarks:true});
- try{lm=await TV.FaceLandmarker.createFromOptions(vision,opt('GPU'));}catch(e){lm=await TV.FaceLandmarker.createFromOptions(vision,opt('CPU'));}
- const sopt=d=>({baseOptions:{modelAssetPath:SEGM,delegate:d},runningMode:'VIDEO',outputCategoryMask:true});
- try{seg=await TV.ImageSegmenter.createFromOptions(vision,sopt('GPU'));}catch(e){try{seg=await TV.ImageSegmenter.createFromOptions(vision,sopt('CPU'));}catch(e2){seg=null;}}
- setLoad('📷 آماده‌سازی دوربین…');
- video.srcObject=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'}});
- await new Promise(r=>video.onloadedmetadata=r);
- await video.play().catch(()=>{});
- W=cv.width=glc.width=oc.width=video.videoWidth;H=cv.height=glc.height=oc.height=video.videoHeight;
- renderer.setSize(W,H,false);
- camera.fov=2*Math.atan(H/1000)*180/Math.PI;camera.aspect=W/H;camera.updateProjectionMatrix();
- load.style.display='none';startedAt=performance.now();requestAnimationFrame(loop);
+ load.style.display='flex';
+ try{
+  setLoad('⏳ دانلود کتابخانه هوش مصنوعی…');
+  let TV,base=MP_URL;
+  try{TV=await import(MP_URL);}catch(e1){base=MP_URL2;TV=await import(MP_URL2);}
+  setLoad('⏳ آماده‌سازی موتور تشخیص…');
+  const vision=await TV.FilesetResolver.forVisionTasks(base);
+  const opt=d=>({baseOptions:{modelAssetPath:MODEL,delegate:d},runningMode:'VIDEO',numFaces:1,refineLandmarks:true});
+  try{lm=await TV.FaceLandmarker.createFromOptions(vision,opt('GPU'));}catch(e){lm=await TV.FaceLandmarker.createFromOptions(vision,opt('CPU'));}
+  const sopt=d=>({baseOptions:{modelAssetPath:SEGM,delegate:d},runningMode:'VIDEO',outputCategoryMask:true});
+  try{seg=await TV.ImageSegmenter.createFromOptions(vision,sopt('GPU'));}catch(e){try{seg=await TV.ImageSegmenter.createFromOptions(vision,sopt('CPU'));}catch(e2){seg=null;}}
+  setLoad('📷 آماده‌سازی دوربین…');
+  if(!navigator.mediaDevices)throw {name:'NotFoundError'};
+  video.srcObject=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'}});
+  await new Promise(r=>video.onloadedmetadata=r);
+  await video.play().catch(()=>{});
+  W=cv.width=glc.width=oc.width=video.videoWidth;H=cv.height=glc.height=oc.height=video.videoHeight;
+  renderer.setSize(W,H,false);
+  camera.fov=2*Math.atan(H/1000)*180/Math.PI;camera.aspect=W/H;camera.updateProjectionMatrix();
+  load.style.display='none';startedAt=performance.now();requestAnimationFrame(loop);
+ }catch(e){setLoad(friendly(e));}
 }
-document.getElementById('start').onclick=()=>{document.getElementById('intro').style.display='none';start().catch(e=>{setLoad('⚠️ خطا: '+e.message);});};
+document.getElementById('start').onclick=()=>{document.getElementById('intro').style.display='none';start();};
 
 const maskC=document.createElement('canvas');maskC.width=256;maskC.height=256;
 const mctx=maskC.getContext('2d');const maskImg=mctx.createImageData(256,256);
@@ -294,7 +308,7 @@ function buildColors(){cBox.innerHTML='';if(!frame.colors||!frame.colors.length)
   d.onclick=()=>{colorHex=c[1];metal=c[2];[...cBox.children].forEach(x=>x.classList.remove('on'));d.classList.add('on');buildGlasses();};
   if(c[1]===colorHex)d.classList.add('on');cBox.appendChild(d);});}
 buildColors();buildGlasses();
-})()}catch(e){document.getElementById('load').style.display='flex';document.getElementById('loadTxt').innerHTML='⚠️ خطا: '+e.message;}
+})()}catch(e){document.getElementById('load').style.display='flex';document.getElementById('loadTxt').innerHTML='⚠️ خطا: '+(e.message||String(e));}
 </script>
 </body>
 </html>
