@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>پرو مجازی عینک</title>
+<link href="https://cdn.jsdelivr.net/npm/vazirmatn@33.0.3/Vazirmatn-font-face.css" rel="stylesheet">
+<style>
+:root{--acc:#4da3ff}
+*{margin:0;box-sizing:border-box;font-family:Vazirmatn,Tahoma,sans-serif;-webkit-tap-highlight-color:transparent}
+body{background:#000;overflow:hidden;user-select:none}
+canvas{position:fixed;inset:0;width:100vw;height:100vh;object-fit:cover}
+#gl,#oc{pointer-events:none}
+#top{position:fixed;top:0;right:0;left:0;padding:calc(10px + env(safe-area-inset-top)) 16px 12px;display:flex;justify-content:space-between;align-items:center;background:linear-gradient(rgba(0,0,0,.75),transparent);z-index:5}
+#top h1{color:#fff;font-size:15px;font-weight:800}
+#top h1 span{color:var(--acc)}
+#badge{color:#fff;font-size:10px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);padding:4px 10px;border-radius:99px}
+#hint{position:fixed;top:calc(52px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);background:rgba(0,0,0,.75);color:#ffd77e;padding:8px 18px;border-radius:99px;font-size:12px;z-index:6;opacity:0;transition:opacity .4s;pointer-events:none}
+#ig{position:fixed;top:calc(88px + env(safe-area-inset-top));right:12px;left:12px;z-index:8;background:#3b1d5a;color:#fff;border:1px solid #7c4dff;border-radius:14px;padding:10px 14px;font-size:12px;display:none;align-items:center;gap:8px;justify-content:space-between}
+#ig button{background:#7c4dff;border:none;color:#fff;border-radius:10px;padding:6px 12px;font-size:12px}
+#ui{position:fixed;bottom:0;right:0;left:0;padding:10px 10px calc(14px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:9px;background:linear-gradient(transparent,rgba(0,0,0,.92));z-index:5}
+.row{display:flex;gap:8px;justify-content:center;align-items:center}
+#frames{overflow-x:auto;justify-content:flex-start;padding-bottom:4px;scrollbar-width:none}
+#frames::-webkit-scrollbar{display:none}
+.chip{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:4px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);backdrop-filter:blur(8px);color:#eee;padding:8px 12px;border-radius:14px;font-size:11px;cursor:pointer}
+.chip.on{background:var(--acc);border-color:var(--acc);color:#fff;box-shadow:0 0 16px var(--acc)}
+.dot{width:26px;height:26px;border-radius:50%;border:2px solid rgba(255,255,255,.25);cursor:pointer;flex:0 0 auto}
+.dot.on{border-color:#fff;transform:scale(1.2)}
+.btn{border:none;border-radius:14px;padding:11px 14px;font-size:12px;font-weight:700;cursor:pointer;color:#fff}
+#rescan,#pd{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3)}
+#wa{background:#25d366}
+#snap{background:linear-gradient(135deg,var(--acc),#7c4dff)}
+#intro{position:fixed;inset:0;z-index:10;background:radial-gradient(circle at 50% 20%,#12233d,#05070d 70%);display:flex;align-items:center;justify-content:center;padding:20px}
+#intro .card{width:min(92vw,380px);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:24px;padding:28px 22px;text-align:center;backdrop-filter:blur(10px)}
+#intro .logo{font-size:44px}
+#intro h2{color:#fff;font-size:20px;margin:10px 0 4px}
+#intro .sub{color:#9fb6d4;font-size:12px;margin-bottom:18px}
+#intro .steps{display:flex;flex-direction:column;gap:8px;text-align:right;color:#dfe9f5;font-size:12.5px;background:rgba(77,163,255,.08);border:1px solid rgba(77,163,255,.25);border-radius:14px;padding:14px;margin-bottom:18px}
+#start{width:100%;border:none;border-radius:16px;padding:14px;font-size:15px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--acc),#7c4dff);cursor:pointer;box-shadow:0 8px 24px rgba(77,163,255,.35);font-family:Vazirmatn}
+#intro .priv{color:#7d8ca0;font-size:10.5px;margin-top:12px}
+#load{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;flex-direction:column;gap:14px;align-items:center;justify-content:center;z-index:9;color:#fff;text-align:center;padding:20px}
+.spin{width:42px;height:42px;border:4px solid rgba(255,255,255,.15);border-top-color:var(--acc);border-radius:50%;animation:s 1s linear infinite}
+@keyframes s{to{transform:rotate(1turn)}}
+#scan{position:fixed;inset:0;z-index:6;display:none;flex-direction:column;gap:18px;align-items:center;justify-content:center;pointer-events:none}
+#scan .frame{width:min(75vw,340px);height:min(75vw,340px);border:2px dashed var(--acc);border-radius:28px;position:relative;overflow:hidden}
+#scan .line{position:absolute;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,var(--acc),transparent);animation:sc 1.1s linear infinite}
+@keyframes sc{0%{top:4%}100%{top:96%}}
+#scanTxt{color:#fff;font-size:13px;background:rgba(0,0,0,.6);padding:8px 16px;border-radius:12px;text-align:center}
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas><canvas id="gl"></canvas><canvas id="oc"></canvas>
+<div id="top"><h1 id="shopTitle"></h1><div id="badge">پرو مجازی سه‌بعدی</div></div>
+<div id="hint"></div>
+<div id="ig"><span>برای اجرای دوربین، از منوی ⋯ گزینه «Open in Browser» رو بزن</span><button onclick="this.parentNode.style.display='none'">باشه</button></div>
+<div id="scan"><div class="frame"><div class="line"></div></div><div id="scanTxt">در حال اسکن صورت…<br>صاف رو به دوربین</div></div>
+<div id="ui">
+ <div class="row" id="frames"></div>
+ <div class="row" id="colors"></div>
+ <div class="row">
+  <button class="btn" id="rescan">🔄 اسکن صورت</button>
+  <button class="btn" id="pd">📏 سایز دقیق</button>
+  <button class="btn" id="wa">🛒 سفارش</button>
+  <button class="btn" id="snap">📸 اشتراک</button>
+ </div>
+</div>
+<div id="intro"><div class="card">
+ <div class="logo">🕶</div>
+ <h2 id="introShop"></h2>
+ <p class="sub">پرو مجازی عینک — بدون نصب، با دوربین گوشی</p>
+ <div class="steps">
+  <div>۱. اجازه دسترسی به دوربین رو بده</div>
+  <div>۲. صاف و روبه‌رو، تو نور کافی بایست</div>
+  <div>۳. فریم‌ها رو ورق بزن، اسکرین‌شات بگیر و سفارش بده</div>
+ </div>
+ <button id="start">شروع پرو مجازی</button>
+ <p class="priv">🔒 پردازش تصویر فقط روی گوشی خودته؛ هیچ عکسی ارسال نمی‌شه.</p>
+</div></div>
+<div id="load"><div class="spin"></div><div id="loadTxt">در حال آماده‌سازی…</div></div>
+<script>
+setTimeout(function(){if(!window.__ok){document.getElementById('intro').style.display='none';document.getElementById('load').style.display='flex';document.getElementById('loadTxt').innerHTML='⚠️ اینترنت یا مرورگر مشکل داره.<br>با کروم و اینترنت پایدار باز کن.';}},20000);
+if(/Instagram/.test(navigator.userAgent))document.getElementById('ig').style.display='flex';
+function toast(m){const t=document.createElement('div');t.innerHTML=m;t.style.cssText='position:fixed;top:64px;left:50%;transform:translateX(-50%);background:rgba(15,15,20,.92);color:#fff;padding:10px 18px;border-radius:12px;z-index:9;font-size:12px;border:1px solid rgba(255,255,255,.3);text-align:center;font-family:Vazirmatn';document.body.appendChild(t);setTimeout(()=>t.remove(),2600);}
+</script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>
+<script>
+/* ═══════ تنظیمات مغازه ═══════ */
+const SHOP={name:'اپتیک آرین', wa:'989120000000', accent:'#4da3ff'};
+const FRAMES=[
+ {id:1,name:'مربعی کلاسیک',style:'square',colors:[['مشکی','#141414',0],['لاک‌پشتی','#5d3a1a',0],['طلایی','#d4af37',1]]},
+ {id:2,name:'گرد رترو',style:'round',colors:[['مشکی','#141414',0],['نقره‌ای','#c0c0c0',1]]},
+ {id:3,name:'گربه‌ای',style:'cat',colors:[['مشکی','#141414',0],['قرمز','#8e1f1f',0]]},
+ {id:4,name:'خلبانی',style:'aviator',colors:[['طلایی','#d4af37',1],['مشکی','#141414',0]]},
+ /* {id:5,name:'فریم اسکنی',glb:'frames/f1.glb',colors:[]}, */
+];
+const MP_URL='https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14';
+const MODEL='https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task';
+const SEGM='https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_multiclass_256x256.tflite';
+/* ═════════════════════════════ */
+try{(function(){
+window.__ok=true;
+document.getElementById('shopTitle').innerHTML=SHOP.name+' <span>| پرو مجازی</span>';
+document.getElementById('introShop').textContent=SHOP.name;
+document.documentElement.style.setProperty('--acc',SHOP.accent);
+const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+const glc=document.getElementById('gl'),oc=document.getElementById('oc'),octx=oc.getContext('2d');
+const load=document.getElementById('load'),loadTxt=document.getElementById('loadTxt');
+const scanEl=document.getElementById('scan'),hint=document.getElementById('hint');
+let W=0,H=0,lite=false,pdMM=63,startedAt=0,hintT=0;
+let frame=FRAMES[0],colorHex=frame.colors[0][1],metal=frame.colors[0][2];
+const mh=location.hash.match(/f=(\d+)/);if(mh){const f=FRAMES.find(x=>x.id==mh[1]);if(f)frame=f;}
+function showHint(m){const n=performance.now();if(n-hintT<3500)return;hintT=n;hint.textContent=m;hint.style.opacity=1;setTimeout(()=>hint.style.opacity=0,2500);}
+function setLoad(m){loadTxt.innerHTML=m;}
+
+const renderer=new THREE.WebGLRenderer({canvas:glc,alpha:true,antialias:true,preserveDrawingBuffer:true});
+renderer.outputEncoding=THREE.sRGBEncoding;
+const scene=new THREE.Scene();
+(function(){const sc=new THREE.Scene();
+ sc.add(new THREE.Mesh(new THREE.SphereGeometry(10,16,16),new THREE.MeshBasicMaterial({color:0x1a1a1f,side:THREE.BackSide})));
+ const soft=(w,h,c,i,x,y,z)=>{const mm=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({color:new THREE.Color(c).multiplyScalar(i)}));mm.position.set(x,y,z);mm.lookAt(0,0,0);sc.add(mm);};
+ soft(6,6,0xffffff,5,0,5,4);soft(4,4,0xbfd8ff,2.5,-6,1,3);soft(4,4,0xffe0c0,2,6,0,2);
+ scene.environment=new THREE.PMREMGenerator(renderer).fromScene(sc,0.05).texture;})();
+const camera=new THREE.PerspectiveCamera(40,1,1,2000);camera.position.z=500;
+scene.add(new THREE.AmbientLight(0xffffff,0.5));
+const dl=new THREE.DirectionalLight(0xffffff,1.2);dl.position.set(1,2,3);scene.add(dl);
+const glasses=new THREE.Group();scene.add(glasses);
+
+const lensMat=new THREE.MeshPhysicalMaterial({color:0x9fc5ff,transparent:true,opacity:0.18,roughness:0.05,clearcoat:1,side:THREE.DoubleSide});
+function rrect(s,x,y,w,h,r){s.moveTo(x+r,y);s.lineTo(x+w-r,y);s.quadraticCurveTo(x+w,y,x+w,y+r);s.lineTo(x+w,y+h-r);s.quadraticCurveTo(x+w,y+h,x+w-r,y+h);s.lineTo(x+r,y+h);s.quadraticCurveTo(x,y+h,x,y+h-r);s.lineTo(x,y+r);s.quadraticCurveTo(x,y,x+r,y);}
+function shapeFor(k){const s=new THREE.Shape(),h=new THREE.Shape(),t=0.045;
+ if(k==='round'){s.absarc(0,0,0.31,0,Math.PI*2);h.absarc(0,0,0.31-t,0,Math.PI*2);}
+ else if(k==='cat'){s.absellipse(0,0,0.33,0.25);h.absellipse(0,0,0.33-t,0.25-t);}
+ else if(k==='aviator'){s.absellipse(0,-0.02,0.32,0.29);h.absellipse(0,-0.02,0.32-t,0.29-t);}
+ else{rrect(s,-0.32,-0.23,0.64,0.46,0.12);rrect(h,-0.32+t,-0.23+t,0.64-2*t,0.46-2*t,0.08);}
+ s.holes.push(h);return{s,h};}
+function procedural(){
+ const mat=new THREE.MeshPhysicalMaterial({color:colorHex,roughness:metal?0.35:0.2,metalness:metal?1:0.15,clearcoat:1,clearcoatRoughness:0.1});
+ const {s,h}=shapeFor(frame.style);
+ const rimG=new THREE.ExtrudeGeometry(s,{depth:0.06,bevelEnabled:true,bevelThickness:0.012,bevelSize:0.012,bevelSegments:2,curveSegments:24});
+ const lensG=new THREE.ShapeGeometry(h,24);
+ for(const sd of[-1,1]){
+  const rim=new THREE.Mesh(rimG,mat);rim.position.set(sd*0.40,0,-0.03);
+  const lens=new THREE.Mesh(lensG,lensMat);lens.position.set(sd*0.40,0,0);
+  if(frame.style==='cat'){rim.rotation.z=sd*-0.15;lens.rotation.z=sd*-0.15;}
+  const arm=new THREE.Mesh(new THREE.BoxGeometry(0.035,0.07,1.0),mat);arm.position.set(sd*0.72,0.10,-0.5);
+  const tip=new THREE.Mesh(new THREE.BoxGeometry(0.035,0.3,0.045),mat);tip.position.set(sd*0.72,-0.05,-0.98);tip.rotation.x=0.5;
+  const hinge=new THREE.Mesh(new THREE.SphereGeometry(0.045,12,12),mat);hinge.position.set(sd*0.71,0.08,-0.01);
+  glasses.add(rim,lens,arm,tip,hinge);
+ }
+ glasses.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.QuadraticBezierCurve3(new THREE.Vector3(-0.10,0.08,0.01),new THREE.Vector3(0,0.14,0.02),new THREE.Vector3(0.10,0.08,0.01)),12,0.03,8),mat));
+}
+const glbCache={};
+function loadGLB(url){return new Promise((res,rej)=>{if(glbCache[url])return res(glbCache[url]);
+ new THREE.GLTFLoader().load(url,g=>{const o=g.scene;
+  const box=new THREE.Box3().setFromObject(o);const c=box.getCenter(new THREE.Vector3());const sz=box.getSize(new THREE.Vector3());
+  o.position.sub(c);o.scale.setScalar(1.44/Math.max(sz.x,0.001));
+  const wrap=new THREE.Group();wrap.add(o);
+  o.traverse(n=>{if(n.isMesh&&n.material)n.material.envMapIntensity=1.2;});
+  glbCache[url]=wrap;res(wrap);
+ },undefined,rej);});}
+async function buildGlasses(){
+ glasses.clear();
+ if(frame.glb){try{glasses.add((await loadGLB(frame.glb)).clone());}catch(e){toast('⚠️ خطا در لود مدل');procedural();}}
+ else procedural();
+}
+
+const video=document.createElement('video');video.autoplay=true;video.playsInline=true;video.muted=true;
+let lm=null,seg=null,running=true;
+document.addEventListener('visibilitychange',()=>{const was=running;running=!document.hidden;if(running&&!was)requestAnimationFrame(loop);});
+async function start(){
+ load.style.display='flex';setLoad('⏳ دانلود مدل هوش مصنوعی…');
+ const TV=await import(MP_URL);
+ const vision=await TV.FilesetResolver.forVisionTasks(MP_URL);
+ const opt=d=>({baseOptions:{modelAssetPath:MODEL,delegate:d},runningMode:'VIDEO',numFaces:1,refineLandmarks:true});
+ try{lm=await TV.FaceLandmarker.createFromOptions(vision,opt('GPU'));}catch(e){lm=await TV.FaceLandmarker.createFromOptions(vision,opt('CPU'));}
+ const sopt=d=>({baseOptions:{modelAssetPath:SEGM,delegate:d},runningMode:'VIDEO',outputCategoryMask:true});
+ try{seg=await TV.ImageSegmenter.createFromOptions(vision,sopt('GPU'));}catch(e){try{seg=await TV.ImageSegmenter.createFromOptions(vision,sopt('CPU'));}catch(e2){seg=null;}}
+ setLoad('📷 آماده‌سازی دوربین…');
+ video.srcObject=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'}});
+ await new Promise(r=>video.onloadedmetadata=r);
+ await video.play().catch(()=>{});
+ W=cv.width=glc.width=oc.width=video.videoWidth;H=cv.height=glc.height=oc.height=video.videoHeight;
+ renderer.setSize(W,H,false);
+ camera.fov=2*Math.atan(H/1000)*180/Math.PI;camera.aspect=W/H;camera.updateProjectionMatrix();
+ load.style.display='none';startedAt=performance.now();requestAnimationFrame(loop);
+}
+document.getElementById('start').onclick=()=>{document.getElementById('intro').style.display='none';start().catch(e=>{setLoad('⚠️ خطا: '+e.message);});};
+
+const maskC=document.createElement('canvas');maskC.width=256;maskC.height=256;
+const mctx=maskC.getContext('2d');const maskImg=mctx.createImageData(256,256);
+let hairClass=1;
+const sm={x:0,y:0,z:0,sc:0,on:false},smQ=new THREE.Quaternion();
+let scanning=false,samples=[],scanStart=0,fpsN=0,fpsT=0;
+document.getElementById('rescan').onclick=()=>{scanning=true;samples=[];scanStart=performance.now();scanEl.style.display='flex';glasses.visible=false;};
+document.getElementById('pd').onclick=()=>{const v=prompt('فاصله مردمک (PD) از روی نسخه (میلی‌متر):\nخالی = استاندارد ۶۳','63');if(v&&!isNaN(+v)&&+v>40&&+v<80){pdMM=+v;toast('✅ سایز واقعی تنظیم شد');}else toast('📏 سایز استاندارد فعاله');};
+document.getElementById('wa').onclick=()=>{const cn=frame.colors.find(c=>c[1]===colorHex);open('https://wa.me/'+SHOP.wa+'?text='+encodeURIComponent('سلام! فریم «'+frame.name+'»'+(cn?' رنگ '+cn[0]:'')+' رو مجازی پرو کردم. برای خرید راهنمایی‌ام کنید 🕶'),'_blank');};
+document.getElementById('snap').onclick=()=>{
+ const o=document.createElement('canvas');o.width=W;o.height=H;const c2=o.getContext('2d');
+ c2.drawImage(cv,0,0);c2.drawImage(glc,0,0);c2.drawImage(oc,0,0);
+ c2.font='bold '+Math.round(W*0.035)+'px Vazirmatn,Tahoma';c2.textAlign='right';
+ c2.shadowColor='rgba(0,0,0,.8)';c2.shadowBlur=8;c2.fillStyle='#fff';
+ c2.fillText(SHOP.name+' | پرو مجازی',W-20,H-20);
+ o.toBlob(async b=>{const f=new File([b],'tryon.png',{type:'image/png'});
+  try{await navigator.share({files:[f],title:SHOP.name});}
+  catch(e){const a=document.createElement('a');a.download='tryon.png';a.href=URL.createObjectURL(b);a.click();}
+ },'image/png');};
+function loop(){
+ if(!running)return;
+ requestAnimationFrame(loop);
+ if(!video.videoWidth)return;
+ fpsN++;if(fpsN===90){if(90000/(performance.now()-fpsT)<22&&!lite){lite=true;toast('⚡ حالت سبک فعال شد');}}
+ if(fpsN===1)fpsT=performance.now();
+ ctx.save();ctx.translate(W,0);ctx.scale(-1,1);ctx.drawImage(video,0,0,W,H);ctx.restore();
+ const now=performance.now();
+ const r=lm.detectForVideo(video,now);
+ if(r.faceLandmarks&&r.faceLandmarks.length){
+  const p=r.faceLandmarks[0];
+  const zs=((p[4].z-(p[234].z+p[454].z)/2)>=0)?1:-1;
+  const V=i=>new THREE.Vector3((1-p[i].x)*W-W/2,H/2-p[i].y*H,zs*p[i].z*W);
+  const eLc=V(33).add(V(133)).multiplyScalar(0.5);
+  const eRc=V(263).add(V(363)).multiplyScalar(0.5);
+  const mid=eLc.clone().add(eRc).multiplyScalar(0.5);
+  const irisD=Math.hypot((p[468].x-p[473].x)*W,(p[468].y-p[473].y)*H)||1;
+  const target=(140*(pdMM/irisD))/1.44;
+  if(target<W*0.16)showHint('یه کم نزدیک‌تر بیا 📏');
+  const ex=eLc.clone().sub(eRc).normalize();
+  const up0=mid.clone().sub(V(4)).normalize();
+  const up=up0.sub(ex.clone().multiplyScalar(up0.dot(ex))).normalize();
+  const ez=ex.clone().cross(up).normalize();
+  const q=new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(ex,up,ez));
+  const t={x:mid.x,y:mid.y,z:mid.z};
+  if(scanning){
+   samples.push({x:t.x,y:t.y,z:t.z,sc:target,q:q.clone()});
+   glasses.visible=false;
+   if(samples.length>=30){let ax=0,ay=0,az=0,as=0;for(const s of samples){ax+=s.x;ay+=s.y;az+=s.z;as+=s.sc;}
+    const n=samples.length;sm.x=ax/n;sm.y=ay/n;sm.z=az/n;sm.sc=as/n;sm.on=true;
+    smQ.copy(samples[0].q);for(let i=1;i<n;i++)smQ.slerp(samples[i].q,1/(i+1));
+    scanning=false;scanEl.style.display='none';toast('✅ صورت اسکن شد؛ عینک تنظیم شد');}
+  }else{
+   const a=sm.on?0.4:1;
+   sm.x+=(t.x-sm.x)*a;sm.y+=(t.y-sm.y)*a;sm.z+=(t.z-sm.z)*a;sm.sc+=(target-sm.sc)*a;
+   sm.on?smQ.slerp(q,0.4):smQ.copy(q);
+   sm.on=true;glasses.visible=true;
+   glasses.position.set(sm.x,sm.y,sm.z+sm.sc*0.15);
+   glasses.quaternion.copy(smQ);
+   glasses.scale.setScalar(sm.sc);
+   glasses.updateMatrixWorld();
+   for(const sd of[-1,1]){
+    const wp=glasses.localToWorld(new THREE.Vector3(sd*0.40,-0.26,0.05)).project(camera);
+    const x=(wp.x*0.5+0.5)*W,y=(-wp.y*0.5+0.5)*H,rad=sm.sc*0.34;
+    const g=ctx.createRadialGradient(x,y,rad*0.2,x,y,rad);
+    g.addColorStop(0,'rgba(0,0,0,0.25)');g.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=g;ctx.beginPath();ctx.ellipse(x,y+rad*0.25,rad,rad*0.75,0,0,7);ctx.fill();
+   }
+   if(seg&&!lite){
+    const res=seg.segmentForVideo(video,now);
+    const mm=new Uint8Array(res.categoryMask.getAsUint8Array());
+    const eyeRow=Math.floor((((p[33].y+p[263].y)/2)*256)/H);
+    const counts=[0,0,0,0,0,0];
+    for(let i=0;i<mm.length;i++){const c=mm[i];if(c>0&&(i>>8)<eyeRow)counts[c]++;}
+    let best=0,bc=0;for(let c=1;c<6;c++)if(counts[c]>bc){bc=counts[c];best=c;}
+    if(bc>150)hairClass=best;
+    const d=maskImg.data;
+    for(let i=0;i<mm.length;i++){const o=i*4;d[o]=255;d[o+1]=255;d[o+2]=255;d[o+3]=mm[i]===hairClass?255:0;}
+    mctx.putImageData(maskImg,0,0);
+    octx.save();octx.globalCompositeOperation='source-over';octx.clearRect(0,0,W,H);
+    octx.translate(W,0);octx.scale(-1,1);octx.filter='blur(4px)';octx.drawImage(maskC,0,0,W,H);octx.filter='none';
+    octx.globalCompositeOperation='source-in';octx.drawImage(video,0,0,W,H);octx.restore();
+   }else octx.clearRect(0,0,W,H);
+  }
+ }else{
+  glasses.visible=false;sm.on=false;octx.clearRect(0,0,W,H);
+  if(startedAt&&now-startedAt>2500)showHint('صورتت رو بیار جلوی دوربین 🙂');
+ }
+ renderer.render(scene,camera);
+}
+const SVG={
+square:'<svg viewBox="0 0 64 24" width="36" height="14"><g fill="none" stroke="currentColor" stroke-width="3"><rect x="3" y="4" width="24" height="17" rx="5"/><rect x="37" y="4" width="24" height="17" rx="5"/><path d="M27 10h10"/></g></svg>',
+round:'<svg viewBox="0 0 64 24" width="36" height="14"><g fill="none" stroke="currentColor" stroke-width="3"><circle cx="15" cy="13" r="10"/><circle cx="49" cy="13" r="10"/><path d="M25 10h14"/></g></svg>',
+cat:'<svg viewBox="0 0 64 24" width="36" height="14"><g fill="none" stroke="currentColor" stroke-width="3"><ellipse cx="15" cy="13" rx="12" ry="8" transform="rotate(-8 15 13)"/><ellipse cx="49" cy="13" rx="12" ry="8" transform="rotate(8 49 13)"/><path d="M26 10h12"/></g></svg>',
+aviator:'<svg viewBox="0 0 64 24" width="36" height="14"><g fill="none" stroke="currentColor" stroke-width="3"><ellipse cx="15" cy="12" rx="12" ry="10"/><ellipse cx="49" cy="12" rx="12" ry="10"/><path d="M26 8h12"/></g></svg>'};
+const fBox=document.getElementById('frames');
+FRAMES.forEach(f=>{const b=document.createElement('button');b.className='chip';
+ b.innerHTML=(SVG[f.style]||'🕶')+'<span>'+f.name+'</span>';
+ b.onclick=()=>{frame=f;[...fBox.children].forEach(x=>x.classList.remove('on'));b.classList.add('on');
+  history.replaceState(null,'','#f='+f.id);
+  if(f.colors.length){colorHex=f.colors[0][1];metal=f.colors[0][2];}
+  buildColors();buildGlasses();};
+ if(f===frame)b.classList.add('on');fBox.appendChild(b);});
+const cBox=document.getElementById('colors');
+function buildColors(){cBox.innerHTML='';if(!frame.colors||!frame.colors.length){cBox.style.display='none';return;}cBox.style.display='flex';
+ frame.colors.forEach(c=>{const d=document.createElement('div');d.className='dot';d.title=c[0];d.style.background=c[1];
+  d.onclick=()=>{colorHex=c[1];metal=c[2];[...cBox.children].forEach(x=>x.classList.remove('on'));d.classList.add('on');buildGlasses();};
+  if(c[1]===colorHex)d.classList.add('on');cBox.appendChild(d);});}
+buildColors();buildGlasses();
+})()}catch(e){document.getElementById('load').style.display='flex';document.getElementById('loadTxt').innerHTML='⚠️ خطا: '+e.message;}
+</script>
+</body>
+</html>
