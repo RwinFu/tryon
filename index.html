@@ -10,7 +10,7 @@
 *{margin:0;box-sizing:border-box;font-family:Vazirmatn,Tahoma,sans-serif;-webkit-tap-highlight-color:transparent}
 body{background:#000;overflow:hidden;user-select:none}
 canvas{position:fixed;inset:0;width:100vw;height:100vh;object-fit:cover}
-#gl,#oc{pointer-events:none}
+#gl,#im,#oc{pointer-events:none}
 #top{position:fixed;top:0;right:0;left:0;padding:calc(10px + env(safe-area-inset-top)) 16px 12px;display:flex;justify-content:space-between;align-items:center;background:linear-gradient(rgba(0,0,0,.75),transparent);z-index:5}
 #top h1{color:#fff;font-size:15px;font-weight:800}
 #top h1 span{color:var(--acc)}
@@ -50,7 +50,7 @@ canvas{position:fixed;inset:0;width:100vw;height:100vh;object-fit:cover}
 </style>
 </head>
 <body>
-<canvas id="cv"></canvas><canvas id="gl"></canvas><canvas id="oc"></canvas>
+<canvas id="cv"></canvas><canvas id="gl"></canvas><canvas id="im"></canvas><canvas id="oc"></canvas>
 <div id="top"><h1 id="shopTitle"></h1><div id="badge">پرو مجازی سه‌بعدی</div></div>
 <div id="hint"></div>
 <div id="ig"><span>برای اجرای دوربین، از منوی ⋯ گزینه «Open in Browser» رو بزن</span><button onclick="this.parentNode.style.display='none'">باشه</button></div>
@@ -93,7 +93,8 @@ const FRAMES=[
  {id:2,name:'گرد رترو',style:'round',colors:[['مشکی','#141414',0],['نقره‌ای','#c0c0c0',1]]},
  {id:3,name:'گربه‌ای',style:'cat',colors:[['مشکی','#141414',0],['قرمز','#8e1f1f',0]]},
  {id:4,name:'خلبانی',style:'aviator',colors:[['طلایی','#d4af37',1],['مشکی','#141414',0]]},
- /* {id:5,name:'فریم اسکنی',glb:'frames/f1.glb',colors:[]}, */
+ /* برای عکس واقعی فریم (مثل سایت‌های بزرگ) این خط رو فعال کن:
+ {id:5,name:'فریم واقعی مغازه',img:'frames/f1.png',colors:[]}, */
 ];
 const SELF='https://rwinfu.github.io/tryon';
 const MP_URL='https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14';
@@ -108,12 +109,16 @@ document.getElementById('shopTitle').innerHTML=SHOP.name+' <span>| پرو مجا
 document.getElementById('introShop').textContent=SHOP.name;
 document.documentElement.style.setProperty('--acc',SHOP.accent);
 const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
-const glc=document.getElementById('gl'),oc=document.getElementById('oc'),octx=oc.getContext('2d');
+const glc=document.getElementById('gl'),im=document.getElementById('im'),ictx=im.getContext('2d');
+const oc=document.getElementById('oc'),octx=oc.getContext('2d');
 const load=document.getElementById('load'),loadTxt=document.getElementById('loadTxt');
 const scanEl=document.getElementById('scan'),hint=document.getElementById('hint');
 let W=0,H=0,lite=false,pdMM=63,startedAt=0,hintT=0;
-let frame=FRAMES[0],colorHex=frame.colors[0][1],metal=frame.colors[0][2];
+let frame=FRAMES[0],colorHex=frame.colors[0]?frame.colors[0][1]:'#141414',metal=frame.colors[0]?frame.colors[0][2]:0;
 const mh=location.hash.match(/f=(\d+)/);if(mh){const f=FRAMES.find(x=>x.id==mh[1]);if(f)frame=f;}
+const imgCache={};
+function getImg(src){if(imgCache[src])return imgCache[src];const i=new Image();i.src=src;imgCache[src]=i;return i;}
+if(frame.img)getImg(frame.img);
 function showHint(m){const n=performance.now();if(n-hintT<3500)return;hintT=n;hint.textContent=m;hint.style.opacity=1;setTimeout(()=>hint.style.opacity=0,2500);}
 function setLoad(m){loadTxt.innerHTML=m;}
 function friendly(e){
@@ -199,7 +204,7 @@ async function start(){
   video.srcObject=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'}});
   await new Promise(r=>video.onloadedmetadata=r);
   await video.play().catch(()=>{});
-  W=cv.width=glc.width=oc.width=video.videoWidth;H=cv.height=glc.height=oc.height=video.videoHeight;
+  W=cv.width=glc.width=oc.width=im.width=video.videoWidth;H=cv.height=glc.height=oc.height=im.height=video.videoHeight;
   renderer.setSize(W,H,false);
   camera.fov=2*Math.atan(H/1000)*180/Math.PI;camera.aspect=W/H;camera.updateProjectionMatrix();
   load.style.display='none';startedAt=performance.now();requestAnimationFrame(loop);
@@ -210,15 +215,15 @@ document.getElementById('start').onclick=()=>{document.getElementById('intro').s
 const maskC=document.createElement('canvas');maskC.width=256;maskC.height=256;
 const mctx=maskC.getContext('2d');const maskImg=mctx.createImageData(256,256);
 let hairClass=1;
-const sm={x:0,y:0,sc:0,on:false},smQ=new THREE.Quaternion();
+const sm={x:0,y:0,sc:0,ang:0,on:false},smQ=new THREE.Quaternion();
 let scanning=false,samples=[],scanStart=0,fpsN=0,fpsT=0;
 const cl=THREE.MathUtils.clamp;
 document.getElementById('rescan').onclick=()=>{scanning=true;samples=[];scanStart=performance.now();scanEl.style.display='flex';glasses.visible=false;};
 document.getElementById('pd').onclick=()=>{const v=prompt('فاصله مردمک (PD) از روی نسخه (میلی‌متر):\nخالی = استاندارد ۶۳','63');if(v&&!isNaN(+v)&&+v>40&&+v<80){pdMM=+v;toast('✅ سایز واقعی تنظیم شد');}else toast('📏 سایز استاندارد فعاله');};
-document.getElementById('wa').onclick=()=>{const cn=frame.colors.find(c=>c[1]===colorHex);open('https://wa.me/'+SHOP.wa+'?text='+encodeURIComponent('سلام! فریم «'+frame.name+'»'+(cn?' رنگ '+cn[0]:'')+' رو مجازی پرو کردم. برای خرید راهنمایی‌ام کنید 🕶'),'_blank');};
+document.getElementById('wa').onclick=()=>{const cn=frame.colors?frame.colors.find(c=>c[1]===colorHex):null;open('https://wa.me/'+SHOP.wa+'?text='+encodeURIComponent('سلام! فریم «'+frame.name+'»'+(cn?' رنگ '+cn[0]:'')+' رو مجازی پرو کردم. برای خرید راهنمایی‌ام کنید 🕶'),'_blank');};
 document.getElementById('snap').onclick=()=>{
  const o=document.createElement('canvas');o.width=W;o.height=H;const c2=o.getContext('2d');
- c2.drawImage(cv,0,0);c2.drawImage(glc,0,0);c2.drawImage(oc,0,0);
+ c2.drawImage(cv,0,0);c2.drawImage(glc,0,0);c2.drawImage(im,0,0);c2.drawImage(oc,0,0);
  c2.font='bold '+Math.round(W*0.035)+'px Vazirmatn,Tahoma';c2.textAlign='right';
  c2.shadowColor='rgba(0,0,0,.8)';c2.shadowBlur=8;c2.fillStyle='#fff';
  c2.fillText(SHOP.name+' | پرو مجازی',W-20,H-20);
@@ -242,30 +247,44 @@ function loop(){
   const mid={x:(eL.x+eR.x)/2,y:(eL.y+eR.y)/2};
   const outer=Math.hypot(eL.x-eR.x,eL.y-eR.y);
   const irisD=Math.hypot((p[468].x-p[473].x)*W,(p[468].y-p[473].y)*H)||1;
-  let target=(135*(irisD/pdMM))/1.44;
-  target=cl(target,outer*0.95,outer*1.8);
+  let target=cl((135*(irisD/pdMM))/1.44,outer*0.95,outer*1.8);
   if(outer<W*0.14)showHint('یه کم نزدیک‌تر بیا 📏');
+  const ang=Math.atan2(eR.y-eL.y,eR.x-eL.x);
   const fw=Math.hypot(p[234].x-p[454].x,p[234].y-p[454].y)*W;
   const fh=Math.hypot(p[10].x-p[152].x,p[10].y-p[152].y)*H;
   const nose=P(4);
-  const yaw=cl(((nose.x-mid.x)/fw)*2.6,-1.0,1.0);
-  const pitch=cl((((nose.y-mid.y)/fh)-0.30)*2.2,-0.8,0.8);
-  const roll=-Math.atan2(eL.y-eR.y,eL.x-eR.x);
+  const yaw=cl(((nose.x-mid.x)/fw)*1.2,-0.35,0.35);
+  const pitch=cl((((nose.y-mid.y)/fh)-0.30)*1.0,-0.25,0.25);
+  const roll=-ang;
   const q=new THREE.Quaternion().setFromEuler(new THREE.Euler(pitch,yaw,roll,'YXZ'));
   const t={x:mid.x-W/2,y:H/2-mid.y};
-  if(Math.abs(yaw)>0.85||Math.abs(pitch)>0.7)showHint('صاف‌تر رو به دوربین 🙂');
+  const a=sm.on?0.25:1, as=sm.on?0.1:1;
+  sm.x+=(t.x-sm.x)*a;sm.y+=(t.y-sm.y)*a;sm.sc+=(target-sm.sc)*as;sm.ang+=(ang-sm.ang)*(sm.on?0.25:1);
+  sm.on?smQ.slerp(q,0.25):smQ.copy(q);
+  sm.on=true;
+  const useImg=frame.img&&imgCache[frame.img]&&imgCache[frame.img].complete&&imgCache[frame.img].naturalWidth>0;
   if(scanning){
    samples.push({x:t.x,y:t.y,sc:target,q:q.clone()});
-   glasses.visible=false;
-   if(samples.length>=30){let ax=0,ay=0,as=0;for(const s of samples){ax+=s.x;ay+=s.y;as+=s.sc;}
-    const n=samples.length;sm.x=ax/n;sm.y=ay/n;sm.sc=as/n;sm.on=true;
+   glasses.visible=false;ictx.clearRect(0,0,W,H);
+   if(samples.length>=30){let ax=0,ay=0,as2=0;for(const s of samples){ax+=s.x;ay+=s.y;as2+=s.sc;}
+    const n=samples.length;sm.x=ax/n;sm.y=ay/n;sm.sc=as2/n;sm.on=true;
     smQ.copy(samples[0].q);for(let i=1;i<n;i++)smQ.slerp(samples[i].q,1/(i+1));
     scanning=false;scanEl.style.display='none';toast('✅ صورت اسکن شد؛ عینک تنظیم شد');}
+  }else if(useImg){
+   glasses.visible=false;
+   const img=imgCache[frame.img];
+   const w=1.44*sm.sc*1.06;
+   const h=w*(img.naturalHeight/img.naturalWidth);
+   ictx.clearRect(0,0,W,H);
+   ictx.save();ictx.translate(sm.x+W/2? sm.x+W/2:0,0);ictx.restore();
+   ictx.save();
+   ictx.translate(sm.x,sm.y);
+   ictx.rotate(sm.ang);
+   ictx.drawImage(img,-w/2,-h*0.5,w,h);
+   ictx.restore();
   }else{
-   const a=sm.on?0.25:1, as=sm.on?0.1:1;
-   sm.x+=(t.x-sm.x)*a;sm.y+=(t.y-sm.y)*a;sm.sc+=(target-sm.sc)*as;
-   sm.on?smQ.slerp(q,0.25):smQ.copy(q);
-   sm.on=true;glasses.visible=true;
+   ictx.clearRect(0,0,W,H);
+   glasses.visible=true;
    glasses.position.set(sm.x,sm.y,sm.sc*0.05);
    glasses.quaternion.copy(smQ);
    glasses.scale.setScalar(sm.sc);
@@ -277,24 +296,24 @@ function loop(){
     g.addColorStop(0,'rgba(0,0,0,0.22)');g.addColorStop(1,'rgba(0,0,0,0)');
     ctx.fillStyle=g;ctx.beginPath();ctx.ellipse(x,y+rad*0.25,rad,rad*0.75,0,0,7);ctx.fill();
    }
-   if(seg&&!lite){
-    const res=seg.segmentForVideo(video,now);
-    const mm=new Uint8Array(res.categoryMask.getAsUint8Array());
-    const eyeRow=Math.floor((((p[33].y+p[263].y)/2)*256)/H);
-    const counts=[0,0,0,0,0,0];
-    for(let i=0;i<mm.length;i++){const c=mm[i];if(c>0&&(i>>8)<eyeRow)counts[c]++;}
-    let best=0,bc=0;for(let c=1;c<6;c++)if(counts[c]>bc){bc=counts[c];best=c;}
-    if(bc>150)hairClass=best;
-    const d=maskImg.data;
-    for(let i=0;i<mm.length;i++){const o=i*4;d[o]=255;d[o+1]=255;d[o+2]=255;d[o+3]=mm[i]===hairClass?255:0;}
-    mctx.putImageData(maskImg,0,0);
-    octx.save();octx.globalCompositeOperation='source-over';octx.clearRect(0,0,W,H);
-    octx.translate(W,0);octx.scale(-1,1);octx.filter='blur(4px)';octx.drawImage(maskC,0,0,W,H);octx.filter='none';
-    octx.globalCompositeOperation='source-in';octx.drawImage(video,0,0,W,H);octx.restore();
-   }else octx.clearRect(0,0,W,H);
   }
+  if(seg&&!lite){
+   const res=seg.segmentForVideo(video,now);
+   const mm=new Uint8Array(res.categoryMask.getAsUint8Array());
+   const eyeRow=Math.floor((((p[33].y+p[263].y)/2)*256)/H);
+   const counts=[0,0,0,0,0,0];
+   for(let i=0;i<mm.length;i++){const c=mm[i];if(c>0&&(i>>8)<eyeRow)counts[c]++;}
+   let best=0,bc=0;for(let c=1;c<6;c++)if(counts[c]>bc){bc=counts[c];best=c;}
+   if(bc>150)hairClass=best;
+   const d=maskImg.data;
+   for(let i=0;i<mm.length;i++){const o=i*4;d[o]=255;d[o+1]=255;d[o+2]=255;d[o+3]=mm[i]===hairClass?255:0;}
+   mctx.putImageData(maskImg,0,0);
+   octx.save();octx.globalCompositeOperation='source-over';octx.clearRect(0,0,W,H);
+   octx.translate(W,0);octx.scale(-1,1);octx.filter='blur(4px)';octx.drawImage(maskC,0,0,W,H);octx.filter='none';
+   octx.globalCompositeOperation='source-in';octx.drawImage(video,0,0,W,H);octx.restore();
+  }else octx.clearRect(0,0,W,H);
  }else{
-  glasses.visible=false;sm.on=false;octx.clearRect(0,0,W,H);
+  glasses.visible=false;sm.on=false;octx.clearRect(0,0,W,H);ictx.clearRect(0,0,W,H);
   if(startedAt&&now-startedAt>2500)showHint('صورتت رو بیار جلوی دوربین 🙂');
  }
  renderer.render(scene,camera);
@@ -309,7 +328,8 @@ FRAMES.forEach(f=>{const b=document.createElement('button');b.className='chip';
  b.innerHTML=(SVG[f.style]||'🕶')+'<span>'+f.name+'</span>';
  b.onclick=()=>{frame=f;[...fBox.children].forEach(x=>x.classList.remove('on'));b.classList.add('on');
   history.replaceState(null,'','#f='+f.id);
-  if(f.colors.length){colorHex=f.colors[0][1];metal=f.colors[0][2];}
+  if(f.colors&&f.colors.length){colorHex=f.colors[0][1];metal=f.colors[0][2];}
+  if(f.img)getImg(f.img);
   buildColors();buildGlasses();};
  if(f===frame)b.classList.add('on');fBox.appendChild(b);});
 const cBox=document.getElementById('colors');
