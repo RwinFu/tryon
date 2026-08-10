@@ -84,10 +84,10 @@ canvas{position:fixed;inset:0;width:100vw;height:100vh;object-fit:cover;transfor
 /* ===================== فقط این بخش را برای فروشگاه و محصولات ویرایش کنید ===================== */
 const SHOP={name:'اپتیک آرین',wa:'989120000000',accent:'#4da3ff'};
 const FRAMES=[
- {id:1,name:'مربعی کلاسیک',style:'square',glb:'./models/square.glb',widthMM:138,lensCenter:.38,lensBlocker:.96,colors:[['مشکی','#111214',0],['لاک‌پشتی','#6b3f20',0],['طلایی','#c8a33a',1]]},
- {id:2,name:'گرد رترو',style:'round',glb:'./models/round.glb',widthMM:136,lensCenter:.36,lensBlocker:.82,colors:[['مشکی','#111214',0],['نقره‌ای','#b9bec5',1]]},
- {id:3,name:'گربه‌ای',style:'cat',glb:'./models/cat.glb',widthMM:140,lensCenter:.37,lensBlocker:.86,colors:[['مشکی','#111214',0],['قرمز','#7d1822',0]]},
- {id:4,name:'خلبانی',style:'aviator',glb:'./models/aviator.glb',widthMM:140,lensCenter:.40,lensBlocker:.94,colors:[['طلایی','#c8a33a',1],['مشکی','#111214',0]]}
+ {id:1,name:'مربعی کلاسیک',style:'square',glb:'./square.glb',widthMM:138,lensCenter:.38,lensBlocker:.96,colors:[['مشکی','#111214',0],['لاک‌پشتی','#6b3f20',0],['طلایی','#c8a33a',1]]},
+ {id:2,name:'گرد رترو',style:'round',glb:'./round.glb',widthMM:136,lensCenter:.36,lensBlocker:.82,colors:[['مشکی','#111214',0],['نقره‌ای','#b9bec5',1]]},
+ {id:3,name:'گربه‌ای',style:'cat',glb:'./cat.glb',widthMM:140,lensCenter:.37,lensBlocker:.86,colors:[['مشکی','#111214',0],['قرمز','#7d1822',0]]},
+ {id:4,name:'خلبانی',style:'aviator',glb:'./aviator.glb',widthMM:140,lensCenter:.40,lensBlocker:.94,colors:[['طلایی','#c8a33a',1],['مشکی','#111214',0]]}
 ];
 /* مدل‌های GLB این نسخه تحت CC BY 4.0 هستند؛ مشخصات کامل سازندگان در MODEL-LICENSES.txt قرار دارد. */
 /* برای عکس واقعی به همان محصول png:'./frames/1.png' و برای مدل سه‌بعدی دلخواه glb:'./models/1.glb' اضافه کنید. */
@@ -363,5 +363,5 @@ buildColors();
 
 window.addEventListener('error',e=>{if(started&&load.style.display!=='none')setLoad(friendly(e.error||e.message));});
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a292aa8dcaf25392',t:'MTc4NjQwMzM0NQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>
