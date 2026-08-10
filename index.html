@@ -84,12 +84,13 @@ canvas{position:fixed;inset:0;width:100vw;height:100vh;object-fit:cover;transfor
 /* ===================== فقط این بخش را برای فروشگاه و محصولات ویرایش کنید ===================== */
 const SHOP={name:'اپتیک آرین',wa:'989120000000',accent:'#4da3ff'};
 const FRAMES=[
- {id:1,name:'مربعی کلاسیک',style:'square',widthMM:135,colors:[['مشکی','#141414',0],['لاک‌پشتی','#5d3a1a',0],['طلایی','#d4af37',1]]},
- {id:2,name:'گرد رترو',style:'round',widthMM:135,colors:[['مشکی','#141414',0],['نقره‌ای','#c0c0c0',1]]},
- {id:3,name:'گربه‌ای',style:'cat',widthMM:135,colors:[['مشکی','#141414',0],['قرمز','#8e1f1f',0]]},
- {id:4,name:'خلبانی',style:'aviator',widthMM:135,colors:[['طلایی','#d4af37',1],['مشکی','#141414',0]]}
+ {id:1,name:'مربعی کلاسیک',style:'square',glb:'./models/square.glb',widthMM:138,lensCenter:.38,lensBlocker:.96,colors:[['مشکی','#111214',0],['لاک‌پشتی','#6b3f20',0],['طلایی','#c8a33a',1]]},
+ {id:2,name:'گرد رترو',style:'round',glb:'./models/round.glb',widthMM:136,lensCenter:.36,lensBlocker:.82,colors:[['مشکی','#111214',0],['نقره‌ای','#b9bec5',1]]},
+ {id:3,name:'گربه‌ای',style:'cat',glb:'./models/cat.glb',widthMM:140,lensCenter:.37,lensBlocker:.86,colors:[['مشکی','#111214',0],['قرمز','#7d1822',0]]},
+ {id:4,name:'خلبانی',style:'aviator',glb:'./models/aviator.glb',widthMM:140,lensCenter:.40,lensBlocker:.94,colors:[['طلایی','#c8a33a',1],['مشکی','#111214',0]]}
 ];
-/* برای عکس واقعی به همان محصول png:'./frames/1.png' و برای مدل سه‌بعدی glb:'./models/1.glb' اضافه کنید. */
+/* مدل‌های GLB این نسخه تحت CC BY 4.0 هستند؛ مشخصات کامل سازندگان در MODEL-LICENSES.txt قرار دارد. */
+/* برای عکس واقعی به همان محصول png:'./frames/1.png' و برای مدل سه‌بعدی دلخواه glb:'./models/1.glb' اضافه کنید. */
 /* ============================================================================================ */
 
 const SELF=/^https?:$/.test(location.protocol)?new URL('.',location.href).href.replace(/\/$/,''):'https://rwinfu.github.io/tryon';
@@ -99,6 +100,8 @@ const FACE_MODELS=[
  'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task'
 ];
 const SEG_MODELS=[
+ SELF+'/hair_segmenter.tflite',
+ 'https://storage.googleapis.com/mediapipe-models/image_segmenter/hair_segmenter/float32/latest/hair_segmenter.tflite',
  SELF+'/selfie_multiclass_256x256.tflite',
  'https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_multiclass_256x256/float32/latest/selfie_multiclass_256x256.tflite'
 ];
@@ -216,18 +219,31 @@ function procedural(){
 function loadImage(url){if(imageCache[url])return imageCache[url];imageCache[url]=new Promise((res,rej)=>{const im=new Image();im.crossOrigin='anonymous';im.onload=()=>res(im);im.onerror=rej;im.src=url;});return imageCache[url];}
 function loadGLB(url){if(glbCache[url])return glbCache[url];glbCache[url]=new Promise((res,rej)=>{
  if(!THREE.GLTFLoader)return rej(new Error('GLTFLoader unavailable'));
- new THREE.GLTFLoader().load(url,g=>{const raw=g.scene,box=new THREE.Box3().setFromObject(raw),c=box.getCenter(new THREE.Vector3()),sz=box.getSize(new THREE.Vector3());raw.position.sub(c);raw.scale.setScalar(1.44/Math.max(sz.x,.001));const wrap=new THREE.Group();wrap.add(raw);glbCache[url]=Promise.resolve(wrap);res(wrap);},undefined,rej);
+ new THREE.GLTFLoader().load(url,g=>{const raw=g.scene,box=new THREE.Box3().setFromObject(raw),c=box.getCenter(new THREE.Vector3()),sz=box.getSize(new THREE.Vector3());
+  /* مرکز X/Y روی مرکز اپتیکی است؛ سطح جلویی روی Z=0 و همهٔ دسته‌ها در Z منفی می‌مانند. */
+  raw.position.x-=c.x;raw.position.y-=c.y;raw.position.z-=box.max.z;const wrap=new THREE.Group();wrap.scale.setScalar(1.44/Math.max(sz.x,.001));wrap.add(raw);glbCache[url]=Promise.resolve(wrap);res(wrap);},undefined,rej);
  });return glbCache[url];}
+function tuneGLBMaterial(src){
+ const m=src.clone(),name=(m.name||'').toLowerCase();
+ const isLens=m.transparent||m.opacity<.82||(m.transmission||0)>.01||/glass|lens|vidro|tint|transparent/.test(name);
+ if(isLens){m.color&&m.color.set(frame.style==='aviator'?0x758797:0xa9bed0);m.transparent=true;m.opacity=frame.style==='aviator'?.24:.14;m.depthWrite=false;m.roughness=.08;if('transmission'in m)m.transmission=0;m.side=THREE.DoubleSide;}
+ else if(m.color){m.color.set(colorHex);m.metalness=metal?.88:Math.min(m.metalness||0,.12);m.roughness=metal?.28:.23;if('clearcoat'in m){m.clearcoat=1;m.clearcoatRoughness=.12;}}
+ m.envMapIntensity=1.15;return m;
+}
+function addGLBLensBlockers(){
+ const depthMat=new THREE.MeshBasicMaterial({color:0,colorWrite:false,depthWrite:true,depthTest:true,side:THREE.DoubleSide}),h=shapeFor(frame.style).h;
+ for(const sd of[-1,1]){const blocker=new THREE.Mesh(new THREE.ShapeGeometry(h,24),depthMat);blocker.position.set(sd*(frame.lensCenter||.39),0,.018);blocker.scale.setScalar(frame.lensBlocker||.92);if(frame.style==='cat')blocker.rotation.z=sd*-.10;blocker.renderOrder=-50;modelRoot.add(blocker);}
+}
 async function buildGlasses(){
  const token=++buildToken;activeImage=null;pctx.clearRect(0,0,W,H);
  if(!webglReady)return;
  if(frame.png){try{const im=await loadImage(frame.png);if(token!==buildToken)return;activeImage=im;activeMode='png';anchor.visible=false;badge.textContent='پرو مجازی عکس واقعی';return;}catch(e){toast('⚠️ عکس محصول پیدا نشد؛ مدل سه‌بعدی جایگزین شد');}}
  activeMode='3d';badge.textContent=lite?'پرو مجازی سه‌بعدی • سبک':'پرو مجازی سه‌بعدی';
- if(frame.glb){try{const wrap=await loadGLB(frame.glb);if(token!==buildToken)return;clearModel();const clone=wrap.clone(true);const off=frame.glbOffset||[0,0,0],rot=frame.glbRotation||[0,0,0];clone.position.set(off[0]||0,off[1]||0,off[2]||0);clone.rotation.set(rot[0]||0,rot[1]||0,rot[2]||0);clone.traverse(n=>{if(n.isMesh&&n.material){n.material=n.material.clone();n.material.envMapIntensity=1.2;n.renderOrder=1;}});modelRoot.add(clone);return;}catch(e){toast('⚠️ مدل GLB پیدا نشد؛ فریم جایگزین شد');}}
+ if(frame.glb){try{const wrap=await loadGLB(frame.glb);if(token!==buildToken)return;clearModel();const clone=wrap.clone(true);const off=frame.glbOffset||[0,0,0],rot=frame.glbRotation||[0,0,0];clone.position.set(off[0]||0,off[1]||0,.045+(off[2]||0));clone.rotation.set(rot[0]||0,rot[1]||0,rot[2]||0);clone.traverse(n=>{if(n.isMesh&&n.material){n.material=Array.isArray(n.material)?n.material.map(tuneGLBMaterial):tuneGLBMaterial(n.material);n.renderOrder=1;}});modelRoot.add(clone);addGLBLensBlockers();return;}catch(e){toast('⚠️ مدل GLB پیدا نشد؛ فریم جایگزین شد');}}
  procedural();
 }
 
-async function initSegmenter(){if(segLoading||seg||segBroken||lite)return;segLoading=true;
+async function initSegmenter(){if(segLoading||seg||segBroken)return;segLoading=true;
  try{seg=await createWithFallback((model,delegate)=>TV.ImageSegmenter.createFromOptions(vision,{baseOptions:{modelAssetPath:model,delegate},runningMode:'VIDEO',outputCategoryMask:true,outputConfidenceMasks:false}),SEG_MODELS);}
  catch(e){segBroken=true;toast('ℹ️ مدل مو در دسترس نیست؛ بقیهٔ پرو فعال است');}
  finally{segLoading=false;}
@@ -299,7 +315,7 @@ document.getElementById('wa').onclick=()=>{const cn=frame.colors&&frame.colors.f
 
 const maskC=document.createElement('canvas'),mctx=maskC.getContext('2d'),maskState={ready:false};
 function updateHairMask(res){try{const mask=res.categoryMask,arr=mask.getAsUint8Array(),mw=mask.width||256,mh=mask.height||256;if(maskC.width!==mw||maskC.height!==mh){maskC.width=mw;maskC.height=mh;}const im=mctx.createImageData(mw,mh),d=im.data;for(let i=0;i<arr.length;i++){const o=i*4;d[o]=d[o+1]=d[o+2]=255;d[o+3]=arr[i]===1?255:0;}mctx.putImageData(im,0,0);maskState.ready=true;if(mask&&typeof mask.close==='function')mask.close();}catch(e){segBroken=true;seg=null;maskState.ready=false;}}
-function drawHair(){octx.clearRect(0,0,W,H);if(!maskState.ready||lite)return;octx.save();octx.filter='blur(3px)';octx.drawImage(maskC,0,0,W,H);octx.filter='none';octx.globalCompositeOperation='source-in';octx.drawImage(video,0,0,W,H);octx.restore();}
+function drawHair(){octx.clearRect(0,0,W,H);if(!maskState.ready)return;octx.save();octx.filter='blur(3px)';octx.drawImage(maskC,0,0,W,H);octx.filter='none';octx.globalCompositeOperation='source-in';octx.drawImage(video,0,0,W,H);octx.restore();}
 function drawProduct(t){pctx.clearRect(0,0,W,H);if(activeMode!=='png'||!activeImage||!state.ready)return;
  const axis=new THREE.Vector3(1,0,0).applyQuaternion(state.q),a=state.pos.clone().project(camera),b=state.pos.clone().add(axis).project(camera),angle=Math.atan2(-(b.y-a.y)*H,(b.x-a.x)*W);
  const w=(frame.widthMM||135)*t.iris/pdMM*(frame.pngScale||1),h=w*(activeImage.naturalHeight/activeImage.naturalWidth),yo=(frame.pngYOffset||0)*w;
@@ -316,7 +332,7 @@ function renderTarget(t,now){
 }
 function processDetection(result,now){
  if(result&&result.faceLandmarks&&result.faceLandmarks.length){lastResult=result;const t=targetFrom(result);renderTarget(t,now);
-  if(seg&&!lite&&!segBroken&&frameCounter%(lite?12:6)===0){try{updateHairMask(seg.segmentForVideo(video,now));}catch(e){segBroken=true;seg=null;maskState.ready=false;toast('ℹ️ لایهٔ مو خاموش شد؛ بقیهٔ پرو فعال است');}}
+  if(seg&&!segBroken&&frameCounter%(lite?12:6)===0){try{updateHairMask(seg.segmentForVideo(video,now));}catch(e){segBroken=true;seg=null;maskState.ready=false;toast('ℹ️ لایهٔ مو خاموش شد؛ بقیهٔ پرو فعال است');}}
  }else if(now-lastFaceAt>350){if(anchor)anchor.visible=false;pctx.clearRect(0,0,W,H);if(now-startedAt>2500)showHint('صورتت رو بیار جلوی دوربین 🙂');}
 }
 function loop(now){
@@ -347,5 +363,5 @@ buildColors();
 
 window.addEventListener('error',e=>{if(started&&load.style.display!=='none')setLoad(friendly(e.error||e.message));});
 </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a292aa8dcaf25392',t:'MTc4NjQwMzM0NQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
