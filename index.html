@@ -241,7 +241,7 @@ async function start(){if(started)return;started=true;load.style.display='flex';
   curStage='مدل تشخیص صورت';setLoad('⏳ آماده‌سازی تشخیص صورت…');
   lm=await createWithFallback((model,delegate)=>TV.FaceLandmarker.createFromOptions(vision,{baseOptions:{modelAssetPath:model,delegate},runningMode:'VIDEO',numFaces:1,outputFaceBlendshapes:false,outputFacialTransformationMatrixes:true,minFaceDetectionConfidence:.5,minFacePresenceConfidence:.5,minTrackingConfidence:.5}),FACE_MODELS);
   curStage='دوربین';setLoad('📷 آماده‌سازی دوربین…');if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)throw{name:'NotFoundError'};
-  video.srcObject=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:720},height:{ideal:1280},frameRate:{ideal:30,max:30}},audio:false});
+  video.srcObject=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:false});
   await withTimeout(new Promise((r,j)=>{video.onloadedmetadata=r;video.onerror=j;}),15000,'camera timeout');await video.play();resizeCanvases();await buildGlasses();
   load.style.display='none';startedAt=performance.now();fpsFrom=startedAt;requestAnimationFrame(loop);setTimeout(initSegmenter,500);
  }catch(e){setLoad(friendly(e));}
