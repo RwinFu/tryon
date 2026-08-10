@@ -4,18 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>پرو مجازی عینک</title>
-<link href="https://cdn.jsdelivr.net/npm/vazirmatn@33.0.3/Vazirmatn-font-face.css" rel="stylesheet">
 <style>
+@font-face{font-family:Vazirmatn;src:url('./vendor/Vazirmatn-Regular.woff2') format('woff2');font-weight:100 900;font-style:normal;font-display:swap}
 :root{--acc:#4da3ff}
-*{margin:0;box-sizing:border-box;font-family:Vazirmatn,Tahoma,sans-serif;-webkit-tap-highlight-color:transparent}
+*{margin:0;box-sizing:border-box;font-family:Vazirmatn,Tahoma,Arial,sans-serif;-webkit-tap-highlight-color:transparent}
 body{background:#000;overflow:hidden;user-select:none}
-canvas{position:fixed;inset:0;width:100vw;height:100vh;object-fit:cover}
-#gl,#im,#oc{pointer-events:none}
+canvas{position:fixed;inset:0;width:100vw;height:100vh;object-fit:cover;transform:scaleX(-1);transform-origin:50% 50%}
+#gl,#prod,#oc{pointer-events:none}
 #top{position:fixed;top:0;right:0;left:0;padding:calc(10px + env(safe-area-inset-top)) 16px 12px;display:flex;justify-content:space-between;align-items:center;background:linear-gradient(rgba(0,0,0,.75),transparent);z-index:5}
 #top h1{color:#fff;font-size:15px;font-weight:800}
 #top h1 span{color:var(--acc)}
 #badge{color:#fff;font-size:10px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);padding:4px 10px;border-radius:99px}
-#hint{position:fixed;top:calc(52px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);background:rgba(0,0,0,.75);color:#ffd77e;padding:8px 18px;border-radius:99px;font-size:12px;z-index:6;opacity:0;transition:opacity .4s;pointer-events:none}
+#hint{position:fixed;top:calc(52px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);background:rgba(0,0,0,.75);color:#ffd77e;padding:8px 18px;border-radius:99px;font-size:12px;z-index:6;opacity:0;transition:opacity .4s;pointer-events:none;white-space:nowrap}
 #ig{position:fixed;top:calc(88px + env(safe-area-inset-top));right:12px;left:12px;z-index:8;background:#3b1d5a;color:#fff;border:1px solid #7c4dff;border-radius:14px;padding:10px 14px;font-size:12px;display:none;align-items:center;gap:8px;justify-content:space-between}
 #ig button{background:#7c4dff;border:none;color:#fff;border-radius:10px;padding:6px 12px;font-size:12px}
 #ui{position:fixed;bottom:0;right:0;left:0;padding:10px 10px calc(14px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:9px;background:linear-gradient(transparent,rgba(0,0,0,.92));z-index:5}
@@ -36,10 +36,10 @@ canvas{position:fixed;inset:0;width:100vw;height:100vh;object-fit:cover}
 #intro h2{color:#fff;font-size:20px;margin:10px 0 4px}
 #intro .sub{color:#9fb6d4;font-size:12px;margin-bottom:18px}
 #intro .steps{display:flex;flex-direction:column;gap:8px;text-align:right;color:#dfe9f5;font-size:12.5px;background:rgba(77,163,255,.08);border:1px solid rgba(77,163,255,.25);border-radius:14px;padding:14px;margin-bottom:18px}
-#start{width:100%;border:none;border-radius:16px;padding:14px;font-size:15px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--acc),#7c4dff);cursor:pointer;box-shadow:0 8px 24px rgba(77,163,255,.35);font-family:Vazirmatn}
+#start{width:100%;border:none;border-radius:16px;padding:14px;font-size:15px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--acc),#7c4dff);cursor:pointer;box-shadow:0 8px 24px rgba(77,163,255,.35);font-family:Vazirmatn,Tahoma}
 #intro .priv{color:#7d8ca0;font-size:10.5px;margin-top:12px}
 #load{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;flex-direction:column;gap:14px;align-items:center;justify-content:center;z-index:9;color:#fff;text-align:center;padding:20px}
-#load button{border:none;background:var(--acc);color:#fff;border-radius:12px;padding:10px 22px;font-size:13px;font-weight:700;font-family:Vazirmatn;cursor:pointer}
+#load button{border:none;background:var(--acc);color:#fff;border-radius:12px;padding:10px 22px;font-size:13px;font-weight:700;font-family:Vazirmatn,Tahoma;cursor:pointer}
 .spin{width:42px;height:42px;border:4px solid rgba(255,255,255,.15);border-top-color:var(--acc);border-radius:50%;animation:s 1s linear infinite}
 @keyframes s{to{transform:rotate(1turn)}}
 #scan{position:fixed;inset:0;z-index:6;display:none;flex-direction:column;gap:18px;align-items:center;justify-content:center;pointer-events:none}
@@ -50,7 +50,7 @@ canvas{position:fixed;inset:0;width:100vw;height:100vh;object-fit:cover}
 </style>
 </head>
 <body>
-<canvas id="cv"></canvas><canvas id="gl"></canvas><canvas id="im"></canvas><canvas id="oc"></canvas>
+<canvas id="cv"></canvas><canvas id="gl"></canvas><canvas id="prod"></canvas><canvas id="oc"></canvas>
 <div id="top"><h1 id="shopTitle"></h1><div id="badge">پرو مجازی سه‌بعدی</div></div>
 <div id="hint"></div>
 <div id="ig"><span>برای اجرای دوربین، از منوی ⋯ گزینه «Open in Browser» رو بزن</span><button onclick="this.parentNode.style.display='none'">باشه</button></div>
@@ -79,266 +79,273 @@ canvas{position:fixed;inset:0;width:100vw;height:100vh;object-fit:cover}
 </div></div>
 <div id="load"><div class="spin"></div><div id="loadTxt">در حال آماده‌سازی…</div></div>
 <script>
-setTimeout(function(){if(!window.__ok){document.getElementById('intro').style.display='none';document.getElementById('load').style.display='flex';document.getElementById('loadTxt').innerHTML='⚠️ اینترنت یا مرورگر مشکل داره.<br>با کروم و اینترنت پایدار باز کن.';}},30000);
-if(/Instagram/.test(navigator.userAgent))document.getElementById('ig').style.display='flex';
-function toast(m){const t=document.createElement('div');t.innerHTML=m;t.style.cssText='position:fixed;top:64px;left:50%;transform:translateX(-50%);background:rgba(15,15,20,.92);color:#fff;padding:10px 18px;border-radius:12px;z-index:9;font-size:12px;border:1px solid rgba(255,255,255,.3);text-align:center;font-family:Vazirmatn';document.body.appendChild(t);setTimeout(()=>t.remove(),2600);}
-</script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>
-<script>
-/* ═══════ تنظیمات مغازه ═══════ */
-const SHOP={name:'اپتیک آرین', wa:'989120000000', accent:'#4da3ff'};
+'use strict';
+
+/* ===================== فقط این بخش را برای فروشگاه و محصولات ویرایش کنید ===================== */
+const SHOP={name:'اپتیک آرین',wa:'989120000000',accent:'#4da3ff'};
 const FRAMES=[
- {id:1,name:'مربعی کلاسیک',style:'square',colors:[['مشکی','#141414',0],['لاک‌پشتی','#5d3a1a',0],['طلایی','#d4af37',1]]},
- {id:2,name:'گرد رترو',style:'round',colors:[['مشکی','#141414',0],['نقره‌ای','#c0c0c0',1]]},
- {id:3,name:'گربه‌ای',style:'cat',colors:[['مشکی','#141414',0],['قرمز','#8e1f1f',0]]},
- {id:4,name:'خلبانی',style:'aviator',colors:[['طلایی','#d4af37',1],['مشکی','#141414',0]]},
- /* برای عکس واقعی فریم (مثل سایت‌های بزرگ) این خط رو فعال کن:
- {id:5,name:'فریم واقعی مغازه',img:'frames/f1.png',colors:[]}, */
+ {id:1,name:'مربعی کلاسیک',style:'square',widthMM:135,colors:[['مشکی','#141414',0],['لاک‌پشتی','#5d3a1a',0],['طلایی','#d4af37',1]]},
+ {id:2,name:'گرد رترو',style:'round',widthMM:135,colors:[['مشکی','#141414',0],['نقره‌ای','#c0c0c0',1]]},
+ {id:3,name:'گربه‌ای',style:'cat',widthMM:135,colors:[['مشکی','#141414',0],['قرمز','#8e1f1f',0]]},
+ {id:4,name:'خلبانی',style:'aviator',widthMM:135,colors:[['طلایی','#d4af37',1],['مشکی','#141414',0]]}
 ];
-const SELF='https://rwinfu.github.io/tryon';
-const MP_URL='https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14';
-const MP_URL2='https://unpkg.com/@mediapipe/tasks-vision@0.10.14';
-const MODEL=SELF+'/face_landmarker.task';
-const SEGM='https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_multiclass_256x256.tflite';
-let curStage='';
-/* ═════════════════════════════ */
-try{(function(){
+/* برای عکس واقعی به همان محصول png:'./frames/1.png' و برای مدل سه‌بعدی glb:'./models/1.glb' اضافه کنید. */
+/* ============================================================================================ */
+
+const SELF=/^https?:$/.test(location.protocol)?new URL('.',location.href).href.replace(/\/$/,''):'https://rwinfu.github.io/tryon';
+const MP_VER='0.10.14',THREE_VER='0.147.0';
+const FACE_MODELS=[
+ SELF+'/face_landmarker.task',
+ 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task'
+];
+const SEG_MODELS=[
+ SELF+'/selfie_multiclass_256x256.tflite',
+ 'https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_multiclass_256x256/float32/latest/selfie_multiclass_256x256.tflite'
+];
+const THREE_SCRIPTS=[
+ SELF+'/vendor/three.min.js',
+ 'https://cdn.jsdelivr.net/npm/three@'+THREE_VER+'/build/three.min.js',
+ 'https://unpkg.com/three@'+THREE_VER+'/build/three.min.js'
+];
+const GLTF_SCRIPTS=[
+ SELF+'/vendor/GLTFLoader.js',
+ 'https://cdn.jsdelivr.net/npm/three@'+THREE_VER+'/examples/js/loaders/GLTFLoader.js',
+ 'https://unpkg.com/three@'+THREE_VER+'/examples/js/loaders/GLTFLoader.js'
+];
+const VISION_SOURCES=[
+ {module:SELF+'/vendor/tasks-vision.mjs',wasm:SELF+'/vendor/wasm'},
+ {module:'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@'+MP_VER,wasm:'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@'+MP_VER+'/wasm'},
+ {module:'https://unpkg.com/@mediapipe/tasks-vision@'+MP_VER,wasm:'https://unpkg.com/@mediapipe/tasks-vision@'+MP_VER+'/wasm'}
+];
+
 window.__ok=true;
+if(/Instagram|FBAN|FBAV/.test(navigator.userAgent))document.getElementById('ig').style.display='flex';
 document.getElementById('shopTitle').innerHTML=SHOP.name+' <span>| پرو مجازی</span>';
 document.getElementById('introShop').textContent=SHOP.name;
 document.documentElement.style.setProperty('--acc',SHOP.accent);
-const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
-const glc=document.getElementById('gl'),im=document.getElementById('im'),ictx=im.getContext('2d');
+
+const cv=document.getElementById('cv'),ctx=cv.getContext('2d',{alpha:false});
+const glc=document.getElementById('gl'),prod=document.getElementById('prod'),pctx=prod.getContext('2d');
 const oc=document.getElementById('oc'),octx=oc.getContext('2d');
 const load=document.getElementById('load'),loadTxt=document.getElementById('loadTxt');
-const scanEl=document.getElementById('scan'),hint=document.getElementById('hint');
-let W=0,H=0,lite=false,pdMM=63,startedAt=0,hintT=0;
-let frame=FRAMES[0],colorHex=frame.colors[0]?frame.colors[0][1]:'#141414',metal=frame.colors[0]?frame.colors[0][2]:0;
+const scanEl=document.getElementById('scan'),scanTxt=document.getElementById('scanTxt');
+const hint=document.getElementById('hint'),badge=document.getElementById('badge');
+const video=document.createElement('video');video.autoplay=true;video.playsInline=true;video.muted=true;
+let W=0,H=0,F=800,started=false,running=true,lite=((navigator.deviceMemory||8)<=3||(navigator.hardwareConcurrency||8)<=4);
+let pdMM=63,frame=FRAMES[0],colorHex=frame.colors[0][1],metal=frame.colors[0][2],curStage='',hintT=0;
+try{const saved=+localStorage.getItem('tryon-pd');if(saved>=45&&saved<=80)pdMM=saved;}catch(e){}
 const mh=location.hash.match(/f=(\d+)/);if(mh){const f=FRAMES.find(x=>x.id==mh[1]);if(f)frame=f;}
-const imgCache={};
-function getImg(src){if(imgCache[src])return imgCache[src];const i=new Image();i.src=src;imgCache[src]=i;return i;}
-if(frame.img)getImg(frame.img);
-function showHint(m){const n=performance.now();if(n-hintT<3500)return;hintT=n;hint.textContent=m;hint.style.opacity=1;setTimeout(()=>hint.style.opacity=0,2500);}
+if(frame.colors&&frame.colors.length){colorHex=frame.colors[0][1];metal=frame.colors[0][2];}
+
+let renderer=null,scene=null,camera=null,anchor=null,modelRoot=null,headOccluder=null,lensMat=null;
+let TV=null,vision=null,lm=null,seg=null,segLoading=false,segBroken=false,webglReady=false;
+let activeMode='3d',activeImage=null,buildToken=0,lastResult=null,lastVideoTime=-1,lastFaceAt=0,startedAt=0;
+let frameCounter=0,fpsFrames=0,fpsFrom=0;
+const imageCache={},glbCache={};
+
+function toast(m){const t=document.createElement('div');t.innerHTML=m;t.style.cssText='position:fixed;top:64px;left:50%;transform:translateX(-50%);background:rgba(15,15,20,.92);color:#fff;padding:10px 18px;border-radius:12px;z-index:20;font-size:12px;border:1px solid rgba(255,255,255,.3);text-align:center;font-family:Vazirmatn,Tahoma;max-width:88vw';document.body.appendChild(t);setTimeout(()=>t.remove(),3000);}
+function showHint(m,force){const n=performance.now();if(!force&&n-hintT<3500)return;hintT=n;hint.textContent=m;hint.style.opacity=1;setTimeout(()=>hint.style.opacity=0,2500);}
 function setLoad(m){loadTxt.innerHTML=m;}
 function friendly(e){
- if(e&&e.name==='NotAllowedError')return '🚫 اجازه دوربین داده نشد.<br>از تنظیمات مرورگر، دسترسی دوربین رو برای این سایت روشن کن.';
+ if(e&&e.name==='NotAllowedError')return '🚫 اجازه دوربین داده نشد.<br>از تنظیمات مرورگر، دسترسی دوربین رو برای این سایت روشن کن.<br><button onclick="location.reload()">🔄 تلاش دوباره</button>';
  if(e&&e.name==='NotFoundError')return '📷 دوربینی روی این دستگاه پیدا نشد.';
+ if(e&&e.name==='NotReadableError')return '📷 دوربین در برنامهٔ دیگری در حال استفاده است.<br>برنامه‌های دوربین را ببند و دوباره تلاش کن.';
  const s=e?(e.message||String(e)):'';
- return '🌐 مشکل در مرحله «'+curStage+'» — اینترنت رو چک کن و دوباره تلاش کن.<br><span style="font-size:10px;opacity:.6">'+s+'</span><br><button onclick="location.reload()">🔄 تلاش دوباره</button>';
+ return '🌐 مشکل در مرحله «'+curStage+'» — اینترنت رو چک کن و دوباره تلاش کن.<br><span style="font-size:10px;opacity:.65;direction:ltr;display:inline-block">'+s.replace(/[<>]/g,'')+'</span><br><button onclick="location.reload()">🔄 تلاش دوباره</button>';
+}
+function withTimeout(p,ms,label){return Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error(label||'timeout')),ms))]);}
+function loadScript(urls,test){return new Promise(async(resolve,reject)=>{let last;
+ for(const url of urls){try{await new Promise((ok,no)=>{const s=document.createElement('script');let done=false;const timer=setTimeout(()=>{if(done)return;done=true;s.remove();no(new Error('timeout: '+url));},14000);s.src=url;s.crossOrigin='anonymous';s.onload=()=>{if(done)return;done=true;clearTimeout(timer);ok();};s.onerror=()=>{if(done)return;done=true;clearTimeout(timer);s.remove();no(new Error('load failed: '+url));};document.head.appendChild(s);});if(!test||test())return resolve();}catch(e){last=e;}}
+ reject(last||new Error('script unavailable'));
+});}
+async function loadVision(){let last;
+ for(const src of VISION_SOURCES){try{const mod=await withTimeout(import(src.module),18000,'module timeout');const fs=await withTimeout(mod.FilesetResolver.forVisionTasks(src.wasm),18000,'wasm timeout');return{mod,fs};}catch(e){last=e;}}
+ throw last||new Error('MediaPipe unavailable');
+}
+async function createWithFallback(factory,models){let last;
+ for(const model of models){for(const delegate of['GPU','CPU']){try{return await factory(model,delegate);}catch(e){last=e;}}}
+ throw last||new Error('model unavailable');
 }
 
-const renderer=new THREE.WebGLRenderer({canvas:glc,alpha:true,antialias:true,preserveDrawingBuffer:true});
-renderer.outputEncoding=THREE.sRGBEncoding;
-const scene=new THREE.Scene();
-(function(){const sc=new THREE.Scene();
- sc.add(new THREE.Mesh(new THREE.SphereGeometry(10,16,16),new THREE.MeshBasicMaterial({color:0x1a1a1f,side:THREE.BackSide})));
- const soft=(w,h,c,i,x,y,z)=>{const mm=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({color:new THREE.Color(c).multiplyScalar(i)}));mm.position.set(x,y,z);mm.lookAt(0,0,0);sc.add(mm);};
- soft(6,6,0xffffff,5,0,5,4);soft(4,4,0xbfd8ff,2.5,-6,1,3);soft(4,4,0xffe0c0,2,6,0,2);
- scene.environment=new THREE.PMREMGenerator(renderer).fromScene(sc,0.05).texture;})();
-const camera=new THREE.PerspectiveCamera(40,1,1,2000);camera.position.z=500;
-scene.add(new THREE.AmbientLight(0xffffff,0.5));
-const dl=new THREE.DirectionalLight(0xffffff,1.2);dl.position.set(1,2,3);scene.add(dl);
-const glasses=new THREE.Group();scene.add(glasses);
+function resizeCanvases(){
+ W=video.videoWidth;H=video.videoHeight;
+ for(const c of[cv,glc,prod,oc]){c.width=W;c.height=H;}
+ if(renderer){renderer.setPixelRatio(1);renderer.setSize(W,H,false);F=Math.max(W,H)*.95;camera.position.set(0,0,F);camera.fov=2*Math.atan(H/(2*F))*180/Math.PI;camera.aspect=W/H;camera.near=1;camera.far=F*4;camera.updateProjectionMatrix();camera.updateMatrixWorld();}
+}
 
-const lensMat=new THREE.MeshPhysicalMaterial({color:0x9fc5ff,transparent:true,opacity:0.2,roughness:0.05,clearcoat:1,side:THREE.DoubleSide});
+function initThree(){
+ renderer=new THREE.WebGLRenderer({canvas:glc,alpha:true,antialias:!lite,preserveDrawingBuffer:true,powerPreference:'high-performance'});
+ renderer.setPixelRatio(1);renderer.outputEncoding=THREE.sRGBEncoding;renderer.setClearColor(0x000000,0);
+ scene=new THREE.Scene();camera=new THREE.PerspectiveCamera(45,1,1,4000);scene.add(camera);
+ scene.add(new THREE.HemisphereLight(0xffffff,0x303848,.9));const dl=new THREE.DirectionalLight(0xffffff,1.25);dl.position.set(-2,4,5);scene.add(dl);
+ if(!lite)try{const envScene=new THREE.Scene();envScene.add(new THREE.Mesh(new THREE.SphereGeometry(10,20,20),new THREE.MeshBasicMaterial({color:0x22232a,side:THREE.BackSide})));
+  const soft=(w,h,c,x,y,z)=>{const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({color:c,side:THREE.DoubleSide}));m.position.set(x,y,z);m.lookAt(0,0,0);envScene.add(m);};
+  soft(6,6,0xffffff,0,5,4);soft(4,4,0xbfd8ff,-6,1,3);soft(4,4,0xffdfc2,6,0,2);const pm=new THREE.PMREMGenerator(renderer);scene.environment=pm.fromScene(envScene,.06).texture;pm.dispose();
+ }catch(e){}
+ anchor=new THREE.Group();modelRoot=new THREE.Group();anchor.add(modelRoot);scene.add(anchor);
+ const depthMat=new THREE.MeshBasicMaterial({color:0x000000,colorWrite:false,depthWrite:true,depthTest:true,side:THREE.FrontSide});
+ headOccluder=new THREE.Mesh(new THREE.SphereGeometry(1,28,20),depthMat);headOccluder.scale.set(.79,1.03,.58);headOccluder.position.set(0,-.18,-.58);headOccluder.renderOrder=-100;anchor.add(headOccluder);
+ lensMat=new THREE.MeshPhysicalMaterial({color:0x9fc5ff,transparent:true,opacity:.18,roughness:.04,metalness:0,clearcoat:1,clearcoatRoughness:.04,depthWrite:false,side:THREE.DoubleSide});
+ anchor.visible=false;webglReady=true;
+}
 function rrect(s,x,y,w,h,r){s.moveTo(x+r,y);s.lineTo(x+w-r,y);s.quadraticCurveTo(x+w,y,x+w,y+r);s.lineTo(x+w,y+h-r);s.quadraticCurveTo(x+w,y+h,x+w-r,y+h);s.lineTo(x+r,y+h);s.quadraticCurveTo(x,y+h,x,y+h-r);s.lineTo(x,y+r);s.quadraticCurveTo(x,y,x+r,y);}
-function shapeFor(k){const s=new THREE.Shape(),h=new THREE.Shape(),t=0.04;
- if(k==='round'){s.absarc(0,0,0.30,0,Math.PI*2);h.absarc(0,0,0.30-t,0,Math.PI*2);}
- else if(k==='cat'){s.absellipse(0,0,0.33,0.24);h.absellipse(0,0,0.33-t,0.24-t);}
- else if(k==='aviator'){s.absellipse(0,-0.02,0.32,0.28);h.absellipse(0,-0.02,0.32-t,0.28-t);}
- else{rrect(s,-0.32,-0.21,0.64,0.42,0.10);rrect(h,-0.32+t,-0.21+t,0.64-2*t,0.42-2*t,0.07);}
- s.holes.push(h);return{s,h};}
-function procedural(){
- const mat=new THREE.MeshPhysicalMaterial({color:colorHex,roughness:metal?0.35:0.2,metalness:metal?1:0.15,clearcoat:1,clearcoatRoughness:0.1});
- const {s,h}=shapeFor(frame.style);
- const rimG=new THREE.ExtrudeGeometry(s,{depth:0.05,bevelEnabled:true,bevelThickness:0.008,bevelSize:0.008,bevelSegments:2,curveSegments:24});
- const lensG=new THREE.ShapeGeometry(h,24);
- for(const sd of[-1,1]){
-  const rim=new THREE.Mesh(rimG,mat);rim.position.set(sd*0.40,0,-0.025);
-  const lens=new THREE.Mesh(lensG,lensMat);lens.position.set(sd*0.40,0,0);
-  if(frame.style==='cat'){rim.rotation.z=sd*-0.15;lens.rotation.z=sd*-0.15;}
-  const arm=new THREE.Mesh(new THREE.BoxGeometry(0.03,0.06,1.0),mat);arm.position.set(sd*0.70,0.10,-0.5);
-  const tip=new THREE.Mesh(new THREE.BoxGeometry(0.03,0.28,0.04),mat);tip.position.set(sd*0.70,-0.04,-0.97);tip.rotation.x=0.5;
-  const hinge=new THREE.Mesh(new THREE.SphereGeometry(0.04,12,12),mat);hinge.position.set(sd*0.69,0.10,-0.01);
-  glasses.add(rim,lens,arm,tip,hinge);
- }
- glasses.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.QuadraticBezierCurve3(new THREE.Vector3(-0.10,0.07,0.01),new THREE.Vector3(0,0.12,0.02),new THREE.Vector3(0.10,0.07,0.01)),12,0.025,8),mat));
+function shapeFor(k){const s=new THREE.Shape(),h=new THREE.Shape(),t=.04;
+ if(k==='round'){s.absarc(0,0,.30,0,Math.PI*2);h.absarc(0,0,.30-t,0,Math.PI*2);}
+ else if(k==='cat'){s.absellipse(0,0,.33,.24);h.absellipse(0,0,.33-t,.24-t);}
+ else if(k==='aviator'){s.absellipse(0,-.02,.32,.28);h.absellipse(0,-.02,.32-t,.28-t);}
+ else{rrect(s,-.32,-.21,.64,.42,.10);rrect(h,-.32+t,-.21+t,.64-2*t,.42-2*t,.07);}
+ s.holes.push(h);return{s,h};
 }
-const glbCache={};
-function loadGLB(url){return new Promise((res,rej)=>{if(glbCache[url])return res(glbCache[url]);
- new THREE.GLTFLoader().load(url,g=>{const o=g.scene;
-  const box=new THREE.Box3().setFromObject(o);const c=box.getCenter(new THREE.Vector3());const sz=box.getSize(new THREE.Vector3());
-  o.position.sub(c);o.scale.setScalar(1.44/Math.max(sz.x,0.001));
-  const wrap=new THREE.Group();wrap.add(o);
-  o.traverse(n=>{if(n.isMesh&&n.material)n.material.envMapIntensity=1.2;});
-  glbCache[url]=wrap;res(wrap);
- },undefined,rej);});}
+function clearModel(){while(modelRoot.children.length)modelRoot.remove(modelRoot.children[0]);}
+function procedural(){
+ clearModel();const mat=new THREE.MeshPhysicalMaterial({color:colorHex,roughness:metal?.34:.2,metalness:metal?1:.12,clearcoat:1,clearcoatRoughness:.1,envMapIntensity:1.2});
+ const depthMat=new THREE.MeshBasicMaterial({color:0,colorWrite:false,depthWrite:true,depthTest:true,side:THREE.DoubleSide});const sh=shapeFor(frame.style);
+ const rimG=new THREE.ExtrudeGeometry(sh.s,{depth:.05,bevelEnabled:true,bevelThickness:.008,bevelSize:.008,bevelSegments:2,curveSegments:24});const lensG=new THREE.ShapeGeometry(sh.h,24);
+ for(const sd of[-1,1]){
+  const rim=new THREE.Mesh(rimG,mat);rim.position.set(sd*.40,0,-.025);rim.renderOrder=0;
+  const blocker=new THREE.Mesh(lensG,depthMat);blocker.position.set(sd*.40,0,.042);blocker.renderOrder=-50;
+  const lens=new THREE.Mesh(lensG,lensMat);lens.position.set(sd*.40,0,.05);lens.renderOrder=20;
+  if(frame.style==='cat'){rim.rotation.z=sd*-.15;blocker.rotation.z=sd*-.15;lens.rotation.z=sd*-.15;}
+  const pts=[new THREE.Vector3(sd*.735,.10,.015),new THREE.Vector3(sd*.77,.10,-.16),new THREE.Vector3(sd*.82,.06,-.76),new THREE.Vector3(sd*.81,-.08,-1.08)];
+  const arm=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),24,.026,8,false),mat);arm.renderOrder=1;
+  const hinge=new THREE.Mesh(new THREE.SphereGeometry(.043,12,10),mat);hinge.position.set(sd*.735,.10,.012);hinge.renderOrder=2;
+  modelRoot.add(rim,blocker,lens,arm,hinge);
+ }
+ const bridge=new THREE.Mesh(new THREE.TubeGeometry(new THREE.QuadraticBezierCurve3(new THREE.Vector3(-.10,.07,.025),new THREE.Vector3(0,.13,.045),new THREE.Vector3(.10,.07,.025)),14,.025,8),mat);bridge.renderOrder=2;modelRoot.add(bridge);
+}
+function loadImage(url){if(imageCache[url])return imageCache[url];imageCache[url]=new Promise((res,rej)=>{const im=new Image();im.crossOrigin='anonymous';im.onload=()=>res(im);im.onerror=rej;im.src=url;});return imageCache[url];}
+function loadGLB(url){if(glbCache[url])return glbCache[url];glbCache[url]=new Promise((res,rej)=>{
+ if(!THREE.GLTFLoader)return rej(new Error('GLTFLoader unavailable'));
+ new THREE.GLTFLoader().load(url,g=>{const raw=g.scene,box=new THREE.Box3().setFromObject(raw),c=box.getCenter(new THREE.Vector3()),sz=box.getSize(new THREE.Vector3());raw.position.sub(c);raw.scale.setScalar(1.44/Math.max(sz.x,.001));const wrap=new THREE.Group();wrap.add(raw);glbCache[url]=Promise.resolve(wrap);res(wrap);},undefined,rej);
+ });return glbCache[url];}
 async function buildGlasses(){
- glasses.clear();
- if(frame.glb){try{glasses.add((await loadGLB(frame.glb)).clone());}catch(e){toast('⚠️ خطا در لود مدل');procedural();}}
- else procedural();
+ const token=++buildToken;activeImage=null;pctx.clearRect(0,0,W,H);
+ if(!webglReady)return;
+ if(frame.png){try{const im=await loadImage(frame.png);if(token!==buildToken)return;activeImage=im;activeMode='png';anchor.visible=false;badge.textContent='پرو مجازی عکس واقعی';return;}catch(e){toast('⚠️ عکس محصول پیدا نشد؛ مدل سه‌بعدی جایگزین شد');}}
+ activeMode='3d';badge.textContent=lite?'پرو مجازی سه‌بعدی • سبک':'پرو مجازی سه‌بعدی';
+ if(frame.glb){try{const wrap=await loadGLB(frame.glb);if(token!==buildToken)return;clearModel();const clone=wrap.clone(true);const off=frame.glbOffset||[0,0,0],rot=frame.glbRotation||[0,0,0];clone.position.set(off[0]||0,off[1]||0,off[2]||0);clone.rotation.set(rot[0]||0,rot[1]||0,rot[2]||0);clone.traverse(n=>{if(n.isMesh&&n.material){n.material=n.material.clone();n.material.envMapIntensity=1.2;n.renderOrder=1;}});modelRoot.add(clone);return;}catch(e){toast('⚠️ مدل GLB پیدا نشد؛ فریم جایگزین شد');}}
+ procedural();
 }
 
-const video=document.createElement('video');video.autoplay=true;video.playsInline=true;video.muted=true;
-let lm=null,seg=null,running=true;
-document.addEventListener('visibilitychange',()=>{const was=running;running=!document.hidden;if(running&&!was)requestAnimationFrame(loop);});
-async function start(){
- load.style.display='flex';
+async function initSegmenter(){if(segLoading||seg||segBroken||lite)return;segLoading=true;
+ try{seg=await createWithFallback((model,delegate)=>TV.ImageSegmenter.createFromOptions(vision,{baseOptions:{modelAssetPath:model,delegate},runningMode:'VIDEO',outputCategoryMask:true,outputConfidenceMasks:false}),SEG_MODELS);}
+ catch(e){segBroken=true;toast('ℹ️ مدل مو در دسترس نیست؛ بقیهٔ پرو فعال است');}
+ finally{segLoading=false;}
+}
+async function start(){if(started)return;started=true;load.style.display='flex';
  try{
-  setLoad('⏳ دانلود کتابخانه هوش مصنوعی…');curStage='کتابخانه AI';
-  let TV,wb;
-  try{TV=await import(MP_URL);wb=MP_URL+'/wasm';}
-  catch(eA){try{TV=await import(MP_URL2);wb=MP_URL2+'/wasm';}
-   catch(eB){TV=await import(MP_URL);wb=MP_URL+'/wasm';}}
-  setLoad('⏳ آماده‌سازی موتور…');curStage='موتور wasm';
-  const vision=await TV.FilesetResolver.forVisionTasks(wb);
-  curStage='مدل تشخیص صورت';
-  const opt=d=>({baseOptions:{modelAssetPath:MODEL,delegate:d},runningMode:'VIDEO',numFaces:1,refineLandmarks:true});
-  try{lm=await TV.FaceLandmarker.createFromOptions(vision,opt('GPU'));}catch(e){lm=await TV.FaceLandmarker.createFromOptions(vision,opt('CPU'));}
-  curStage='مدل مو';
-  const sopt=d=>({baseOptions:{modelAssetPath:SEGM,delegate:d},runningMode:'VIDEO',outputCategoryMask:true});
-  try{seg=await TV.ImageSegmenter.createFromOptions(vision,sopt('GPU'));}catch(e){try{seg=await TV.ImageSegmenter.createFromOptions(vision,sopt('CPU'));}catch(e2){seg=null;}}
-  setLoad('📷 آماده‌سازی دوربین…');curStage='دوربین';
-  if(!navigator.mediaDevices)throw {name:'NotFoundError'};
-  video.srcObject=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'}});
-  await new Promise(r=>video.onloadedmetadata=r);
-  await video.play().catch(()=>{});
-  W=cv.width=glc.width=oc.width=im.width=video.videoWidth;H=cv.height=glc.height=oc.height=im.height=video.videoHeight;
-  renderer.setSize(W,H,false);
-  camera.fov=2*Math.atan(H/1000)*180/Math.PI;camera.aspect=W/H;camera.updateProjectionMatrix();
-  load.style.display='none';startedAt=performance.now();requestAnimationFrame(loop);
+  curStage='کتابخانه سه‌بعدی';setLoad('⏳ آماده‌سازی نمایش سه‌بعدی…');await loadScript(THREE_SCRIPTS,()=>window.THREE);
+  try{await loadScript(GLTF_SCRIPTS,()=>THREE.GLTFLoader);}catch(e){}
+  initThree();
+  curStage='کتابخانه AI';setLoad('⏳ دانلود کتابخانه هوش مصنوعی…');const got=await loadVision();TV=got.mod;vision=got.fs;
+  curStage='مدل تشخیص صورت';setLoad('⏳ آماده‌سازی تشخیص صورت…');
+  lm=await createWithFallback((model,delegate)=>TV.FaceLandmarker.createFromOptions(vision,{baseOptions:{modelAssetPath:model,delegate},runningMode:'VIDEO',numFaces:1,outputFaceBlendshapes:false,outputFacialTransformationMatrixes:true,minFaceDetectionConfidence:.5,minFacePresenceConfidence:.5,minTrackingConfidence:.5}),FACE_MODELS);
+  curStage='دوربین';setLoad('📷 آماده‌سازی دوربین…');if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)throw{name:'NotFoundError'};
+  video.srcObject=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:720},height:{ideal:1280},frameRate:{ideal:30,max:30}},audio:false});
+  await withTimeout(new Promise((r,j)=>{video.onloadedmetadata=r;video.onerror=j;}),15000,'camera timeout');await video.play();resizeCanvases();await buildGlasses();
+  load.style.display='none';startedAt=performance.now();fpsFrom=startedAt;requestAnimationFrame(loop);setTimeout(initSegmenter,500);
  }catch(e){setLoad(friendly(e));}
 }
 document.getElementById('start').onclick=()=>{document.getElementById('intro').style.display='none';start();};
+document.addEventListener('visibilitychange',()=>{const was=running;running=!document.hidden;if(running&&!was&&started)requestAnimationFrame(loop);});
+window.addEventListener('orientationchange',()=>setTimeout(()=>{if(video.videoWidth)resizeCanvases();},300));
 
-const maskC=document.createElement('canvas');maskC.width=256;maskC.height=256;
-const mctx=maskC.getContext('2d');const maskImg=mctx.createImageData(256,256);
-let hairClass=1;
-const sm={x:0,y:0,sc:0,ang:0,on:false},smQ=new THREE.Quaternion();
-let scanning=false,samples=[],scanStart=0,fpsN=0,fpsT=0;
-const cl=THREE.MathUtils.clamp;
-document.getElementById('rescan').onclick=()=>{scanning=true;samples=[];scanStart=performance.now();scanEl.style.display='flex';glasses.visible=false;};
-document.getElementById('pd').onclick=()=>{const v=prompt('فاصله مردمک (PD) از روی نسخه (میلی‌متر):\nخالی = استاندارد ۶۳','63');if(v&&!isNaN(+v)&&+v>40&&+v<80){pdMM=+v;toast('✅ سایز واقعی تنظیم شد');}else toast('📏 سایز استاندارد فعاله');};
-document.getElementById('wa').onclick=()=>{const cn=frame.colors?frame.colors.find(c=>c[1]===colorHex):null;open('https://wa.me/'+SHOP.wa+'?text='+encodeURIComponent('سلام! فریم «'+frame.name+'»'+(cn?' رنگ '+cn[0]:'')+' رو مجازی پرو کردم. برای خرید راهنمایی‌ام کنید 🕶'),'_blank');};
-document.getElementById('snap').onclick=()=>{
- const o=document.createElement('canvas');o.width=W;o.height=H;const c2=o.getContext('2d');
- c2.drawImage(cv,0,0);c2.drawImage(glc,0,0);c2.drawImage(im,0,0);c2.drawImage(oc,0,0);
- c2.font='bold '+Math.round(W*0.035)+'px Vazirmatn,Tahoma';c2.textAlign='right';
- c2.shadowColor='rgba(0,0,0,.8)';c2.shadowBlur=8;c2.fillStyle='#fff';
- c2.fillText(SHOP.name+' | پرو مجازی',W-20,H-20);
- o.toBlob(async b=>{const f=new File([b],'tryon.png',{type:'image/png'});
-  try{await navigator.share({files:[f],title:SHOP.name});}
-  catch(e){const a=document.createElement('a');a.download='tryon.png';a.href=URL.createObjectURL(b);a.click();}
- },'image/png');};
-function loop(){
- if(!running)return;
- requestAnimationFrame(loop);
- if(!video.videoWidth)return;
- fpsN++;if(fpsN===90){if(90000/(performance.now()-fpsT)<22&&!lite){lite=true;toast('⚡ حالت سبک فعال شد');}}
- if(fpsN===1)fpsT=performance.now();
- ctx.save();ctx.translate(W,0);ctx.scale(-1,1);ctx.drawImage(video,0,0,W,H);ctx.restore();
- const now=performance.now();
- const r=lm.detectForVideo(video,now);
- if(r.faceLandmarks&&r.faceLandmarks.length){
-  const p=r.faceLandmarks[0];
-  const P=i=>({x:(1-p[i].x)*W,y:p[i].y*H});
-  const eL=P(33),eR=P(263);
-  const mid={x:(eL.x+eR.x)/2,y:(eL.y+eR.y)/2};
-  const outer=Math.hypot(eL.x-eR.x,eL.y-eR.y);
-  const irisD=Math.hypot((p[468].x-p[473].x)*W,(p[468].y-p[473].y)*H)||1;
-  let target=cl((135*(irisD/pdMM))/1.44,outer*0.95,outer*1.8);
-  if(outer<W*0.14)showHint('یه کم نزدیک‌تر بیا 📏');
-  const ang=Math.atan2(eR.y-eL.y,eR.x-eL.x);
-  const fw=Math.hypot(p[234].x-p[454].x,p[234].y-p[454].y)*W;
-  const fh=Math.hypot(p[10].x-p[152].x,p[10].y-p[152].y)*H;
-  const nose=P(4);
-  const yaw=cl(((nose.x-mid.x)/fw)*1.2,-0.35,0.35);
-  const pitch=cl((((nose.y-mid.y)/fh)-0.30)*1.0,-0.25,0.25);
-  const roll=-ang;
-  const q=new THREE.Quaternion().setFromEuler(new THREE.Euler(pitch,yaw,roll,'YXZ'));
-  const t={x:mid.x-W/2,y:H/2-mid.y};
-  const a=sm.on?0.25:1, as=sm.on?0.1:1;
-  sm.x+=(t.x-sm.x)*a;sm.y+=(t.y-sm.y)*a;sm.sc+=(target-sm.sc)*as;sm.ang+=(ang-sm.ang)*(sm.on?0.25:1);
-  sm.on?smQ.slerp(q,0.25):smQ.copy(q);
-  sm.on=true;
-  const useImg=frame.img&&imgCache[frame.img]&&imgCache[frame.img].complete&&imgCache[frame.img].naturalWidth>0;
-  if(scanning){
-   samples.push({x:t.x,y:t.y,sc:target,q:q.clone()});
-   glasses.visible=false;ictx.clearRect(0,0,W,H);
-   if(samples.length>=30){let ax=0,ay=0,as2=0;for(const s of samples){ax+=s.x;ay+=s.y;as2+=s.sc;}
-    const n=samples.length;sm.x=ax/n;sm.y=ay/n;sm.sc=as2/n;sm.on=true;
-    smQ.copy(samples[0].q);for(let i=1;i<n;i++)smQ.slerp(samples[i].q,1/(i+1));
-    scanning=false;scanEl.style.display='none';toast('✅ صورت اسکن شد؛ عینک تنظیم شد');}
-  }else if(useImg){
-   glasses.visible=false;
-   const img=imgCache[frame.img];
-   const w=1.44*sm.sc*1.06;
-   const h=w*(img.naturalHeight/img.naturalWidth);
-   ictx.clearRect(0,0,W,H);
-   ictx.save();ictx.translate(sm.x+W/2? sm.x+W/2:0,0);ictx.restore();
-   ictx.save();
-   ictx.translate(sm.x,sm.y);
-   ictx.rotate(sm.ang);
-   ictx.drawImage(img,-w/2,-h*0.5,w,h);
-   ictx.restore();
-  }else{
-   ictx.clearRect(0,0,W,H);
-   glasses.visible=true;
-   glasses.position.set(sm.x,sm.y,sm.sc*0.05);
-   glasses.quaternion.copy(smQ);
-   glasses.scale.setScalar(sm.sc);
-   glasses.updateMatrixWorld();
-   for(const sd of[-1,1]){
-    const wp=glasses.localToWorld(new THREE.Vector3(sd*0.40,-0.24,0.04)).project(camera);
-    const x=(wp.x*0.5+0.5)*W,y=(-wp.y*0.5+0.5)*H,rad=sm.sc*0.32;
-    const g=ctx.createRadialGradient(x,y,rad*0.2,x,y,rad);
-    g.addColorStop(0,'rgba(0,0,0,0.22)');g.addColorStop(1,'rgba(0,0,0,0)');
-    ctx.fillStyle=g;ctx.beginPath();ctx.ellipse(x,y+rad*0.25,rad,rad*0.75,0,0,7);ctx.fill();
-   }
-  }
-  if(seg&&!lite){
-   const res=seg.segmentForVideo(video,now);
-   const mm=new Uint8Array(res.categoryMask.getAsUint8Array());
-   const eyeRow=Math.floor((((p[33].y+p[263].y)/2)*256)/H);
-   const counts=[0,0,0,0,0,0];
-   for(let i=0;i<mm.length;i++){const c=mm[i];if(c>0&&(i>>8)<eyeRow)counts[c]++;}
-   let best=0,bc=0;for(let c=1;c<6;c++)if(counts[c]>bc){bc=counts[c];best=c;}
-   if(bc>150)hairClass=best;
-   const d=maskImg.data;
-   for(let i=0;i<mm.length;i++){const o=i*4;d[o]=255;d[o+1]=255;d[o+2]=255;d[o+3]=mm[i]===hairClass?255:0;}
-   mctx.putImageData(maskImg,0,0);
-   octx.save();octx.globalCompositeOperation='source-over';octx.clearRect(0,0,W,H);
-   octx.translate(W,0);octx.scale(-1,1);octx.filter='blur(4px)';octx.drawImage(maskC,0,0,W,H);octx.filter='none';
-   octx.globalCompositeOperation='source-in';octx.drawImage(video,0,0,W,H);octx.restore();
-  }else octx.clearRect(0,0,W,H);
- }else{
-  glasses.visible=false;sm.on=false;octx.clearRect(0,0,W,H);ictx.clearRect(0,0,W,H);
-  if(startedAt&&now-startedAt>2500)showHint('صورتت رو بیار جلوی دوربین 🙂');
- }
- renderer.render(scene,camera);
+/* مختصات داخلی هر چهار canvas دقیقاً مختصات خام دوربین است؛ آینه فقط یک بار در CSS اعمال می‌شود. */
+const state={ready:false,pos:null,q:null,scale:100,last:0},scaleHistory=[];
+let scanning=false,samples=[],scanStart=0;
+function median(a){const b=a.slice().sort((x,y)=>x-y),n=b.length;return n%2?b[(n-1)/2]:(b[n/2-1]+b[n/2])/2;}
+function angleWrap(a){while(a>Math.PI)a-=2*Math.PI;while(a<-Math.PI)a+=2*Math.PI;return a;}
+function screenPoint(p){return{x:p.x*W,y:p.y*H};}
+function fallbackQuaternion(p){
+ const a=screenPoint(p[33]),b=screenPoint(p[263]),midX=(a.x+b.x)/2,midY=(a.y+b.y)/2,n=screenPoint(p[4]);
+ const fw=Math.max(1,Math.hypot((p[234].x-p[454].x)*W,(p[234].y-p[454].y)*H));const fh=Math.max(1,Math.hypot((p[10].x-p[152].x)*W,(p[10].y-p[152].y)*H));
+ const yaw=THREE.MathUtils.clamp((n.x-midX)/fw*1.8,-.55,.55),pitch=THREE.MathUtils.clamp(((n.y-midY)/fh-.30)*1.4,-.38,.38),roll=-Math.atan2(b.y-a.y,b.x-a.x);
+ return new THREE.Quaternion().setFromEuler(new THREE.Euler(pitch,yaw,roll,'YXZ'));
 }
+function poseQuaternion(result,p){
+ let q=null,md=result.facialTransformationMatrixes&&result.facialTransformationMatrixes[0];
+ if(md&&md.data&&md.data.length===16){try{const m=new THREE.Matrix4().fromArray(md.data),po=new THREE.Vector3(),sc=new THREE.Vector3();q=new THREE.Quaternion();m.decompose(po,q,sc);q.normalize();const front=new THREE.Vector3(0,0,1).applyQuaternion(q);if(!isFinite(q.x)||front.z<.02)q=null;}catch(e){q=null;}}
+ return q||fallbackQuaternion(p);
+}
+function projectedLocalX(pos,q){
+ const a=pos.clone().project(camera),b=pos.clone().add(new THREE.Vector3(1,0,0).applyQuaternion(q)).project(camera);
+ return Math.max(.08,Math.hypot((b.x-a.x)*W*.5,(b.y-a.y)*H*.5));
+}
+function targetFrom(result){
+ const p=result.faceLandmarks[0],i1=p[468]||p[33],i2=p[473]||p[263],sp1=screenPoint(i1),sp2=screenPoint(i2);
+ const mid={x:(sp1.x+sp2.x)/2,y:(sp1.y+sp2.y)/2},iris=Math.max(1,Math.hypot(sp2.x-sp1.x,sp2.y-sp1.y));
+ const q=poseQuaternion(result,p),pos=new THREE.Vector3(mid.x-W/2,H/2-mid.y,0),proj=projectedLocalX(pos,q),modelWidth=1.44,physicalWidth=frame.widthMM||135;
+ let scale=physicalWidth*iris/(pdMM*modelWidth*proj);scale=THREE.MathUtils.clamp(scale,28,Math.max(W,H)*.65);
+ return{p,mid,iris,pos,q,scale,front:new THREE.Vector3(0,0,1).applyQuaternion(q)};
+}
+function acceptTarget(t,now){
+ scaleHistory.push(t.scale);if(scaleHistory.length>9)scaleHistory.shift();t.scale=median(scaleHistory);
+ if(!state.ready){state.pos=t.pos.clone();state.q=t.q.clone();state.scale=t.scale;state.ready=true;state.last=now;return;}
+ if(state.q.dot(t.q)<0)t.q.set(-t.q.x,-t.q.y,-t.q.z,-t.q.w);
+ const dt=Math.min(.08,Math.max(.008,(now-state.last)/1000||.033));state.last=now;
+ const move=state.pos.distanceTo(t.pos),aPos=1-Math.exp(-dt/(move>18?.035:.070));
+ const aRot=1-Math.exp(-dt/.060),rel=Math.abs(t.scale-state.scale)/Math.max(state.scale,1),aScale=1-Math.exp(-dt/(rel>.045?.085:.18));
+ state.pos.lerp(t.pos,aPos);state.q.slerp(t.q,aRot);state.scale+=(t.scale-state.scale)*aScale;
+}
+function completeScan(){let pos=new THREE.Vector3(),sc=0,q=samples[0].q.clone();for(let i=0;i<samples.length;i++){pos.add(samples[i].pos);sc+=samples[i].scale;if(i)q.slerp(samples[i].q,1/(i+1));}pos.multiplyScalar(1/samples.length);state.pos=pos;state.scale=sc/samples.length;state.q=q;state.ready=true;state.last=performance.now();scanning=false;scanEl.style.display='none';toast('✅ صورت اسکن شد؛ عینک تنظیم شد');}
+function scanTarget(t){
+ if(!scanning)return false;if(performance.now()-scanStart>9000){scanning=false;scanEl.style.display='none';toast('⚠️ اسکن کامل نشد؛ دوباره امتحان کن');return false;}
+ if(t.front.z<.82){scanTxt.innerHTML='کمی صاف‌تر رو به دوربین…<br>'+samples.length+' از ۳۰';return true;}
+ samples.push({pos:t.pos.clone(),q:t.q.clone(),scale:t.scale});scanTxt.innerHTML='در حال اسکن صورت…<br>'+samples.length+' از ۳۰';if(samples.length>=30)completeScan();return true;
+}
+document.getElementById('rescan').onclick=()=>{if(!started||!lm)return toast('اول پرو مجازی را شروع کن');scanning=true;samples=[];scanStart=performance.now();scanTxt.innerHTML='در حال اسکن صورت…<br>۰ از ۳۰';scanEl.style.display='flex';if(anchor)anchor.visible=false;pctx.clearRect(0,0,W,H);};
+document.getElementById('pd').onclick=()=>{const v=prompt('فاصله مردمک (PD) از روی نسخه (میلی‌متر):\nخالی = استاندارد ۶۳',String(pdMM));if(v&&!isNaN(+v)&&+v>=45&&+v<=80){pdMM=+v;scaleHistory.length=0;try{localStorage.setItem('tryon-pd',pdMM)}catch(e){}toast('✅ سایز واقعی تنظیم شد');}else toast('📏 سایز فعلی: '+pdMM+' میلی‌متر');};
+document.getElementById('wa').onclick=()=>{const cn=frame.colors&&frame.colors.find(c=>c[1]===colorHex);open('https://wa.me/'+SHOP.wa+'?text='+encodeURIComponent('سلام! فریم «'+frame.name+'»'+(cn?' رنگ '+cn[0]:'')+' رو مجازی پرو کردم. برای خرید راهنمایی‌ام کنید 🕶'),'_blank');};
+
+const maskC=document.createElement('canvas'),mctx=maskC.getContext('2d'),maskState={ready:false};
+function updateHairMask(res){try{const mask=res.categoryMask,arr=mask.getAsUint8Array(),mw=mask.width||256,mh=mask.height||256;if(maskC.width!==mw||maskC.height!==mh){maskC.width=mw;maskC.height=mh;}const im=mctx.createImageData(mw,mh),d=im.data;for(let i=0;i<arr.length;i++){const o=i*4;d[o]=d[o+1]=d[o+2]=255;d[o+3]=arr[i]===1?255:0;}mctx.putImageData(im,0,0);maskState.ready=true;if(mask&&typeof mask.close==='function')mask.close();}catch(e){segBroken=true;seg=null;maskState.ready=false;}}
+function drawHair(){octx.clearRect(0,0,W,H);if(!maskState.ready||lite)return;octx.save();octx.filter='blur(3px)';octx.drawImage(maskC,0,0,W,H);octx.filter='none';octx.globalCompositeOperation='source-in';octx.drawImage(video,0,0,W,H);octx.restore();}
+function drawProduct(t){pctx.clearRect(0,0,W,H);if(activeMode!=='png'||!activeImage||!state.ready)return;
+ const axis=new THREE.Vector3(1,0,0).applyQuaternion(state.q),a=state.pos.clone().project(camera),b=state.pos.clone().add(axis).project(camera),angle=Math.atan2(-(b.y-a.y)*H,(b.x-a.x)*W);
+ const w=(frame.widthMM||135)*t.iris/pdMM*(frame.pngScale||1),h=w*(activeImage.naturalHeight/activeImage.naturalWidth),yo=(frame.pngYOffset||0)*w;
+ pctx.save();pctx.translate(t.mid.x,t.mid.y);pctx.rotate(angle);pctx.drawImage(activeImage,-w/2,-h/2+yo,w,h);pctx.restore();
+}
+function drawShadows(){if(activeMode!=='3d'||!anchor||!anchor.visible)return;anchor.updateMatrixWorld(true);for(const sd of[-1,1]){const wp=anchor.localToWorld(new THREE.Vector3(sd*.40,-.22,.03)).project(camera),x=(wp.x*.5+.5)*W,y=(-wp.y*.5+.5)*H,rad=Math.max(8,state.scale*.30);const g=ctx.createRadialGradient(x,y,rad*.15,x,y,rad);g.addColorStop(0,'rgba(0,0,0,.20)');g.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=g;ctx.beginPath();ctx.ellipse(x,y+rad*.24,rad,rad*.70,0,0,Math.PI*2);ctx.fill();}}
+function renderTarget(t,now){
+ if(scanTarget(t)){if(anchor)anchor.visible=false;pctx.clearRect(0,0,W,H);return;}
+ acceptTarget(t,now);lastFaceAt=now;
+ if(Math.hypot((t.p[33].x-t.p[263].x)*W,(t.p[33].y-t.p[263].y)*H)<W*.14)showHint('یه کم نزدیک‌تر بیا 📏');
+ if(t.front.z<.48)showHint('کمی صاف‌تر رو به دوربین 🙂');
+ if(activeMode==='3d'){pctx.clearRect(0,0,W,H);anchor.visible=true;anchor.position.copy(state.pos);anchor.quaternion.copy(state.q);anchor.scale.setScalar(state.scale);drawShadows();}
+ else{anchor.visible=false;drawProduct(t);if(t.front.z<.70)showHint('برای عکس محصول، کمی صاف‌تر بایست 🙂');}
+}
+function processDetection(result,now){
+ if(result&&result.faceLandmarks&&result.faceLandmarks.length){lastResult=result;const t=targetFrom(result);renderTarget(t,now);
+  if(seg&&!lite&&!segBroken&&frameCounter%(lite?12:6)===0){try{updateHairMask(seg.segmentForVideo(video,now));}catch(e){segBroken=true;seg=null;maskState.ready=false;toast('ℹ️ لایهٔ مو خاموش شد؛ بقیهٔ پرو فعال است');}}
+ }else if(now-lastFaceAt>350){if(anchor)anchor.visible=false;pctx.clearRect(0,0,W,H);if(now-startedAt>2500)showHint('صورتت رو بیار جلوی دوربین 🙂');}
+}
+function loop(now){
+ if(!running)return;requestAnimationFrame(loop);if(!video.videoWidth||!lm)return;
+ frameCounter++;fpsFrames++;if(now-fpsFrom>4000){const fps=fpsFrames*1000/(now-fpsFrom);if(fps<18&&!lite){lite=true;badge.textContent='پرو مجازی سه‌بعدی • سبک';maskState.ready=false;octx.clearRect(0,0,W,H);toast('⚡ حالت سبک فعال شد');}fpsFrames=0;fpsFrom=now;}
+ ctx.drawImage(video,0,0,W,H);
+ if(video.currentTime!==lastVideoTime){lastVideoTime=video.currentTime;try{processDetection(lm.detectForVideo(video,now),now);}catch(e){showHint('ردیابی دوباره تنظیم شد…',true);}}
+ else if(lastResult&&now-lastFaceAt<350&&activeMode==='3d')drawShadows();
+ drawHair();if(renderer){renderer.clear();renderer.render(scene,camera);}
+}
+
+document.getElementById('snap').onclick=()=>{if(!W)return toast('اول دوربین را روشن کن');if(renderer)renderer.render(scene,camera);const out=document.createElement('canvas');out.width=W;out.height=H;const c2=out.getContext('2d');
+ for(const layer of[cv,glc,prod,oc]){c2.save();c2.translate(W,0);c2.scale(-1,1);c2.drawImage(layer,0,0,W,H);c2.restore();}
+ c2.direction='rtl';c2.font='bold '+Math.round(W*.035)+'px Vazirmatn,Tahoma';c2.textAlign='right';c2.shadowColor='rgba(0,0,0,.8)';c2.shadowBlur=8;c2.fillStyle='#fff';c2.fillText(SHOP.name+' | پرو مجازی',W-20,H-20);
+ out.toBlob(async b=>{if(!b)return toast('گرفتن عکس ممکن نشد');try{const f=new File([b],'tryon.png',{type:'image/png'});if(navigator.share&&(!navigator.canShare||navigator.canShare({files:[f]})))await navigator.share({files:[f],title:SHOP.name});else throw 0;}catch(e){const a=document.createElement('a');a.download='tryon.png';a.href=URL.createObjectURL(b);a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000);}},'image/png');
+};
+
 const SVG={
-square:'<svg viewBox="0 0 64 24" width="36" height="14"><g fill="none" stroke="currentColor" stroke-width="3"><rect x="3" y="4" width="24" height="17" rx="5"/><rect x="37" y="4" width="24" height="17" rx="5"/><path d="M27 10h10"/></g></svg>',
-round:'<svg viewBox="0 0 64 24" width="36" height="14"><g fill="none" stroke="currentColor" stroke-width="3"><circle cx="15" cy="13" r="10"/><circle cx="49" cy="13" r="10"/><path d="M25 10h14"/></g></svg>',
-cat:'<svg viewBox="0 0 64 24" width="36" height="14"><g fill="none" stroke="currentColor" stroke-width="3"><ellipse cx="15" cy="13" rx="12" ry="8" transform="rotate(-8 15 13)"/><ellipse cx="49" cy="13" rx="12" ry="8" transform="rotate(8 49 13)"/><path d="M26 10h12"/></g></svg>',
-aviator:'<svg viewBox="0 0 64 24" width="36" height="14"><g fill="none" stroke="currentColor" stroke-width="3"><ellipse cx="15" cy="12" rx="12" ry="10"/><ellipse cx="49" cy="12" rx="12" ry="10"/><path d="M26 8h12"/></g></svg>'};
-const fBox=document.getElementById('frames');
-FRAMES.forEach(f=>{const b=document.createElement('button');b.className='chip';
- b.innerHTML=(SVG[f.style]||'🕶')+'<span>'+f.name+'</span>';
- b.onclick=()=>{frame=f;[...fBox.children].forEach(x=>x.classList.remove('on'));b.classList.add('on');
-  history.replaceState(null,'','#f='+f.id);
-  if(f.colors&&f.colors.length){colorHex=f.colors[0][1];metal=f.colors[0][2];}
-  if(f.img)getImg(f.img);
-  buildColors();buildGlasses();};
- if(f===frame)b.classList.add('on');fBox.appendChild(b);});
-const cBox=document.getElementById('colors');
-function buildColors(){cBox.innerHTML='';if(!frame.colors||!frame.colors.length){cBox.style.display='none';return;}cBox.style.display='flex';
- frame.colors.forEach(c=>{const d=document.createElement('div');d.className='dot';d.title=c[0];d.style.background=c[1];
-  d.onclick=()=>{colorHex=c[1];metal=c[2];[...cBox.children].forEach(x=>x.classList.remove('on'));d.classList.add('on');buildGlasses();};
-  if(c[1]===colorHex)d.classList.add('on');cBox.appendChild(d);});}
-buildColors();buildGlasses();
-})()}catch(e){document.getElementById('load').style.display='flex';document.getElementById('loadTxt').innerHTML='⚠️ خطا: '+(e.message||String(e));}
+ square:'<svg viewBox="0 0 64 24" width="36" height="14"><g fill="none" stroke="currentColor" stroke-width="3"><rect x="3" y="4" width="24" height="17" rx="5"/><rect x="37" y="4" width="24" height="17" rx="5"/><path d="M27 10h10"/></g></svg>',
+ round:'<svg viewBox="0 0 64 24" width="36" height="14"><g fill="none" stroke="currentColor" stroke-width="3"><circle cx="15" cy="13" r="10"/><circle cx="49" cy="13" r="10"/><path d="M25 10h14"/></g></svg>',
+ cat:'<svg viewBox="0 0 64 24" width="36" height="14"><g fill="none" stroke="currentColor" stroke-width="3"><ellipse cx="15" cy="13" rx="12" ry="8" transform="rotate(-8 15 13)"/><ellipse cx="49" cy="13" rx="12" ry="8" transform="rotate(8 49 13)"/><path d="M26 10h12"/></g></svg>',
+ aviator:'<svg viewBox="0 0 64 24" width="36" height="14"><g fill="none" stroke="currentColor" stroke-width="3"><ellipse cx="15" cy="12" rx="12" ry="10"/><ellipse cx="49" cy="12" rx="12" ry="10"/><path d="M26 8h12"/></g></svg>'
+};
+const fBox=document.getElementById('frames'),cBox=document.getElementById('colors');
+function buildColors(){cBox.innerHTML='';if(!frame.colors||!frame.colors.length){cBox.style.display='none';return;}cBox.style.display='flex';frame.colors.forEach(c=>{const d=document.createElement('div');d.className='dot';d.title=c[0];d.style.background=c[1];d.onclick=()=>{colorHex=c[1];metal=c[2];[...cBox.children].forEach(x=>x.classList.remove('on'));d.classList.add('on');buildGlasses();};if(c[1]===colorHex)d.classList.add('on');cBox.appendChild(d);});}
+FRAMES.forEach(f=>{const b=document.createElement('button');b.className='chip';b.innerHTML=(SVG[f.style]||'🕶')+'<span>'+f.name+'</span>';b.onclick=()=>{frame=f;[...fBox.children].forEach(x=>x.classList.remove('on'));b.classList.add('on');history.replaceState(null,'','#f='+f.id);if(f.colors&&f.colors.length){colorHex=f.colors[0][1];metal=f.colors[0][2];}scaleHistory.length=0;buildColors();buildGlasses();};if(f===frame)b.classList.add('on');fBox.appendChild(b);});
+buildColors();
+
+window.addEventListener('error',e=>{if(started&&load.style.display!=='none')setLoad(friendly(e.error||e.message));});
 </script>
 </body>
 </html>
