@@ -51,7 +51,9 @@ canvas{position:fixed;inset:0;width:100vw;height:100vh;object-fit:cover;transfor
 .modal.show{display:flex}
 .modalCard{width:min(100%,420px);background:linear-gradient(145deg,#202126,#111216);border:1px solid rgba(255,255,255,.13);border-radius:25px;padding:20px;box-shadow:0 25px 70px rgba(0,0,0,.55)}
 .modalCard h3{font-size:17px;margin-bottom:5px}.modalCard p{font-size:11px;line-height:1.8;color:rgba(255,255,255,.55);margin-bottom:14px}
-#pdInput{width:100%;height:54px;border-radius:15px;border:1px solid rgba(212,170,98,.4);background:rgba(0,0,0,.25);color:#fff;font:800 20px Tahoma;text-align:center;outline:none;direction:ltr;margin-bottom:12px}
+.autoFitRow{height:58px;display:flex;align-items:center;justify-content:space-between;gap:12px;background:rgba(212,170,98,.08);border:1px solid rgba(212,170,98,.25);border-radius:16px;padding:9px 12px;margin-bottom:10px;cursor:pointer}.autoFitRow span{display:block}.autoFitRow b{display:block;font-size:12px}.autoFitRow small{display:block;color:rgba(255,255,255,.45);font-size:9px;margin-top:2px}.autoFitRow input{display:none}.autoFitRow i{position:relative;width:42px;height:24px;flex:0 0 auto;border-radius:99px;background:#45464c;transition:.2s}.autoFitRow i:after{content:'';position:absolute;width:18px;height:18px;top:3px;left:3px;border-radius:50%;background:#fff;transition:.2s}.autoFitRow input:checked+i{background:var(--acc)}.autoFitRow input:checked+i:after{left:21px;background:#17120a}
+#pdInput{width:100%;height:54px;border-radius:15px;border:1px solid rgba(212,170,98,.4);background:rgba(0,0,0,.25);color:#fff;font:800 20px Tahoma;text-align:center;outline:none;direction:ltr;margin-bottom:12px;transition:.2s}
+#pdInput:disabled{opacity:.28;filter:saturate(.3)}
 #pdInput:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(212,170,98,.12)}
 .modalActions{display:grid;grid-template-columns:1fr 1.6fr;gap:8px}.modalActions button{height:45px;border-radius:13px;border:1px solid rgba(255,255,255,.12);font-weight:800;cursor:pointer}.modalCancel{background:rgba(255,255,255,.06);color:#fff}.modalSave{background:linear-gradient(145deg,#f2dfbd,var(--acc));color:#17120a}
 #load{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;flex-direction:column;gap:14px;align-items:center;justify-content:center;z-index:9;color:#fff;text-align:center;padding:20px}
@@ -67,12 +69,12 @@ canvas{position:fixed;inset:0;width:100vw;height:100vh;object-fit:cover;transfor
 </head>
 <body>
 <canvas id="cv"></canvas><canvas id="gl"></canvas><canvas id="prod"></canvas><canvas id="oc"></canvas>
-<div id="top"><h1 id="shopTitle"></h1><div id="badge">پرو مجازی سه‌بعدی</div></div>
+<div id="top"><h1 id="shopTitle"></h1><div id="badge">فیت هوشمند 3D</div></div>
 <div id="hint"></div>
 <div id="ig"><span>برای اجرای دوربین، از منوی ⋯ گزینه «Open in Browser» رو بزن</span><button onclick="this.parentNode.style.display='none'">باشه</button></div>
 <div id="scan"><div class="frame"><div class="line"></div></div><div id="scanTxt">در حال اسکن صورت…<br>صاف رو به دوربین</div></div>
 <div id="ui">
- <div id="productMeta"><div><strong id="productName">انتخاب فریم</strong><small>پرو زنده با مقیاس واقعی</small></div><span id="productSize">—</span></div>
+ <div id="productMeta"><div><strong id="productName">انتخاب فریم</strong><small id="fitStatus">فیت هوشمند در حال آماده‌سازی</small></div><span id="productSize">—</span></div>
  <div class="row" id="frames"></div>
  <div class="row" id="colors"></div>
  <div class="actions">
@@ -85,7 +87,7 @@ canvas{position:fixed;inset:0;width:100vw;height:100vh;object-fit:cover;transfor
 <div id="intro"><div class="card">
  <div class="logo">🕶</div>
  <h2 id="introShop"></h2>
- <p class="sub">پرو مجازی عینک — بدون نصب، با دوربین گوشی</p>
+ <p class="sub">فیت خودکار، اندازه واقعی و پرو زنده با دوربین گوشی</p>
  <div class="steps">
   <div>۱. اجازه دسترسی به دوربین رو بده</div>
   <div>۲. صاف و روبه‌رو، تو نور کافی بایست</div>
@@ -96,7 +98,8 @@ canvas{position:fixed;inset:0;width:100vw;height:100vh;object-fit:cover;transfor
 </div></div>
 <div id="pdModal" class="modal"><div class="modalCard">
  <h3>تنظیم فاصلهٔ مردمک</h3>
- <p>عدد PD روی نسخهٔ عینک را وارد کن. معمولاً بین ۵۵ تا ۷۰ میلی‌متر است. اگر نمی‌دانی، مقدار استاندارد ۶۳ را نگه دار.</p>
+ <p>حالت خودکار، اندازهٔ نمایشی فریم را از عرض صورت و فاصلهٔ چشم‌ها تنظیم می‌کند. این عدد برای پرو مجازی است و جای اندازه‌گیری پزشکی نسخه را نمی‌گیرد.</p>
+ <label class="autoFitRow"><span><b>فیت خودکار برای هر مشتری</b><small>پیشنهادشده برای پرو مجازی</small></span><input id="autoPdToggle" type="checkbox" checked><i></i></label>
  <input id="pdInput" type="number" inputmode="decimal" min="45" max="80" step="0.5" value="63">
  <div class="modalActions"><button id="pdCancel" class="modalCancel">انصراف</button><button id="pdSave" class="modalSave">ذخیره و تنظیم اندازه</button></div>
 </div></div>
@@ -158,7 +161,8 @@ const scanEl=document.getElementById('scan'),scanTxt=document.getElementById('sc
 const hint=document.getElementById('hint'),badge=document.getElementById('badge');
 const video=document.createElement('video');video.autoplay=true;video.playsInline=true;video.muted=true;
 let W=0,H=0,F=800,started=false,running=true,lite=((navigator.deviceMemory||8)<=3||(navigator.hardwareConcurrency||8)<=4);
-let pdMM=63,frame=FRAMES[0],colorHex=frame.colors[0][1],metal=frame.colors[0][2],curStage='',hintT=0;
+let pdMM=63,autoPD=true,autoPdMM=63,frame=FRAMES[0],colorHex=frame.colors[0][1],metal=frame.colors[0][2],curStage='',hintT=0;
+const autoPdHistory=[];
 try{const saved=+localStorage.getItem('tryon-pd');if(saved>=45&&saved<=80)pdMM=saved;}catch(e){}
 const mh=location.hash.match(/f=(\d+)/);if(mh){const f=FRAMES.find(x=>x.id==mh[1]);if(f)frame=f;}
 if(frame.colors&&frame.colors.length){colorHex=frame.colors[0][1];metal=frame.colors[0][2];}
@@ -263,8 +267,8 @@ function replaceProblemTemples(clone){
 async function buildGlasses(){
  const token=++buildToken;activeImage=null;pctx.clearRect(0,0,W,H);
  if(!webglReady)return;
- if(frame.png){try{const im=await loadImage(frame.png);if(token!==buildToken)return;activeImage=im;activeMode='png';anchor.visible=false;badge.textContent='پرو مجازی عکس واقعی';return;}catch(e){toast('⚠️ عکس محصول پیدا نشد؛ مدل سه‌بعدی جایگزین شد');}}
- activeMode='3d';badge.textContent=lite?'پرو مجازی سه‌بعدی • سبک':'پرو مجازی سه‌بعدی';
+ if(frame.png){try{const im=await loadImage(frame.png);if(token!==buildToken)return;activeImage=im;activeMode='png';anchor.visible=false;badge.textContent='فیت هوشمند • عکس واقعی';return;}catch(e){toast('⚠️ عکس محصول پیدا نشد؛ مدل سه‌بعدی جایگزین شد');}}
+ activeMode='3d';badge.textContent=lite?'فیت هوشمند 3D • سبک':'فیت هوشمند 3D';
  if(frame.glb){try{const wrap=await loadGLB(frame.glb);if(token!==buildToken)return;clearModel();const clone=wrap.clone(true);const off=frame.glbOffset||[0,0,0],rot=frame.glbRotation||[0,0,0];clone.position.set(off[0]||0,off[1]||0,.12+(off[2]||0));clone.rotation.set(rot[0]||0,rot[1]||0,rot[2]||0);clone.traverse(n=>{if(n.isMesh&&n.material){n.material=Array.isArray(n.material)?n.material.map(tuneGLBMaterial):tuneGLBMaterial(n.material);n.renderOrder=1;}});replaceProblemTemples(clone);modelRoot.add(clone);return;}catch(e){toast('⚠️ مدل GLB پیدا نشد؛ فریم جایگزین شد');}}
  procedural();
 }
@@ -318,12 +322,15 @@ function anchorFor(sp,local,q,scale){const v=local.clone().applyQuaternion(q).mu
 function targetFrom(result){
  const p=result.faceLandmarks[0],i1=p[468]||p[33],i2=p[473]||p[263],sp1=screenPoint(i1),sp2=screenPoint(i2);
  const mid={x:(sp1.x+sp2.x)/2,y:(sp1.y+sp2.y)/2},iris=Math.max(1,Math.hypot(sp2.x-sp1.x,sp2.y-sp1.y)),noseTop=screenPoint(p[168]||p[6]||p[4]),noseForward=screenPoint(p[6]||p[197]||p[168]||p[4]),nose={x:noseForward.x,y:noseTop.y};
- const q=poseQuaternion(result,p),modelWidth=1.44,physicalWidth=frame.widthMM||135,eyeLocal=new THREE.Vector3(0,0,frame.eyeZ||.055),bridgeLocal=new THREE.Vector3(0,frame.bridgeY||.09,frame.bridgeZ||.105);
- let center=worldAtScreen(mid,0),proj=projectedLocalX(center,q),scale=THREE.MathUtils.clamp(physicalWidth*iris/(pdMM*modelWidth*proj),28,Math.max(W,H)*.65);
- /* یک بار مقیاس را روی صفحهٔ واقعی لنز تصحیح می‌کنیم، سپس دو لنگر چشم و پل بینی را حل می‌کنیم. */
- let ev=eyeLocal.clone().applyQuaternion(q).multiplyScalar(scale);center=worldAtScreen(mid,ev.z);proj=projectedLocalX(center,q);scale=THREE.MathUtils.clamp(physicalWidth*iris/(pdMM*modelWidth*proj),28,Math.max(W,H)*.65);
+ const q=poseQuaternion(result,p),front=new THREE.Vector3(0,0,1).applyQuaternion(q),modelWidth=1.44,physicalWidth=frame.widthMM||135,eyeLocal=new THREE.Vector3(0,0,frame.eyeZ||.055),bridgeLocal=new THREE.Vector3(0,frame.bridgeY||.09,frame.bridgeZ||.105);
+ const fa=screenPoint(p[234]||p[127]),fb=screenPoint(p[454]||p[356]),faceSpan=Math.max(1,Math.hypot(fb.x-fa.x,fb.y-fa.y));
+ if(autoPD&&front.z>.82&&faceSpan>W*.18){const candidate=THREE.MathUtils.clamp(150*iris/faceSpan,50,76);autoPdHistory.push(candidate);if(autoPdHistory.length>24)autoPdHistory.shift();autoPdMM+=(median(autoPdHistory)-autoPdMM)*.10;if(frameCounter%10===0)refreshFitStatus();}
+ const effectivePD=autoPD?autoPdMM:pdMM;
+ let center=worldAtScreen(mid,0),proj=projectedLocalX(center,q),scale=THREE.MathUtils.clamp(physicalWidth*iris/(effectivePD*modelWidth*proj),28,Math.max(W,H)*.65);
+ /* یک بار مقیاس را روی صفحهٔ واقعی لنز تصحیح می‌کنیم، سپس پل فریم را روی بینی حل می‌کنیم. */
+ let ev=eyeLocal.clone().applyQuaternion(q).multiplyScalar(scale);center=worldAtScreen(mid,ev.z);proj=projectedLocalX(center,q);scale=THREE.MathUtils.clamp(physicalWidth*iris/(effectivePD*modelWidth*proj),28,Math.max(W,H)*.65);
  const eyeAnchor=anchorFor(mid,eyeLocal,q,scale),noseAnchor=anchorFor(nose,bridgeLocal,q,scale),pos=eyeAnchor.lerp(noseAnchor,(frame.noseWeight==null ? 1 : frame.noseWeight));
- return{p,mid,nose,iris,pos,q,scale,eyeLocal,bridgeLocal,front:new THREE.Vector3(0,0,1).applyQuaternion(q)};
+ return{p,mid,nose,iris,pos,q,scale,eyeLocal,bridgeLocal,front};
 }
 function acceptTarget(t,now){
  scaleHistory.push(t.scale);if(scaleHistory.length>9)scaleHistory.shift();t.scale=median(scaleHistory);
@@ -344,11 +351,13 @@ function scanTarget(t){
  samples.push({pos:t.pos.clone(),q:t.q.clone(),scale:t.scale});scanTxt.innerHTML='در حال اسکن صورت…<br>'+samples.length+' از ۳۰';if(samples.length>=30)completeScan();return true;
 }
 document.getElementById('rescan').onclick=()=>{if(!started||!lm)return toast('اول پرو مجازی را شروع کن');scanning=true;samples=[];scanStart=performance.now();scanTxt.innerHTML='در حال اسکن صورت…<br>۰ از ۳۰';scanEl.style.display='flex';if(anchor)anchor.visible=false;pctx.clearRect(0,0,W,H);};
-const pdModal=document.getElementById('pdModal'),pdInput=document.getElementById('pdInput');
-document.getElementById('pd').onclick=()=>{pdInput.value=String(pdMM);pdModal.classList.add('show');setTimeout(()=>{pdInput.focus();pdInput.select();},120);};
+const pdModal=document.getElementById('pdModal'),pdInput=document.getElementById('pdInput'),autoPdToggle=document.getElementById('autoPdToggle'),pdButton=document.getElementById('pd');
+function syncPdForm(){autoPdToggle.checked=autoPD;pdInput.disabled=autoPD;pdInput.value=String(pdMM);}
+pdButton.onclick=()=>{syncPdForm();pdModal.classList.add('show');if(!autoPD)setTimeout(()=>{pdInput.focus();pdInput.select();},120);};
+autoPdToggle.onchange=()=>{pdInput.disabled=autoPdToggle.checked;if(!autoPdToggle.checked)setTimeout(()=>pdInput.focus(),80);};
 document.getElementById('pdCancel').onclick=()=>pdModal.classList.remove('show');
 pdModal.onclick=e=>{if(e.target===pdModal)pdModal.classList.remove('show');};
-document.getElementById('pdSave').onclick=()=>{const v=+pdInput.value;if(v>=45&&v<=80){pdMM=v;scaleHistory.length=0;try{localStorage.setItem('tryon-pd',pdMM)}catch(e){}pdModal.classList.remove('show');toast('اندازه با PD '+pdMM+' میلی‌متر تنظیم شد');}else{pdInput.focus();toast('عدد PD باید بین ۴۵ تا ۸۰ باشد');}};
+document.getElementById('pdSave').onclick=()=>{if(autoPdToggle.checked){autoPD=true;autoPdHistory.length=0;scaleHistory.length=0;try{localStorage.setItem('tryon-pd-mode','auto')}catch(e){}pdModal.classList.remove('show');refreshFitStatus();toast('فیت خودکار برای این مشتری فعال شد');return;}const v=+pdInput.value;if(v>=45&&v<=80){autoPD=false;pdMM=v;scaleHistory.length=0;try{localStorage.setItem('tryon-pd',pdMM);localStorage.setItem('tryon-pd-mode','manual')}catch(e){}pdModal.classList.remove('show');refreshFitStatus();toast('اندازه با PD '+pdMM+' میلی‌متر تنظیم شد');}else{pdInput.focus();toast('عدد PD باید بین ۴۵ تا ۸۰ باشد');}};
 document.getElementById('wa').onclick=()=>{const cn=frame.colors&&frame.colors.find(c=>c[1]===colorHex);open('https://wa.me/'+SHOP.wa+'?text='+encodeURIComponent('سلام! فریم «'+frame.name+'»'+(cn?' رنگ '+cn[0]:'')+' رو مجازی پرو کردم. برای خرید راهنمایی‌ام کنید 🕶'),'_blank');};
 
 const maskC=document.createElement('canvas'),mctx=maskC.getContext('2d'),maskState={ready:false};
@@ -379,7 +388,7 @@ function processDetection(result,now){
 }
 function loop(now){
  if(!running)return;requestAnimationFrame(loop);if(!video.videoWidth||!lm)return;
- frameCounter++;fpsFrames++;if(now-fpsFrom>4000){const fps=fpsFrames*1000/(now-fpsFrom);if(fps<18&&!lite){lite=true;badge.textContent='پرو مجازی سه‌بعدی • سبک';maskState.ready=false;octx.clearRect(0,0,W,H);toast('⚡ حالت سبک فعال شد');}fpsFrames=0;fpsFrom=now;}
+ frameCounter++;fpsFrames++;if(now-fpsFrom>4000){const fps=fpsFrames*1000/(now-fpsFrom);if(fps<18&&!lite){lite=true;badge.textContent='فیت هوشمند 3D • سبک';maskState.ready=false;octx.clearRect(0,0,W,H);toast('⚡ حالت سبک فعال شد');}fpsFrames=0;fpsFrom=now;}
  ctx.drawImage(video,0,0,W,H);
  if(video.currentTime!==lastVideoTime){lastVideoTime=video.currentTime;try{processDetection(lm.detectForVideo(video,now),now);}catch(e){showHint('ردیابی دوباره تنظیم شد…',true);}}
  else if(lastResult&&now-lastFaceAt<350&&activeMode==='3d')drawShadows();
@@ -398,8 +407,9 @@ const SVG={
  cat:'<svg viewBox="0 0 64 24" width="36" height="14"><g fill="none" stroke="currentColor" stroke-width="3"><ellipse cx="15" cy="13" rx="12" ry="8" transform="rotate(-8 15 13)"/><ellipse cx="49" cy="13" rx="12" ry="8" transform="rotate(8 49 13)"/><path d="M26 10h12"/></g></svg>',
  aviator:'<svg viewBox="0 0 64 24" width="36" height="14"><g fill="none" stroke="currentColor" stroke-width="3"><ellipse cx="15" cy="12" rx="12" ry="10"/><ellipse cx="49" cy="12" rx="12" ry="10"/><path d="M26 8h12"/></g></svg>'
 };
-const fBox=document.getElementById('frames'),cBox=document.getElementById('colors'),productName=document.getElementById('productName'),productSize=document.getElementById('productSize');
-function updateMeta(){productName.textContent=frame.name;productSize.textContent=(frame.widthMM||'—')+' میلی‌متر';}
+const fBox=document.getElementById('frames'),cBox=document.getElementById('colors'),productName=document.getElementById('productName'),productSize=document.getElementById('productSize'),fitStatus=document.getElementById('fitStatus');
+function refreshFitStatus(){if(autoPD){fitStatus.textContent='فیت خودکار فعال • برآورد نمایشی '+autoPdMM.toFixed(1)+' mm';pdButton.textContent='⌁ PD خودکار';}else{fitStatus.textContent='تنظیم دستی PD روی '+pdMM+' mm';pdButton.textContent='⌁ PD دستی';}}
+function updateMeta(){productName.textContent=frame.name;productSize.textContent=(frame.widthMM||'—')+' میلی‌متر';refreshFitStatus();}
 function buildColors(){cBox.innerHTML='';if(!frame.colors||!frame.colors.length){cBox.style.display='none';return;}cBox.style.display='flex';frame.colors.forEach(c=>{const d=document.createElement('div');d.className='dot';d.title=c[0];d.setAttribute('aria-label',c[0]);d.style.background=c[1];d.onclick=()=>{colorHex=c[1];metal=c[2];[...cBox.children].forEach(x=>x.classList.remove('on'));d.classList.add('on');buildGlasses();};if(c[1]===colorHex)d.classList.add('on');cBox.appendChild(d);});}
 FRAMES.forEach(f=>{const b=document.createElement('button');b.className='chip';b.innerHTML=(SVG[f.style]||'🕶')+'<span>'+f.name+'</span>';b.onclick=()=>{frame=f;[...fBox.children].forEach(x=>x.classList.remove('on'));b.classList.add('on');history.replaceState(null,'','#f='+f.id);if(f.colors&&f.colors.length){colorHex=f.colors[0][1];metal=f.colors[0][2];}scaleHistory.length=0;updateMeta();buildColors();buildGlasses();};if(f===frame)b.classList.add('on');fBox.appendChild(b);});
 updateMeta();buildColors();
