@@ -114,7 +114,7 @@ const FRAMES=[
  {id:2,name:'گرد رترو',style:'round',glb:'./round.glb',widthMM:136,eyeZ:.055,bridgeY:.120,bridgeZ:.108,noseWeight:1,lensCenter:.36,lensBlocker:.82,colors:[['مشکی','#111214',0],['نقره‌ای','#b9bec5',1]]},
  {id:3,name:'گربه‌ای',style:'cat',glb:'./cat.glb',widthMM:140,eyeZ:.050,bridgeY:.110,bridgeZ:.107,noseWeight:1,lensCenter:.37,lensBlocker:.86,colors:[['مشکی','#111214',0],['قرمز','#7d1822',0]]},
  {id:4,name:'خلبانی',style:'aviator',glb:'./aviator.glb',widthMM:140,eyeZ:.068,bridgeY:.139,bridgeZ:.113,noseWeight:1,lensCenter:.40,lensBlocker:.94,colors:[['طلایی','#c8a33a',1],['مشکی','#111214',0]]},
- {id:5,name:'طبی اسپایدرمنی',style:'square',custom3d:'spidermanPhoto',photoTexture:'./arvin-spiderman.png',widthMM:138,lensMM:53,bridgeMM:17,templeMM:142,eyeZ:.080,bridgeY:.108,bridgeZ:.080,noseWeight:1,price:'۲ میلیارد',colors:[['مشکی','#0b0c0e',0]]}
+ {id:5,name:'طبی اسپایدرمنی',style:'square',custom3d:'spidermanPhoto',photoTexture:'./arvin-spiderman-v3.png',photoHeightScale:1,widthMM:138,lensMM:53,bridgeMM:17,templeMM:142,eyeZ:.080,bridgeY:.145,bridgeZ:.080,noseWeight:1,price:'۲ میلیارد',colors:[['مشکی','#0b0c0e',0]]}
 ];
 /* مدل‌های GLB این نسخه تحت CC BY 4.0 هستند؛ مشخصات کامل سازندگان در MODEL-LICENSES.txt قرار دارد. */
 /* برای عکس واقعی به همان محصول png:'./frames/1.png' و برای مدل سه‌بعدی دلخواه glb:'./models/1.glb' اضافه کنید. */
@@ -249,14 +249,14 @@ function spidermanPhoto3D(image){
  const tex=new THREE.Texture(image);tex.needsUpdate=true;tex.encoding=THREE.sRGBEncoding;tex.minFilter=THREE.LinearMipmapLinearFilter;tex.magFilter=THREE.LinearFilter;
  const aspect=(image.naturalHeight||image.height)/(image.naturalWidth||image.width);
  const frontMat=new THREE.MeshBasicMaterial({map:tex,transparent:true,alphaTest:.035,depthWrite:true,side:THREE.DoubleSide,toneMapped:false});
- const front=new THREE.Mesh(new THREE.PlaneGeometry(1.44,1.44*aspect),frontMat);front.position.set(0,.018,.080);front.renderOrder=8;modelRoot.add(front);
+ const front=new THREE.Mesh(new THREE.PlaneGeometry(1.44,1.44*aspect*(frame.photoHeightScale||1)),frontMat);front.position.set(0,.018,.080);front.renderOrder=8;modelRoot.add(front);
  /* دو ماسک عمق فقط داخل لنزها؛ تصویر دوربین از آن‌ها عبور می‌کند اما دستهٔ پشت لنز دیده نمی‌شود. */
  const hole=new THREE.Shape();rrect(hole,-.2765,-.21,.553,.42,.075);
  const depthMat=new THREE.MeshBasicMaterial({color:0,colorWrite:false,depthWrite:true,depthTest:true,side:THREE.DoubleSide});
  for(const sd of[-1,1]){const d=new THREE.Mesh(new THREE.ShapeGeometry(hole,28),depthMat);d.position.set(sd*.365,0,.073);d.renderOrder=-35;modelRoot.add(d);}
  const armMat=new THREE.MeshPhysicalMaterial({color:0x15181b,metalness:.72,roughness:.36,clearcoat:.28,envMapIntensity:.48});
  /* فقط بخش کوتاه دسته تا خط مو رندر می‌شود؛ انتهای دسته دیگر روی گونه یا کنار گوش شناور نمی‌ماند. */
- for(const sd of[-1,1]){const arm=new THREE.Mesh(new THREE.BoxGeometry(.018,.023,.50),armMat);arm.position.set(sd*.705,.052,-.19);arm.renderOrder=2;modelRoot.add(arm);}
+ for(const sd of[-1,1]){const arm=new THREE.Mesh(new THREE.BoxGeometry(.018,.023,.50),armMat);arm.position.set(sd*.718,.075,-.19);arm.renderOrder=2;modelRoot.add(arm);}
 }
 function loadImage(url){if(imageCache[url])return imageCache[url];imageCache[url]=new Promise((res,rej)=>{const im=new Image();im.crossOrigin='anonymous';im.onload=()=>res(im);im.onerror=rej;im.src=url;});return imageCache[url];}
 function loadGLB(url){if(glbCache[url])return glbCache[url];glbCache[url]=new Promise((res,rej)=>{
