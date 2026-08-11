@@ -162,7 +162,7 @@ const scanEl=document.getElementById('scan'),scanTxt=document.getElementById('sc
 const hint=document.getElementById('hint'),badge=document.getElementById('badge');
 const video=document.createElement('video');video.autoplay=true;video.playsInline=true;video.muted=true;
 let W=0,H=0,F=800,started=false,running=true,lite=((navigator.deviceMemory||8)<=3||(navigator.hardwareConcurrency||8)<=4);
-let pdMM=63,autoPD=true,autoPdMM=63,frame=FRAMES[0],colorHex=frame.colors[0][1],metal=frame.colors[0][2],curStage='',hintT=0;
+let pdMM=63,autoPD=true,autoPdMM=63,autoPdLocked=false,frame=FRAMES[0],colorHex=frame.colors[0][1],metal=frame.colors[0][2],curStage='',hintT=0;
 const autoPdHistory=[];
 try{const saved=+localStorage.getItem('tryon-pd');if(saved>=45&&saved<=80)pdMM=saved;}catch(e){}
 const mh=location.hash.match(/f=(\d+)/);if(mh){const f=FRAMES.find(x=>x.id==mh[1]);if(f)frame=f;}
@@ -253,10 +253,11 @@ function spidermanPhoto3D(image){
  /* دو ماسک عمق فقط داخل لنزها؛ تصویر دوربین از آن‌ها عبور می‌کند اما دستهٔ پشت لنز دیده نمی‌شود. */
  const hole=new THREE.Shape();rrect(hole,-.2765,-.21,.553,.42,.075);
  const depthMat=new THREE.MeshBasicMaterial({color:0,colorWrite:false,depthWrite:true,depthTest:true,side:THREE.DoubleSide});
- for(const sd of[-1,1]){const d=new THREE.Mesh(new THREE.ShapeGeometry(hole,28),depthMat);d.position.set(sd*.365,0,.073);d.renderOrder=-35;modelRoot.add(d);}
- const armMat=new THREE.MeshPhysicalMaterial({color:0x15181b,metalness:.72,roughness:.36,clearcoat:.28,envMapIntensity:.48});
- /* فقط بخش کوتاه دسته تا خط مو رندر می‌شود؛ انتهای دسته دیگر روی گونه یا کنار گوش شناور نمی‌ماند. */
- for(const sd of[-1,1]){const arm=new THREE.Mesh(new THREE.BoxGeometry(.018,.023,.50),armMat);arm.position.set(sd*.718,.075,-.19);arm.renderOrder=2;modelRoot.add(arm);}
+ const glassMat=new THREE.MeshPhysicalMaterial({color:0xdcecff,transparent:true,opacity:.045,metalness:0,roughness:.07,clearcoat:1,clearcoatRoughness:.025,envMapIntensity:.32,depthWrite:false,side:THREE.DoubleSide});
+ for(const sd of[-1,1]){const g=new THREE.ShapeGeometry(hole,28),d=new THREE.Mesh(g,depthMat);d.position.set(sd*.365,0,.073);d.renderOrder=-35;const glass=new THREE.Mesh(g,glassMat);glass.position.set(sd*.365,0,.084);glass.renderOrder=12;modelRoot.add(d,glass);}
+ const armMat=new THREE.MeshPhysicalMaterial({color:0x090a0c,metalness:.30,roughness:.40,clearcoat:.25,envMapIntensity:.32});
+ /* دسته از داخل لولای واقعی شروع می‌شود و پیش از ناحیه مو تمام می‌شود تا هیچ تکه‌ای شناور نماند. */
+ for(const sd of[-1,1]){const arm=new THREE.Mesh(new THREE.BoxGeometry(.018,.023,.34),armMat);arm.position.set(sd*.700,.075,-.075);arm.renderOrder=2;modelRoot.add(arm);}
 }
 function loadImage(url){if(imageCache[url])return imageCache[url];imageCache[url]=new Promise((res,rej)=>{const im=new Image();im.crossOrigin='anonymous';im.onload=()=>res(im);im.onerror=rej;im.src=url;});return imageCache[url];}
 function loadGLB(url){if(glbCache[url])return glbCache[url];glbCache[url]=new Promise((res,rej)=>{
@@ -340,7 +341,7 @@ function targetFrom(result){
  const mid={x:(sp1.x+sp2.x)/2,y:(sp1.y+sp2.y)/2},iris=Math.max(1,Math.hypot(sp2.x-sp1.x,sp2.y-sp1.y)),noseTop=screenPoint(p[168]||p[6]||p[4]),noseForward=screenPoint(p[6]||p[197]||p[168]||p[4]),nose={x:noseForward.x,y:noseTop.y};
  const q=poseQuaternion(result,p),front=new THREE.Vector3(0,0,1).applyQuaternion(q),modelWidth=1.44,physicalWidth=frame.widthMM||135,eyeLocal=new THREE.Vector3(0,0,frame.eyeZ||.055),bridgeLocal=new THREE.Vector3(0,frame.bridgeY||.09,frame.bridgeZ||.105);
  const fa=screenPoint(p[234]||p[127]),fb=screenPoint(p[454]||p[356]),faceSpan=Math.max(1,Math.hypot(fb.x-fa.x,fb.y-fa.y));
- if(autoPD&&front.z>.82&&faceSpan>W*.18){const candidate=THREE.MathUtils.clamp(126*iris/faceSpan,54,72);autoPdHistory.push(candidate);if(autoPdHistory.length>24)autoPdHistory.shift();autoPdMM+=(median(autoPdHistory)-autoPdMM)*.10;if(frameCounter%10===0)refreshFitStatus();}
+ if(autoPD&&!autoPdLocked&&front.z>.94&&faceSpan>W*.18){const candidate=THREE.MathUtils.clamp(126*iris/faceSpan,58,68);autoPdHistory.push(candidate);autoPdMM+=(median(autoPdHistory)-autoPdMM)*.12;if(autoPdHistory.length>=24)autoPdLocked=true;if(frameCounter%6===0)refreshFitStatus();}
  const effectivePD=autoPD?autoPdMM:pdMM;
  let center=worldAtScreen(mid,0),proj=projectedLocalX(center,q),scale=THREE.MathUtils.clamp(physicalWidth*iris/(effectivePD*modelWidth*proj),28,Math.max(W,H)*.65);
  /* یک بار مقیاس را روی صفحهٔ واقعی لنز تصحیح می‌کنیم، سپس پل فریم را روی بینی حل می‌کنیم. */
@@ -366,14 +367,14 @@ function scanTarget(t){
  if(t.front.z<.82){scanTxt.innerHTML='کمی صاف‌تر رو به دوربین…<br>'+samples.length+' از ۳۰';return true;}
  samples.push({pos:t.pos.clone(),q:t.q.clone(),scale:t.scale});scanTxt.innerHTML='در حال اسکن صورت…<br>'+samples.length+' از ۳۰';if(samples.length>=30)completeScan();return true;
 }
-document.getElementById('rescan').onclick=()=>{if(!started||!lm)return toast('اول پرو مجازی را شروع کن');scanning=true;samples=[];scanStart=performance.now();scanTxt.innerHTML='در حال اسکن صورت…<br>۰ از ۳۰';scanEl.style.display='flex';if(anchor)anchor.visible=false;pctx.clearRect(0,0,W,H);};
+document.getElementById('rescan').onclick=()=>{if(!started||!lm)return toast('اول پرو مجازی را شروع کن');if(autoPD){autoPdHistory.length=0;autoPdMM=63;autoPdLocked=false;refreshFitStatus();}scanning=true;samples=[];scanStart=performance.now();scanTxt.innerHTML='در حال اسکن صورت…<br>۰ از ۳۰';scanEl.style.display='flex';if(anchor)anchor.visible=false;pctx.clearRect(0,0,W,H);};
 const pdModal=document.getElementById('pdModal'),pdInput=document.getElementById('pdInput'),autoPdToggle=document.getElementById('autoPdToggle'),pdButton=document.getElementById('pd');
 function syncPdForm(){autoPdToggle.checked=autoPD;pdInput.disabled=autoPD;pdInput.value=String(pdMM);}
 pdButton.onclick=()=>{syncPdForm();pdModal.classList.add('show');if(!autoPD)setTimeout(()=>{pdInput.focus();pdInput.select();},120);};
 autoPdToggle.onchange=()=>{pdInput.disabled=autoPdToggle.checked;if(!autoPdToggle.checked)setTimeout(()=>pdInput.focus(),80);};
 document.getElementById('pdCancel').onclick=()=>pdModal.classList.remove('show');
 pdModal.onclick=e=>{if(e.target===pdModal)pdModal.classList.remove('show');};
-document.getElementById('pdSave').onclick=()=>{if(autoPdToggle.checked){autoPD=true;autoPdHistory.length=0;scaleHistory.length=0;try{localStorage.setItem('tryon-pd-mode','auto')}catch(e){}pdModal.classList.remove('show');refreshFitStatus();toast('فیت خودکار برای این مشتری فعال شد');return;}const v=+pdInput.value;if(v>=45&&v<=80){autoPD=false;pdMM=v;scaleHistory.length=0;try{localStorage.setItem('tryon-pd',pdMM);localStorage.setItem('tryon-pd-mode','manual')}catch(e){}pdModal.classList.remove('show');refreshFitStatus();toast('اندازه با PD '+pdMM+' میلی‌متر تنظیم شد');}else{pdInput.focus();toast('عدد PD باید بین ۴۵ تا ۸۰ باشد');}};
+document.getElementById('pdSave').onclick=()=>{if(autoPdToggle.checked){autoPD=true;autoPdHistory.length=0;autoPdMM=63;autoPdLocked=false;scaleHistory.length=0;try{localStorage.setItem('tryon-pd-mode','auto')}catch(e){}pdModal.classList.remove('show');refreshFitStatus();toast('فیت خودکار برای این مشتری فعال شد');return;}const v=+pdInput.value;if(v>=45&&v<=80){autoPD=false;pdMM=v;scaleHistory.length=0;try{localStorage.setItem('tryon-pd',pdMM);localStorage.setItem('tryon-pd-mode','manual')}catch(e){}pdModal.classList.remove('show');refreshFitStatus();toast('اندازه با PD '+pdMM+' میلی‌متر تنظیم شد');}else{pdInput.focus();toast('عدد PD باید بین ۴۵ تا ۸۰ باشد');}};
 document.getElementById('wa').onclick=()=>{const cn=frame.colors&&frame.colors.find(c=>c[1]===colorHex);open('https://wa.me/'+SHOP.wa+'?text='+encodeURIComponent('سلام! فریم «'+frame.name+'»'+(cn?' رنگ '+cn[0]:'')+(frame.price?' با قیمت '+frame.price:'')+' رو مجازی پرو کردم. برای خرید راهنمایی‌ام کنید.'),'_blank');};
 
 const maskC=document.createElement('canvas'),mctx=maskC.getContext('2d'),maskState={ready:false};
