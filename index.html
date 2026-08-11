@@ -84,10 +84,10 @@ canvas{position:fixed;inset:0;width:100vw;height:100vh;object-fit:cover;transfor
 /* ===================== فقط این بخش را برای فروشگاه و محصولات ویرایش کنید ===================== */
 const SHOP={name:'اپتیک آرین',wa:'989120000000',accent:'#4da3ff'};
 const FRAMES=[
- {id:1,name:'مربعی کلاسیک',style:'square',glb:'./square.glb',widthMM:138,lensCenter:.38,lensBlocker:.96,colors:[['مشکی','#111214',0],['لاک‌پشتی','#6b3f20',0],['طلایی','#c8a33a',1]]},
- {id:2,name:'گرد رترو',style:'round',glb:'./round.glb',widthMM:136,lensCenter:.36,lensBlocker:.82,colors:[['مشکی','#111214',0],['نقره‌ای','#b9bec5',1]]},
- {id:3,name:'گربه‌ای',style:'cat',glb:'./cat.glb',widthMM:140,lensCenter:.37,lensBlocker:.86,colors:[['مشکی','#111214',0],['قرمز','#7d1822',0]]},
- {id:4,name:'خلبانی',style:'aviator',glb:'./aviator.glb',widthMM:140,lensCenter:.40,lensBlocker:.94,colors:[['طلایی','#c8a33a',1],['مشکی','#111214',0]]}
+ {id:1,name:'مربعی کلاسیک',style:'square',glb:'./square.glb',widthMM:138,eyeZ:.06,bridgeY:.10,bridgeZ:.11,noseWeight:.72,lensCenter:.38,lensBlocker:.96,colors:[['مشکی','#111214',0],['لاک‌پشتی','#6b3f20',0],['طلایی','#c8a33a',1]]},
+ {id:2,name:'گرد رترو',style:'round',glb:'./round.glb',widthMM:136,eyeZ:.055,bridgeY:.09,bridgeZ:.105,noseWeight:.72,lensCenter:.36,lensBlocker:.82,colors:[['مشکی','#111214',0],['نقره‌ای','#b9bec5',1]]},
+ {id:3,name:'گربه‌ای',style:'cat',glb:'./cat.glb',widthMM:140,eyeZ:.05,bridgeY:.11,bridgeZ:.11,noseWeight:.72,lensCenter:.37,lensBlocker:.86,colors:[['مشکی','#111214',0],['قرمز','#7d1822',0]]},
+ {id:4,name:'خلبانی',style:'aviator',glb:'./aviator.glb',widthMM:140,eyeZ:.068,bridgeY:.10,bridgeZ:.115,noseWeight:.72,lensCenter:.40,lensBlocker:.94,colors:[['طلایی','#c8a33a',1],['مشکی','#111214',0]]}
 ];
 /* مدل‌های GLB این نسخه تحت CC BY 4.0 هستند؛ مشخصات کامل سازندگان در MODEL-LICENSES.txt قرار دارد. */
 /* برای عکس واقعی به همان محصول png:'./frames/1.png' و برای مدل سه‌بعدی دلخواه glb:'./models/1.glb' اضافه کنید. */
@@ -287,11 +287,16 @@ function projectedLocalX(pos,q){
  const a=pos.clone().project(camera),b=pos.clone().add(new THREE.Vector3(1,0,0).applyQuaternion(q)).project(camera);
  return Math.max(.08,Math.hypot((b.x-a.x)*W*.5,(b.y-a.y)*H*.5));
 }
+function worldAtScreen(sp,z){const k=(F-z)/F;return new THREE.Vector3((sp.x-W/2)*k,(H/2-sp.y)*k,z);}
+function anchorFor(sp,local,q,scale){const v=local.clone().applyQuaternion(q).multiplyScalar(scale),d=worldAtScreen(sp,v.z);return new THREE.Vector3(d.x-v.x,d.y-v.y,0);}
 function targetFrom(result){
  const p=result.faceLandmarks[0],i1=p[468]||p[33],i2=p[473]||p[263],sp1=screenPoint(i1),sp2=screenPoint(i2);
- const mid={x:(sp1.x+sp2.x)/2,y:(sp1.y+sp2.y)/2},iris=Math.max(1,Math.hypot(sp2.x-sp1.x,sp2.y-sp1.y));
- const q=poseQuaternion(result,p),pos=new THREE.Vector3(mid.x-W/2,H/2-mid.y,0),proj=projectedLocalX(pos,q),modelWidth=1.44,physicalWidth=frame.widthMM||135;
- let scale=physicalWidth*iris/(pdMM*modelWidth*proj);scale=THREE.MathUtils.clamp(scale,28,Math.max(W,H)*.65);
+ const mid={x:(sp1.x+sp2.x)/2,y:(sp1.y+sp2.y)/2},iris=Math.max(1,Math.hypot(sp2.x-sp1.x,sp2.y-sp1.y)),nose=screenPoint(p[168]||p[6]||p[4]);
+ const q=poseQuaternion(result,p),modelWidth=1.44,physicalWidth=frame.widthMM||135,eyeLocal=new THREE.Vector3(0,0,frame.eyeZ||.055),bridgeLocal=new THREE.Vector3(0,frame.bridgeY||.09,frame.bridgeZ||.105);
+ let center=worldAtScreen(mid,0),proj=projectedLocalX(center,q),scale=THREE.MathUtils.clamp(physicalWidth*iris/(pdMM*modelWidth*proj),28,Math.max(W,H)*.65);
+ /* یک بار مقیاس را روی صفحهٔ واقعی لنز تصحیح می‌کنیم، سپس دو لنگر چشم و پل بینی را حل می‌کنیم. */
+ let ev=eyeLocal.clone().applyQuaternion(q).multiplyScalar(scale);center=worldAtScreen(mid,ev.z);proj=projectedLocalX(center,q);scale=THREE.MathUtils.clamp(physicalWidth*iris/(pdMM*modelWidth*proj),28,Math.max(W,H)*.65);
+ const eyeAnchor=anchorFor(mid,eyeLocal,q,scale),noseAnchor=anchorFor(nose,bridgeLocal,q,scale),pos=eyeAnchor.lerp(noseAnchor,(frame.noseWeight==null ? .72 : frame.noseWeight));
  return{p,mid,iris,pos,q,scale,front:new THREE.Vector3(0,0,1).applyQuaternion(q)};
 }
 function acceptTarget(t,now){
