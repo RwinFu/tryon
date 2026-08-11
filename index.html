@@ -114,7 +114,7 @@ const FRAMES=[
  {id:2,name:'گرد رترو',style:'round',glb:'./round.glb',widthMM:136,eyeZ:.055,bridgeY:.120,bridgeZ:.108,noseWeight:1,lensCenter:.36,lensBlocker:.82,colors:[['مشکی','#111214',0],['نقره‌ای','#b9bec5',1]]},
  {id:3,name:'گربه‌ای',style:'cat',glb:'./cat.glb',widthMM:140,eyeZ:.050,bridgeY:.110,bridgeZ:.107,noseWeight:1,lensCenter:.37,lensBlocker:.86,colors:[['مشکی','#111214',0],['قرمز','#7d1822',0]]},
  {id:4,name:'خلبانی',style:'aviator',glb:'./aviator.glb',widthMM:140,eyeZ:.068,bridgeY:.139,bridgeZ:.113,noseWeight:1,lensCenter:.40,lensBlocker:.94,colors:[['طلایی','#c8a33a',1],['مشکی','#111214',0]]},
- {id:5,name:'طبی اسپایدرمنی',style:'square',png:'./arvin-spiderman.png',pngYOffset:-.03,widthMM:138,price:'۲ میلیارد',colors:[['مشکی','#111214',0]]}
+ {id:5,name:'طبی اسپایدرمنی',style:'square',custom3d:'spiderman',widthMM:138,lensMM:53,bridgeMM:17,templeMM:142,eyeZ:.076,bridgeY:.135,bridgeZ:.078,noseWeight:1,price:'۲ میلیارد',colors:[['مشکی','#0b0c0e',0]]}
 ];
 /* مدل‌های GLB این نسخه تحت CC BY 4.0 هستند؛ مشخصات کامل سازندگان در MODEL-LICENSES.txt قرار دارد. */
 /* برای عکس واقعی به همان محصول png:'./frames/1.png' و برای مدل سه‌بعدی دلخواه glb:'./models/1.glb' اضافه کنید. */
@@ -244,6 +244,32 @@ function procedural(){
  }
  const bridge=new THREE.Mesh(new THREE.TubeGeometry(new THREE.QuadraticBezierCurve3(new THREE.Vector3(-.10,.07,.025),new THREE.Vector3(0,.13,.045),new THREE.Vector3(.10,.07,.025)),14,.025,8),mat);bridge.renderOrder=2;modelRoot.add(bridge);
 }
+function spiderman3D(){
+ clearModel();
+ const acetate=new THREE.MeshPhysicalMaterial({color:colorHex,metalness:.02,roughness:.30,clearcoat:.72,clearcoatRoughness:.16,envMapIntensity:.48,side:THREE.DoubleSide});
+ const gunmetal=new THREE.MeshPhysicalMaterial({color:0x34383d,metalness:.82,roughness:.30,clearcoat:.35,envMapIntensity:.9});
+ const sleeveMat=new THREE.MeshPhysicalMaterial({color:0x090a0c,metalness:.02,roughness:.38,clearcoat:.48,clearcoatRoughness:.22});
+ const redMat=new THREE.MeshPhysicalMaterial({color:0x6f1e24,metalness:.55,roughness:.28,clearcoat:.7});
+ const silverMat=new THREE.MeshStandardMaterial({color:0xb8b8b2,metalness:.9,roughness:.25});
+ const depthMat=new THREE.MeshBasicMaterial({color:0,colorWrite:false,depthWrite:true,depthTest:true,side:THREE.DoubleSide});
+ const outer=new THREE.Shape(),hole=new THREE.Shape();rrect(outer,-.31,-.245,.62,.49,.095);rrect(hole,-.2765,-.21,.553,.42,.075);outer.holes.push(hole);
+ const rimG=new THREE.ExtrudeGeometry(outer,{depth:.055,bevelEnabled:true,bevelThickness:.008,bevelSize:.008,bevelSegments:3,curveSegments:30});
+ const lensG=new THREE.ShapeGeometry(hole,30);
+ for(const sd of[-1,1]){
+  const rim=new THREE.Mesh(rimG,acetate);rim.position.set(sd*.365,0,.015);rim.renderOrder=2;
+  const block=new THREE.Mesh(lensG,depthMat);block.position.set(sd*.365,0,.071);block.renderOrder=-40;
+  const lens=new THREE.Mesh(lensG,lensMat);lens.position.set(sd*.365,0,.076);lens.material.opacity=.075;lens.renderOrder=20;
+  const end=new THREE.Mesh(new THREE.BoxGeometry(.075,.075,.075),gunmetal);end.position.set(sd*.685,.075,.045);end.rotation.y=sd*.08;end.renderOrder=3;
+  const screw=new THREE.Mesh(new THREE.CylinderGeometry(.013,.013,.012,14),silverMat);screw.position.set(sd*.724,.075,.046);screw.rotation.z=Math.PI/2;screw.renderOrder=4;
+  const arm=new THREE.Mesh(new THREE.BoxGeometry(.025,.028,.88),gunmetal);arm.position.set(sd*.718,.075,-.405);arm.renderOrder=2;
+  const stripe=new THREE.Mesh(new THREE.BoxGeometry(.030,.034,.045),redMat);stripe.position.set(sd*.718,.075,-.115);stripe.renderOrder=4;
+  const sleevePts=[new THREE.Vector3(sd*.718,.075,-.84),new THREE.Vector3(sd*.724,.065,-1.04),new THREE.Vector3(sd*.718,.015,-1.28),new THREE.Vector3(sd*.69,-.13,-1.48)];
+  const sleeve=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(sleevePts),24,.027,8,false),sleeveMat);sleeve.renderOrder=2;
+  modelRoot.add(rim,block,lens,end,screw,arm,stripe,sleeve);
+ }
+ const bridgeCurve=new THREE.CubicBezierCurve3(new THREE.Vector3(-.085,.145,.072),new THREE.Vector3(-.045,.125,.082),new THREE.Vector3(.045,.125,.082),new THREE.Vector3(.085,.145,.072));
+ const bridge=new THREE.Mesh(new THREE.TubeGeometry(bridgeCurve,18,.034,10,false),acetate);bridge.renderOrder=4;modelRoot.add(bridge);
+}
 function loadImage(url){if(imageCache[url])return imageCache[url];imageCache[url]=new Promise((res,rej)=>{const im=new Image();im.crossOrigin='anonymous';im.onload=()=>res(im);im.onerror=rej;im.src=url;});return imageCache[url];}
 function loadGLB(url){if(glbCache[url])return glbCache[url];glbCache[url]=new Promise((res,rej)=>{
  if(!THREE.GLTFLoader)return rej(new Error('GLTFLoader unavailable'));
@@ -270,6 +296,7 @@ async function buildGlasses(){
  if(!webglReady)return;
  if(frame.png){try{const im=await loadImage(frame.png);if(token!==buildToken)return;activeImage=im;activeMode='png';anchor.visible=false;badge.textContent='فیت هوشمند • عکس واقعی';return;}catch(e){toast('⚠️ عکس محصول پیدا نشد؛ مدل سه‌بعدی جایگزین شد');}}
  activeMode='3d';badge.textContent=lite?'فیت هوشمند 3D • سبک':'فیت هوشمند 3D';
+ if(frame.custom3d==='spiderman'){spiderman3D();return;}
  if(frame.glb){try{const wrap=await loadGLB(frame.glb);if(token!==buildToken)return;clearModel();const clone=wrap.clone(true);const off=frame.glbOffset||[0,0,0],rot=frame.glbRotation||[0,0,0];clone.position.set(off[0]||0,off[1]||0,.12+(off[2]||0));clone.rotation.set(rot[0]||0,rot[1]||0,rot[2]||0);clone.traverse(n=>{if(n.isMesh&&n.material){n.material=Array.isArray(n.material)?n.material.map(tuneGLBMaterial):tuneGLBMaterial(n.material);n.renderOrder=1;}});replaceProblemTemples(clone);modelRoot.add(clone);return;}catch(e){toast('⚠️ مدل GLB پیدا نشد؛ فریم جایگزین شد');}}
  procedural();
 }
