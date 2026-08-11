@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>آروین | پرو مجازی عینک</title>
+<title>اپتیک آروین | پرو مجازی عینک</title>
 <style>
 @font-face{font-family:Vazirmatn;src:url('./vendor/Vazirmatn-Regular.woff2') format('woff2');font-weight:100 900;font-style:normal;font-display:swap}
 :root{--acc:#d4aa62;--ink:#101114;--glass:rgba(13,14,17,.78);--line:rgba(255,255,255,.13)}
@@ -47,6 +47,13 @@ canvas{position:fixed;inset:0;width:100vw;height:100vh;object-fit:cover;transfor
 #intro .steps{display:flex;flex-direction:column;gap:9px;text-align:right;color:rgba(255,255,255,.82);font-size:12px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.09);border-radius:17px;padding:15px;margin-bottom:18px}
 #start{width:100%;border:1px solid rgba(255,255,255,.4);border-radius:16px;padding:14px;font-size:14px;font-weight:900;color:#17120a;background:linear-gradient(145deg,#f2dfbd,var(--acc));cursor:pointer;box-shadow:0 10px 28px rgba(0,0,0,.3);font-family:Vazirmatn,Tahoma}
 #intro .priv{color:rgba(255,255,255,.35);font-size:9.5px;margin-top:13px}
+.modal{position:fixed;inset:0;z-index:30;display:none;align-items:flex-end;justify-content:center;padding:16px;background:rgba(0,0,0,.58);backdrop-filter:blur(8px)}
+.modal.show{display:flex}
+.modalCard{width:min(100%,420px);background:linear-gradient(145deg,#202126,#111216);border:1px solid rgba(255,255,255,.13);border-radius:25px;padding:20px;box-shadow:0 25px 70px rgba(0,0,0,.55)}
+.modalCard h3{font-size:17px;margin-bottom:5px}.modalCard p{font-size:11px;line-height:1.8;color:rgba(255,255,255,.55);margin-bottom:14px}
+#pdInput{width:100%;height:54px;border-radius:15px;border:1px solid rgba(212,170,98,.4);background:rgba(0,0,0,.25);color:#fff;font:800 20px Tahoma;text-align:center;outline:none;direction:ltr;margin-bottom:12px}
+#pdInput:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(212,170,98,.12)}
+.modalActions{display:grid;grid-template-columns:1fr 1.6fr;gap:8px}.modalActions button{height:45px;border-radius:13px;border:1px solid rgba(255,255,255,.12);font-weight:800;cursor:pointer}.modalCancel{background:rgba(255,255,255,.06);color:#fff}.modalSave{background:linear-gradient(145deg,#f2dfbd,var(--acc));color:#17120a}
 #load{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;flex-direction:column;gap:14px;align-items:center;justify-content:center;z-index:9;color:#fff;text-align:center;padding:20px}
 #load button{border:none;background:var(--acc);color:#fff;border-radius:12px;padding:10px 22px;font-size:13px;font-weight:700;font-family:Vazirmatn,Tahoma;cursor:pointer}
 .spin{width:42px;height:42px;border:4px solid rgba(255,255,255,.15);border-top-color:var(--acc);border-radius:50%;animation:s 1s linear infinite}
@@ -87,14 +94,20 @@ canvas{position:fixed;inset:0;width:100vw;height:100vh;object-fit:cover;transfor
  <button id="start">شروع پرو مجازی</button>
  <p class="priv">🔒 پردازش تصویر فقط روی گوشی خودته؛ هیچ عکسی ارسال نمی‌شه.</p>
 </div></div>
+<div id="pdModal" class="modal"><div class="modalCard">
+ <h3>تنظیم فاصلهٔ مردمک</h3>
+ <p>عدد PD روی نسخهٔ عینک را وارد کن. معمولاً بین ۵۵ تا ۷۰ میلی‌متر است. اگر نمی‌دانی، مقدار استاندارد ۶۳ را نگه دار.</p>
+ <input id="pdInput" type="number" inputmode="decimal" min="45" max="80" step="0.5" value="63">
+ <div class="modalActions"><button id="pdCancel" class="modalCancel">انصراف</button><button id="pdSave" class="modalSave">ذخیره و تنظیم اندازه</button></div>
+</div></div>
 <div id="load"><div class="spin"></div><div id="loadTxt">در حال آماده‌سازی…</div></div>
 <script>
 'use strict';
 
 /* ===================== فقط این بخش را برای فروشگاه و محصولات ویرایش کنید ===================== */
-const SHOP={name:'آروین',wa:'989120000000',accent:'#d4aa62'};
+const SHOP={name:'اپتیک آروین',wa:'989120000000',accent:'#d4aa62'};
 const FRAMES=[
- {id:1,name:'مربعی کلاسیک',style:'square',glb:'./square.glb',widthMM:138,eyeZ:.060,bridgeY:.130,bridgeZ:.110,noseWeight:1,lensCenter:.38,lensBlocker:.96,colors:[['مشکی','#111214',0],['لاک‌پشتی','#6b3f20',0],['طلایی','#c8a33a',1]]},
+ {id:1,name:'مربعی کلاسیک',style:'square',glb:'./square.glb',widthMM:138,eyeZ:.060,bridgeY:.108,bridgeZ:.085,noseWeight:1,cleanTemples:true,lensCenter:.38,lensBlocker:.96,colors:[['مشکی','#111214',0],['لاک‌پشتی','#6b3f20',0],['طلایی','#c8a33a',1]]},
  {id:2,name:'گرد رترو',style:'round',glb:'./round.glb',widthMM:136,eyeZ:.055,bridgeY:.120,bridgeZ:.108,noseWeight:1,lensCenter:.36,lensBlocker:.82,colors:[['مشکی','#111214',0],['نقره‌ای','#b9bec5',1]]},
  {id:3,name:'گربه‌ای',style:'cat',glb:'./cat.glb',widthMM:140,eyeZ:.050,bridgeY:.110,bridgeZ:.107,noseWeight:1,lensCenter:.37,lensBlocker:.86,colors:[['مشکی','#111214',0],['قرمز','#7d1822',0]]},
  {id:4,name:'خلبانی',style:'aviator',glb:'./aviator.glb',widthMM:140,eyeZ:.068,bridgeY:.139,bridgeZ:.113,noseWeight:1,lensCenter:.40,lensBlocker:.94,colors:[['طلایی','#c8a33a',1],['مشکی','#111214',0]]}
@@ -240,16 +253,19 @@ function tuneGLBMaterial(src){
  else if(m.color){m.color.set(colorHex);if(metal){m.metalness=.92;m.roughness=.24;m.envMapIntensity=1.05;if('clearcoat'in m){m.clearcoat=.65;m.clearcoatRoughness=.14;}}else{m.metalness=.03;m.roughness=.34;m.envMapIntensity=.42;if('clearcoat'in m){m.clearcoat=.72;m.clearcoatRoughness=.20;}}}
  return m;
 }
-function addGLBLensBlockers(){
- const depthMat=new THREE.MeshBasicMaterial({color:0,colorWrite:false,depthWrite:true,depthTest:true,side:THREE.DoubleSide}),h=shapeFor(frame.style).h;
- for(const sd of[-1,1]){const blocker=new THREE.Mesh(new THREE.ShapeGeometry(h,24),depthMat);blocker.position.set(sd*(frame.lensCenter||.39),0,.018);blocker.scale.setScalar(frame.lensBlocker||.92);if(frame.style==='cat')blocker.rotation.z=sd*-.10;blocker.renderOrder=-50;modelRoot.add(blocker);}
+function replaceProblemTemples(clone){
+ if(!frame.cleanTemples)return;clone.updateMatrixWorld(true);let removed=0;
+ clone.traverse(n=>{if(!n.isMesh)return;const sz=new THREE.Box3().setFromObject(n).getSize(new THREE.Vector3());if(sz.z>.55){n.visible=false;removed++;}});
+ if(!removed)return;
+ const mat=new THREE.MeshPhysicalMaterial({color:colorHex,metalness:metal?.88:.04,roughness:metal?.27:.32,clearcoat:.75,clearcoatRoughness:.18,envMapIntensity:metal?1:.45});
+ for(const sd of[-1,1]){const pts=[new THREE.Vector3(sd*.695,.075,.085),new THREE.Vector3(sd*.735,.073,-.08),new THREE.Vector3(sd*.755,.045,-.52),new THREE.Vector3(sd*.742,-.005,-.82)];const arm=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),22,metal?.018:.028,8,false),mat);arm.renderOrder=2;const hinge=new THREE.Mesh(new THREE.SphereGeometry(metal?.027:.034,12,10),mat);hinge.position.copy(pts[0]);hinge.renderOrder=3;modelRoot.add(arm,hinge);}
 }
 async function buildGlasses(){
  const token=++buildToken;activeImage=null;pctx.clearRect(0,0,W,H);
  if(!webglReady)return;
  if(frame.png){try{const im=await loadImage(frame.png);if(token!==buildToken)return;activeImage=im;activeMode='png';anchor.visible=false;badge.textContent='پرو مجازی عکس واقعی';return;}catch(e){toast('⚠️ عکس محصول پیدا نشد؛ مدل سه‌بعدی جایگزین شد');}}
  activeMode='3d';badge.textContent=lite?'پرو مجازی سه‌بعدی • سبک':'پرو مجازی سه‌بعدی';
- if(frame.glb){try{const wrap=await loadGLB(frame.glb);if(token!==buildToken)return;clearModel();const clone=wrap.clone(true);const off=frame.glbOffset||[0,0,0],rot=frame.glbRotation||[0,0,0];clone.position.set(off[0]||0,off[1]||0,.12+(off[2]||0));clone.rotation.set(rot[0]||0,rot[1]||0,rot[2]||0);clone.traverse(n=>{if(n.isMesh&&n.material){n.material=Array.isArray(n.material)?n.material.map(tuneGLBMaterial):tuneGLBMaterial(n.material);n.renderOrder=1;}});modelRoot.add(clone);return;}catch(e){toast('⚠️ مدل GLB پیدا نشد؛ فریم جایگزین شد');}}
+ if(frame.glb){try{const wrap=await loadGLB(frame.glb);if(token!==buildToken)return;clearModel();const clone=wrap.clone(true);const off=frame.glbOffset||[0,0,0],rot=frame.glbRotation||[0,0,0];clone.position.set(off[0]||0,off[1]||0,.12+(off[2]||0));clone.rotation.set(rot[0]||0,rot[1]||0,rot[2]||0);clone.traverse(n=>{if(n.isMesh&&n.material){n.material=Array.isArray(n.material)?n.material.map(tuneGLBMaterial):tuneGLBMaterial(n.material);n.renderOrder=1;}});replaceProblemTemples(clone);modelRoot.add(clone);return;}catch(e){toast('⚠️ مدل GLB پیدا نشد؛ فریم جایگزین شد');}}
  procedural();
 }
 
@@ -301,7 +317,7 @@ function worldAtScreen(sp,z){const k=(F-z)/F;return new THREE.Vector3((sp.x-W/2)
 function anchorFor(sp,local,q,scale){const v=local.clone().applyQuaternion(q).multiplyScalar(scale),d=worldAtScreen(sp,v.z);return new THREE.Vector3(d.x-v.x,d.y-v.y,0);}
 function targetFrom(result){
  const p=result.faceLandmarks[0],i1=p[468]||p[33],i2=p[473]||p[263],sp1=screenPoint(i1),sp2=screenPoint(i2);
- const mid={x:(sp1.x+sp2.x)/2,y:(sp1.y+sp2.y)/2},iris=Math.max(1,Math.hypot(sp2.x-sp1.x,sp2.y-sp1.y)),nose=screenPoint(p[168]||p[6]||p[4]);
+ const mid={x:(sp1.x+sp2.x)/2,y:(sp1.y+sp2.y)/2},iris=Math.max(1,Math.hypot(sp2.x-sp1.x,sp2.y-sp1.y)),noseTop=screenPoint(p[168]||p[6]||p[4]),noseForward=screenPoint(p[6]||p[197]||p[168]||p[4]),nose={x:noseForward.x,y:noseTop.y};
  const q=poseQuaternion(result,p),modelWidth=1.44,physicalWidth=frame.widthMM||135,eyeLocal=new THREE.Vector3(0,0,frame.eyeZ||.055),bridgeLocal=new THREE.Vector3(0,frame.bridgeY||.09,frame.bridgeZ||.105);
  let center=worldAtScreen(mid,0),proj=projectedLocalX(center,q),scale=THREE.MathUtils.clamp(physicalWidth*iris/(pdMM*modelWidth*proj),28,Math.max(W,H)*.65);
  /* یک بار مقیاس را روی صفحهٔ واقعی لنز تصحیح می‌کنیم، سپس دو لنگر چشم و پل بینی را حل می‌کنیم. */
@@ -328,7 +344,11 @@ function scanTarget(t){
  samples.push({pos:t.pos.clone(),q:t.q.clone(),scale:t.scale});scanTxt.innerHTML='در حال اسکن صورت…<br>'+samples.length+' از ۳۰';if(samples.length>=30)completeScan();return true;
 }
 document.getElementById('rescan').onclick=()=>{if(!started||!lm)return toast('اول پرو مجازی را شروع کن');scanning=true;samples=[];scanStart=performance.now();scanTxt.innerHTML='در حال اسکن صورت…<br>۰ از ۳۰';scanEl.style.display='flex';if(anchor)anchor.visible=false;pctx.clearRect(0,0,W,H);};
-document.getElementById('pd').onclick=()=>{const v=prompt('فاصله مردمک (PD) از روی نسخه (میلی‌متر):\nخالی = استاندارد ۶۳',String(pdMM));if(v&&!isNaN(+v)&&+v>=45&&+v<=80){pdMM=+v;scaleHistory.length=0;try{localStorage.setItem('tryon-pd',pdMM)}catch(e){}toast('✅ سایز واقعی تنظیم شد');}else toast('📏 سایز فعلی: '+pdMM+' میلی‌متر');};
+const pdModal=document.getElementById('pdModal'),pdInput=document.getElementById('pdInput');
+document.getElementById('pd').onclick=()=>{pdInput.value=String(pdMM);pdModal.classList.add('show');setTimeout(()=>{pdInput.focus();pdInput.select();},120);};
+document.getElementById('pdCancel').onclick=()=>pdModal.classList.remove('show');
+pdModal.onclick=e=>{if(e.target===pdModal)pdModal.classList.remove('show');};
+document.getElementById('pdSave').onclick=()=>{const v=+pdInput.value;if(v>=45&&v<=80){pdMM=v;scaleHistory.length=0;try{localStorage.setItem('tryon-pd',pdMM)}catch(e){}pdModal.classList.remove('show');toast('اندازه با PD '+pdMM+' میلی‌متر تنظیم شد');}else{pdInput.focus();toast('عدد PD باید بین ۴۵ تا ۸۰ باشد');}};
 document.getElementById('wa').onclick=()=>{const cn=frame.colors&&frame.colors.find(c=>c[1]===colorHex);open('https://wa.me/'+SHOP.wa+'?text='+encodeURIComponent('سلام! فریم «'+frame.name+'»'+(cn?' رنگ '+cn[0]:'')+' رو مجازی پرو کردم. برای خرید راهنمایی‌ام کنید 🕶'),'_blank');};
 
 const maskC=document.createElement('canvas'),mctx=maskC.getContext('2d'),maskState={ready:false};
