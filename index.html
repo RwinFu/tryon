@@ -226,9 +226,9 @@ function loadGLB(url){if(glbCache[url])return glbCache[url];glbCache[url]=new Pr
 function tuneGLBMaterial(src){
  const m=src.clone(),name=(m.name||'').toLowerCase();
  const isLens=m.transparent||m.opacity<.82||(m.transmission||0)>.01||/glass|lens|vidro|tint|transparent/.test(name);
- if(isLens){m.color&&m.color.set(frame.style==='aviator'?0x758797:0xa9bed0);m.transparent=true;m.opacity=frame.style==='aviator'?.24:.14;m.depthWrite=false;m.roughness=.08;if('transmission'in m)m.transmission=0;m.side=THREE.DoubleSide;}
- else if(m.color){m.color.set(colorHex);m.metalness=metal?.88:Math.min(m.metalness||0,.12);m.roughness=metal?.28:.23;if('clearcoat'in m){m.clearcoat=1;m.clearcoatRoughness=.12;}}
- m.envMapIntensity=1.15;return m;
+ if(isLens){m.color&&m.color.set(0xdbe5ec);m.transparent=true;m.opacity=.10;m.depthWrite=false;m.roughness=.10;if('transmission'in m)m.transmission=0;m.side=THREE.DoubleSide;m.envMapIntensity=.18;}
+ else if(m.color){m.color.set(colorHex);m.metalness=metal?.88:Math.min(m.metalness||0,.12);m.roughness=metal?.28:.23;if('clearcoat'in m){m.clearcoat=1;m.clearcoatRoughness=.12;}m.envMapIntensity=1.15;}
+ return m;
 }
 function addGLBLensBlockers(){
  const depthMat=new THREE.MeshBasicMaterial({color:0,colorWrite:false,depthWrite:true,depthTest:true,side:THREE.DoubleSide}),h=shapeFor(frame.style).h;
@@ -239,7 +239,7 @@ async function buildGlasses(){
  if(!webglReady)return;
  if(frame.png){try{const im=await loadImage(frame.png);if(token!==buildToken)return;activeImage=im;activeMode='png';anchor.visible=false;badge.textContent='پرو مجازی عکس واقعی';return;}catch(e){toast('⚠️ عکس محصول پیدا نشد؛ مدل سه‌بعدی جایگزین شد');}}
  activeMode='3d';badge.textContent=lite?'پرو مجازی سه‌بعدی • سبک':'پرو مجازی سه‌بعدی';
- if(frame.glb){try{const wrap=await loadGLB(frame.glb);if(token!==buildToken)return;clearModel();const clone=wrap.clone(true);const off=frame.glbOffset||[0,0,0],rot=frame.glbRotation||[0,0,0];clone.position.set(off[0]||0,off[1]||0,.045+(off[2]||0));clone.rotation.set(rot[0]||0,rot[1]||0,rot[2]||0);clone.traverse(n=>{if(n.isMesh&&n.material){n.material=Array.isArray(n.material)?n.material.map(tuneGLBMaterial):tuneGLBMaterial(n.material);n.renderOrder=1;}});modelRoot.add(clone);addGLBLensBlockers();return;}catch(e){toast('⚠️ مدل GLB پیدا نشد؛ فریم جایگزین شد');}}
+ if(frame.glb){try{const wrap=await loadGLB(frame.glb);if(token!==buildToken)return;clearModel();const clone=wrap.clone(true);const off=frame.glbOffset||[0,0,0],rot=frame.glbRotation||[0,0,0];clone.position.set(off[0]||0,off[1]||0,.12+(off[2]||0));clone.rotation.set(rot[0]||0,rot[1]||0,rot[2]||0);clone.traverse(n=>{if(n.isMesh&&n.material){n.material=Array.isArray(n.material)?n.material.map(tuneGLBMaterial):tuneGLBMaterial(n.material);n.renderOrder=1;}});modelRoot.add(clone);return;}catch(e){toast('⚠️ مدل GLB پیدا نشد؛ فریم جایگزین شد');}}
  procedural();
 }
 
