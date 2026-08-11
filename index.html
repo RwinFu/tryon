@@ -113,7 +113,8 @@ const FRAMES=[
  {id:1,name:'مربعی کلاسیک',style:'square',glb:'./square.glb',widthMM:138,eyeZ:.060,bridgeY:.108,bridgeZ:.085,noseWeight:1,cleanTemples:true,lensCenter:.38,lensBlocker:.96,colors:[['مشکی','#111214',0],['لاک‌پشتی','#6b3f20',0],['طلایی','#c8a33a',1]]},
  {id:2,name:'گرد رترو',style:'round',glb:'./round.glb',widthMM:136,eyeZ:.055,bridgeY:.120,bridgeZ:.108,noseWeight:1,lensCenter:.36,lensBlocker:.82,colors:[['مشکی','#111214',0],['نقره‌ای','#b9bec5',1]]},
  {id:3,name:'گربه‌ای',style:'cat',glb:'./cat.glb',widthMM:140,eyeZ:.050,bridgeY:.110,bridgeZ:.107,noseWeight:1,lensCenter:.37,lensBlocker:.86,colors:[['مشکی','#111214',0],['قرمز','#7d1822',0]]},
- {id:4,name:'خلبانی',style:'aviator',glb:'./aviator.glb',widthMM:140,eyeZ:.068,bridgeY:.139,bridgeZ:.113,noseWeight:1,lensCenter:.40,lensBlocker:.94,colors:[['طلایی','#c8a33a',1],['مشکی','#111214',0]]}
+ {id:4,name:'خلبانی',style:'aviator',glb:'./aviator.glb',widthMM:140,eyeZ:.068,bridgeY:.139,bridgeZ:.113,noseWeight:1,lensCenter:.40,lensBlocker:.94,colors:[['طلایی','#c8a33a',1],['مشکی','#111214',0]]},
+ {id:5,name:'طبی اسپایدرمنی',style:'square',png:'./arvin-spiderman.png',pngYOffset:-.03,widthMM:138,price:'۲ میلیارد',colors:[['مشکی','#111214',0]]}
 ];
 /* مدل‌های GLB این نسخه تحت CC BY 4.0 هستند؛ مشخصات کامل سازندگان در MODEL-LICENSES.txt قرار دارد. */
 /* برای عکس واقعی به همان محصول png:'./frames/1.png' و برای مدل سه‌بعدی دلخواه glb:'./models/1.glb' اضافه کنید. */
@@ -358,7 +359,7 @@ autoPdToggle.onchange=()=>{pdInput.disabled=autoPdToggle.checked;if(!autoPdToggl
 document.getElementById('pdCancel').onclick=()=>pdModal.classList.remove('show');
 pdModal.onclick=e=>{if(e.target===pdModal)pdModal.classList.remove('show');};
 document.getElementById('pdSave').onclick=()=>{if(autoPdToggle.checked){autoPD=true;autoPdHistory.length=0;scaleHistory.length=0;try{localStorage.setItem('tryon-pd-mode','auto')}catch(e){}pdModal.classList.remove('show');refreshFitStatus();toast('فیت خودکار برای این مشتری فعال شد');return;}const v=+pdInput.value;if(v>=45&&v<=80){autoPD=false;pdMM=v;scaleHistory.length=0;try{localStorage.setItem('tryon-pd',pdMM);localStorage.setItem('tryon-pd-mode','manual')}catch(e){}pdModal.classList.remove('show');refreshFitStatus();toast('اندازه با PD '+pdMM+' میلی‌متر تنظیم شد');}else{pdInput.focus();toast('عدد PD باید بین ۴۵ تا ۸۰ باشد');}};
-document.getElementById('wa').onclick=()=>{const cn=frame.colors&&frame.colors.find(c=>c[1]===colorHex);open('https://wa.me/'+SHOP.wa+'?text='+encodeURIComponent('سلام! فریم «'+frame.name+'»'+(cn?' رنگ '+cn[0]:'')+' رو مجازی پرو کردم. برای خرید راهنمایی‌ام کنید 🕶'),'_blank');};
+document.getElementById('wa').onclick=()=>{const cn=frame.colors&&frame.colors.find(c=>c[1]===colorHex);open('https://wa.me/'+SHOP.wa+'?text='+encodeURIComponent('سلام! فریم «'+frame.name+'»'+(cn?' رنگ '+cn[0]:'')+(frame.price?' با قیمت '+frame.price:'')+' رو مجازی پرو کردم. برای خرید راهنمایی‌ام کنید.'),'_blank');};
 
 const maskC=document.createElement('canvas'),mctx=maskC.getContext('2d'),maskState={ready:false};
 function updateHairMask(res){try{const mask=res.categoryMask,arr=mask.getAsUint8Array(),mw=mask.width||256,mh=mask.height||256;if(maskC.width!==mw||maskC.height!==mh){maskC.width=mw;maskC.height=mh;}const im=mctx.createImageData(mw,mh),d=im.data;for(let i=0;i<arr.length;i++){const o=i*4;d[o]=d[o+1]=d[o+2]=255;d[o+3]=arr[i]===1?255:0;}mctx.putImageData(im,0,0);maskState.ready=true;if(mask&&typeof mask.close==='function')mask.close();}catch(e){segBroken=true;seg=null;maskState.ready=false;}}
@@ -408,8 +409,8 @@ const SVG={
  aviator:'<svg viewBox="0 0 64 24" width="36" height="14"><g fill="none" stroke="currentColor" stroke-width="3"><ellipse cx="15" cy="12" rx="12" ry="10"/><ellipse cx="49" cy="12" rx="12" ry="10"/><path d="M26 8h12"/></g></svg>'
 };
 const fBox=document.getElementById('frames'),cBox=document.getElementById('colors'),productName=document.getElementById('productName'),productSize=document.getElementById('productSize'),fitStatus=document.getElementById('fitStatus');
-function refreshFitStatus(){if(autoPD){fitStatus.textContent='فیت خودکار فعال • برآورد نمایشی '+autoPdMM.toFixed(1)+' mm';pdButton.textContent='⌁ PD خودکار';}else{fitStatus.textContent='تنظیم دستی PD روی '+pdMM+' mm';pdButton.textContent='⌁ PD دستی';}}
-function updateMeta(){productName.textContent=frame.name;productSize.textContent=(frame.widthMM||'—')+' میلی‌متر';refreshFitStatus();}
+function refreshFitStatus(){const w='عرض '+(frame.widthMM||'—')+' mm • ';if(autoPD){fitStatus.textContent=w+'فیت خودکار '+autoPdMM.toFixed(1)+' mm';pdButton.textContent='⌁ PD خودکار';}else{fitStatus.textContent=w+'PD دستی '+pdMM+' mm';pdButton.textContent='⌁ PD دستی';}}
+function updateMeta(){productName.textContent=frame.name;productSize.textContent=frame.price||((frame.widthMM||'—')+' میلی‌متر');refreshFitStatus();}
 function buildColors(){cBox.innerHTML='';if(!frame.colors||!frame.colors.length){cBox.style.display='none';return;}cBox.style.display='flex';frame.colors.forEach(c=>{const d=document.createElement('div');d.className='dot';d.title=c[0];d.setAttribute('aria-label',c[0]);d.style.background=c[1];d.onclick=()=>{colorHex=c[1];metal=c[2];[...cBox.children].forEach(x=>x.classList.remove('on'));d.classList.add('on');buildGlasses();};if(c[1]===colorHex)d.classList.add('on');cBox.appendChild(d);});}
 FRAMES.forEach(f=>{const b=document.createElement('button');b.className='chip';b.innerHTML=(SVG[f.style]||'🕶')+'<span>'+f.name+'</span>';b.onclick=()=>{frame=f;[...fBox.children].forEach(x=>x.classList.remove('on'));b.classList.add('on');history.replaceState(null,'','#f='+f.id);if(f.colors&&f.colors.length){colorHex=f.colors[0][1];metal=f.colors[0][2];}scaleHistory.length=0;updateMeta();buildColors();buildGlasses();};if(f===frame)b.classList.add('on');fBox.appendChild(b);});
 updateMeta();buildColors();
