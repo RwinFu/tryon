@@ -227,7 +227,7 @@ function tuneGLBMaterial(src){
  const m=src.clone(),name=(m.name||'').toLowerCase();
  const isLens=m.transparent||m.opacity<.82||(m.transmission||0)>.01||/glass|lens|vidro|tint|transparent/.test(name);
  if(isLens){m.color&&m.color.set(0xdbe5ec);m.transparent=true;m.opacity=.10;m.depthWrite=false;m.roughness=.10;if('transmission'in m)m.transmission=0;m.side=THREE.DoubleSide;m.envMapIntensity=.18;}
- else if(m.color){m.color.set(colorHex);m.metalness=metal?.88:Math.min(m.metalness||0,.12);m.roughness=metal?.28:.23;if('clearcoat'in m){m.clearcoat=1;m.clearcoatRoughness=.12;}m.envMapIntensity=1.15;}
+ else if(m.color){m.color.set(colorHex);if(metal){m.metalness=.92;m.roughness=.24;m.envMapIntensity=1.05;if('clearcoat'in m){m.clearcoat=.65;m.clearcoatRoughness=.14;}}else{m.metalness=.03;m.roughness=.34;m.envMapIntensity=.42;if('clearcoat'in m){m.clearcoat=.72;m.clearcoatRoughness=.20;}}}
  return m;
 }
 function addGLBLensBlockers(){
@@ -321,7 +321,11 @@ function drawProduct(t){pctx.clearRect(0,0,W,H);if(activeMode!=='png'||!activeIm
  const w=(frame.widthMM||135)*t.iris/pdMM*(frame.pngScale||1),h=w*(activeImage.naturalHeight/activeImage.naturalWidth),yo=(frame.pngYOffset||0)*w;
  pctx.save();pctx.translate(t.mid.x,t.mid.y);pctx.rotate(angle);pctx.drawImage(activeImage,-w/2,-h/2+yo,w,h);pctx.restore();
 }
-function drawShadows(){if(activeMode!=='3d'||!anchor||!anchor.visible)return;anchor.updateMatrixWorld(true);for(const sd of[-1,1]){const wp=anchor.localToWorld(new THREE.Vector3(sd*.40,-.22,.03)).project(camera),x=(wp.x*.5+.5)*W,y=(-wp.y*.5+.5)*H,rad=Math.max(8,state.scale*.30);const g=ctx.createRadialGradient(x,y,rad*.15,x,y,rad);g.addColorStop(0,'rgba(0,0,0,.20)');g.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=g;ctx.beginPath();ctx.ellipse(x,y+rad*.24,rad,rad*.70,0,0,Math.PI*2);ctx.fill();}}
+function drawShadows(){
+ if(activeMode!=='3d'||!anchor||!anchor.visible)return;anchor.updateMatrixWorld(true);
+ for(const sd of[-1,1]){const wp=anchor.localToWorld(new THREE.Vector3(sd*.40,-.19,.015)).project(camera),x=(wp.x*.5+.5)*W,y=(-wp.y*.5+.5)*H,rad=Math.max(7,state.scale*.25);const g=ctx.createRadialGradient(x,y,rad*.12,x,y,rad);g.addColorStop(0,'rgba(0,0,0,.11)');g.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=g;ctx.beginPath();ctx.ellipse(x,y+rad*.20,rad,rad*.55,0,0,Math.PI*2);ctx.fill();}
+ const bp=anchor.localToWorld(new THREE.Vector3(0,-.055,.02)).project(camera),bx=(bp.x*.5+.5)*W,by=(-bp.y*.5+.5)*H,br=Math.max(5,state.scale*.105),bg=ctx.createRadialGradient(bx,by,1,bx,by,br);bg.addColorStop(0,'rgba(0,0,0,.20)');bg.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=bg;ctx.beginPath();ctx.ellipse(bx,by+br*.16,br*.72,br,0,0,Math.PI*2);ctx.fill();
+}
 function renderTarget(t,now){
  if(scanTarget(t)){if(anchor)anchor.visible=false;pctx.clearRect(0,0,W,H);return;}
  acceptTarget(t,now);lastFaceAt=now;
