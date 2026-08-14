@@ -1,16 +1,17 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="fa" dir="rtl">
- <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <title>اپتیک آروین | پرو مجازی عینک</title>
-  <style>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>اپتیک آروین | پرو مجازی عینک</title>
+<style>
 @font-face{font-family:Vazirmatn;src:url('./vendor/Vazirmatn-Regular.woff2') format('woff2');font-weight:100 900;font-style:normal;font-display:swap}
 :root{--acc:#d4aa62;--ink:#101114;--glass:rgba(13,14,17,.78);--line:rgba(255,255,255,.13)}
 *{margin:0;box-sizing:border-box;font-family:Vazirmatn,Tahoma,Arial,sans-serif;-webkit-tap-highlight-color:transparent}
 body{background:#070809;overflow:hidden;user-select:none;color:#fff}
 button{font-family:inherit}
 canvas{position:fixed;inset:0;width:100vw;height:100vh;object-fit:cover;transform:scaleX(-1);transform-origin:50% 50%}
+#cv{filter:brightness(1.022) contrast(.982) saturate(1.018) blur(.28px);will-change:filter}
 #gl,#prod,#oc{pointer-events:none}
 #top{position:fixed;top:0;right:0;left:0;padding:calc(13px + env(safe-area-inset-top)) 18px 22px;display:flex;justify-content:space-between;align-items:center;background:linear-gradient(180deg,rgba(4,5,7,.84),rgba(4,5,7,.28) 65%,transparent);z-index:5}
 #top h1{color:#fff;font-size:17px;font-weight:900;letter-spacing:-.4px;text-shadow:0 2px 12px #000}
@@ -66,79 +67,47 @@ canvas{position:fixed;inset:0;width:100vw;height:100vh;object-fit:cover;transfor
 @keyframes sc{0%{top:4%}100%{top:96%}}
 #scanTxt{color:#fff;font-size:13px;background:rgba(0,0,0,.6);padding:8px 16px;border-radius:12px;text-align:center}
 </style>
- </head>
- <body>
-  <canvas id="cv"></canvas>
-  <canvas id="gl"></canvas>
-  <canvas id="prod"></canvas>
-  <canvas id="oc"></canvas>
-  <div id="top">
-   <h1 id="shopTitle"></h1>
-   <div id="badge">فیت هوشمند 3D</div>
-  </div>
-  <div id="hint"></div>
-  <div id="ig">
-   <span>برای اجرای دوربین، از منوی ⋯ گزینه «Open in Browser» رو بزن</span>
-   <button onclick="this.parentNode.style.display='none'">باشه</button>
-  </div>
-  <div id="scan">
-   <div class="frame">
-    <div class="line"></div>
-   </div>
-   <div id="scanTxt">
-    در حال اسکن صورت…
-    <br>
-    صاف رو به دوربین
-   </div>
-  </div>
-  <div id="ui">
-   <div id="productMeta">
-    <div>
-     <strong id="productName">انتخاب فریم</strong><small id="fitStatus">فیت هوشمند در حال آماده‌سازی</small>
-    </div>
-    <span id="productSize">—</span>
-   </div>
-   <div class="row" id="frames"></div>
-   <div class="row" id="colors"></div>
-   <div class="actions">
-    <button class="btn" id="rescan">↻ اسکن مجدد</button>
-    <button class="btn" id="pd">⌁ تنظیم PD</button>
-    <button class="btn" id="wa">سفارش مستقیم</button>
-    <button class="btn" id="snap">ثبت و اشتراک</button>
-   </div>
-  </div>
-  <div id="intro">
-   <div class="card">
-    <div class="logo">🕶</div>
-    <h2 id="introShop"></h2>
-    <p class="sub">فیت خودکار، اندازه واقعی و پرو زنده با دوربین گوشی</p>
-    <div class="steps">
-     <div>۱. اجازه دسترسی به دوربین رو بده</div>
-     <div>۲. صاف و روبه‌رو، تو نور کافی بایست</div>
-     <div>۳. فریم‌ها رو ورق بزن، اسکرین‌شات بگیر و سفارش بده</div>
-    </div>
-    <button id="start">شروع پرو مجازی</button>
-    <p class="priv">🔒 پردازش تصویر فقط روی گوشی خودته؛ هیچ عکسی ارسال نمی‌شه.</p>
-   </div>
-  </div>
-  <div id="pdModal" class="modal">
-   <div class="modalCard">
-    <h3>تنظیم فاصلهٔ مردمک</h3>
-    <p>حالت خودکار، اندازهٔ نمایشی فریم را از عرض صورت و فاصلهٔ چشم‌ها تنظیم می‌کند. این عدد برای پرو مجازی است و جای اندازه‌گیری پزشکی نسخه را نمی‌گیرد.</p>
-    <label class="autoFitRow"><span><b>فیت خودکار برای هر مشتری</b><small>پیشنهادشده برای پرو مجازی</small></span><input id="autoPdToggle" type="checkbox" checked><i></i></label> <input id="pdInput" type="number" inputmode="decimal" min="45" max="80" step="0.5" value="63">
-    <div class="modalActions">
-     <button id="pdCancel" class="modalCancel">انصراف</button>
-     <button id="pdSave" class="modalSave">ذخیره و تنظیم اندازه</button>
-    </div>
-   </div>
-  </div>
-  <div id="load">
-   <div class="spin"></div>
-   <div id="loadTxt">در حال آماده‌سازی…</div>
-  </div>
-  <script>
+</head>
+<body>
+<canvas id="cv"></canvas><canvas id="gl"></canvas><canvas id="prod"></canvas><canvas id="oc"></canvas>
+<div id="top"><h1 id="shopTitle"></h1><div id="badge">فیت هوشمند 3D</div></div>
+<div id="hint"></div>
+<div id="ig"><span>برای اجرای دوربین، از منوی ⋯ گزینه «Open in Browser» رو بزن</span><button onclick="this.parentNode.style.display='none'">باشه</button></div>
+<div id="scan"><div class="frame"><div class="line"></div></div><div id="scanTxt">در حال اسکن صورت…<br>صاف رو به دوربین</div></div>
+<div id="ui">
+ <div id="productMeta"><div><strong id="productName">انتخاب فریم</strong><small id="fitStatus">فیت هوشمند در حال آماده‌سازی</small></div><span id="productSize">—</span></div>
+ <div class="row" id="frames"></div>
+ <div class="row" id="colors"></div>
+ <div class="actions">
+  <button class="btn" id="rescan">↻ اسکن مجدد</button>
+  <button class="btn" id="pd">⌁ تنظیم PD</button>
+  <button class="btn" id="wa">سفارش مستقیم</button>
+  <button class="btn" id="snap">ثبت و اشتراک</button>
+ </div>
+</div>
+<div id="intro"><div class="card">
+ <div class="logo">🕶</div>
+ <h2 id="introShop"></h2>
+ <p class="sub">فیت خودکار، اندازه واقعی و پرو زنده با دوربین گوشی</p>
+ <div class="steps">
+  <div>۱. اجازه دسترسی به دوربین رو بده</div>
+  <div>۲. صاف و روبه‌رو، تو نور کافی بایست</div>
+  <div>۳. فریم‌ها رو ورق بزن، اسکرین‌شات بگیر و سفارش بده</div>
+ </div>
+ <button id="start">شروع پرو مجازی</button>
+ <p class="priv">🔒 پردازش تصویر فقط روی گوشی خودته؛ هیچ عکسی ارسال نمی‌شه.</p>
+</div></div>
+<div id="pdModal" class="modal"><div class="modalCard">
+ <h3>تنظیم فاصلهٔ مردمک</h3>
+ <p>حالت خودکار، اندازهٔ نمایشی فریم را از عرض صورت و فاصلهٔ چشم‌ها تنظیم می‌کند. این عدد برای پرو مجازی است و جای اندازه‌گیری پزشکی نسخه را نمی‌گیرد.</p>
+ <label class="autoFitRow"><span><b>فیت خودکار برای هر مشتری</b><small>پیشنهادشده برای پرو مجازی</small></span><input id="autoPdToggle" type="checkbox" checked><i></i></label>
+ <input id="pdInput" type="number" inputmode="decimal" min="45" max="80" step="0.5" value="63">
+ <div class="modalActions"><button id="pdCancel" class="modalCancel">انصراف</button><button id="pdSave" class="modalSave">ذخیره و تنظیم اندازه</button></div>
+</div></div>
+<div id="load"><div class="spin"></div><div id="loadTxt">در حال آماده‌سازی…</div></div>
+<script>
 'use strict';
- 
+
 /* ===================== فقط این بخش را برای فروشگاه و محصولات ویرایش کنید ===================== */
 const SHOP={name:'اپتیک آروین',wa:'989120000000',accent:'#d4aa62'};
 const FRAMES=[
@@ -151,7 +120,7 @@ const FRAMES=[
 /* مدل‌های GLB این نسخه تحت CC BY 4.0 هستند؛ مشخصات کامل سازندگان در MODEL-LICENSES.txt قرار دارد. */
 /* برای عکس واقعی به همان محصول png:'./frames/1.png' و برای مدل سه‌بعدی دلخواه glb:'./models/1.glb' اضافه کنید. */
 /* ============================================================================================ */
- 
+
 const SELF=/^https?:$/.test(location.protocol)?new URL('.',location.href).href.replace(/\/$/,''):'https://rwinfu.github.io/tryon';
 const MP_VER='0.10.14',THREE_VER='0.147.0';
 const FACE_MODELS=[
@@ -179,13 +148,13 @@ const VISION_SOURCES=[
  {module:'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@'+MP_VER,wasm:'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@'+MP_VER+'/wasm'},
  {module:'https://unpkg.com/@mediapipe/tasks-vision@'+MP_VER,wasm:'https://unpkg.com/@mediapipe/tasks-vision@'+MP_VER+'/wasm'}
 ];
- 
+
 window.__ok=true;
 if(/Instagram|FBAN|FBAV/.test(navigator.userAgent))document.getElementById('ig').style.display='flex';
 document.getElementById('shopTitle').innerHTML=SHOP.name+'<span>پرو مجازی هوشمند عینک</span>';
 document.getElementById('introShop').textContent=SHOP.name;
 document.documentElement.style.setProperty('--acc',SHOP.accent);
- 
+
 const cv=document.getElementById('cv'),ctx=cv.getContext('2d',{alpha:false});
 const glc=document.getElementById('gl'),prod=document.getElementById('prod'),pctx=prod.getContext('2d');
 const oc=document.getElementById('oc'),octx=oc.getContext('2d');
@@ -199,13 +168,13 @@ const autoPdHistory=[];
 try{const saved=+localStorage.getItem('tryon-pd');if(saved>=45&&saved<=80)pdMM=saved;}catch(e){}
 const mh=location.hash.match(/f=(\d+)/);if(mh){const f=FRAMES.find(x=>x.id==mh[1]);if(f)frame=f;}
 if(frame.colors&&frame.colors.length){colorHex=frame.colors[0][1];metal=frame.colors[0][2];}
- 
+
 let renderer=null,scene=null,camera=null,anchor=null,modelRoot=null,headOccluder=null,lensMat=null;
 let TV=null,vision=null,lm=null,seg=null,segLoading=false,segBroken=false,webglReady=false;
 let activeMode='3d',activeImage=null,buildToken=0,lastResult=null,lastVideoTime=-1,lastFaceAt=0,startedAt=0;
 let frameCounter=0,fpsFrames=0,fpsFrom=0;
 const imageCache={},glbCache={};
- 
+
 function toast(m){const t=document.createElement('div');t.innerHTML=m;t.style.cssText='position:fixed;top:64px;left:50%;transform:translateX(-50%);background:rgba(15,15,20,.92);color:#fff;padding:10px 18px;border-radius:12px;z-index:20;font-size:12px;border:1px solid rgba(255,255,255,.3);text-align:center;font-family:Vazirmatn,Tahoma;max-width:88vw';document.body.appendChild(t);setTimeout(()=>t.remove(),3000);}
 function showHint(m,force){const n=performance.now();if(!force&&n-hintT<3500)return;hintT=n;hint.textContent=m;hint.style.opacity=1;setTimeout(()=>hint.style.opacity=0,2500);}
 function setLoad(m){loadTxt.innerHTML=m;}
@@ -229,13 +198,13 @@ async function createWithFallback(factory,models){let last;
  for(const model of models){for(const delegate of['GPU','CPU']){try{return await factory(model,delegate);}catch(e){last=e;}}}
  throw last||new Error('model unavailable');
 }
- 
+
 function resizeCanvases(){
  W=video.videoWidth;H=video.videoHeight;
  for(const c of[cv,glc,prod,oc]){c.width=W;c.height=H;}
  if(renderer){renderer.setPixelRatio(1);renderer.setSize(W,H,false);F=Math.max(W,H)*.95;camera.position.set(0,0,F);camera.fov=2*Math.atan(H/(2*F))*180/Math.PI;camera.aspect=W/H;camera.near=1;camera.far=F*4;camera.updateProjectionMatrix();camera.updateMatrixWorld();}
 }
- 
+
 function initThree(){
  renderer=new THREE.WebGLRenderer({canvas:glc,alpha:true,antialias:!lite,preserveDrawingBuffer:true,powerPreference:'high-performance'});
  renderer.setPixelRatio(1);renderer.outputEncoding=THREE.sRGBEncoding;renderer.setClearColor(0x000000,0);
@@ -288,9 +257,9 @@ function spidermanPhoto3D(image,templeImage){
  for(const sd of[-1,1]){const d=new THREE.Mesh(new THREE.ShapeGeometry(hole,28),depthMat);d.position.set(sd*.365,0,.073);d.renderOrder=-35;modelRoot.add(d);}
  if(templeImage){
   const tt=new THREE.Texture(templeImage);tt.needsUpdate=true;tt.encoding=THREE.sRGBEncoding;tt.minFilter=THREE.LinearMipmapLinearFilter;tt.magFilter=THREE.LinearFilter;
-  const ta=(templeImage.naturalHeight||templeImage.height)/(templeImage.naturalWidth||templeImage.width),tm=new THREE.MeshBasicMaterial({map:tt,transparent:true,alphaTest:.035,depthWrite:true,side:THREE.DoubleSide,toneMapped:false});
-  /* طول واقعی ۱۴۲mm: لولا در z=+0.07 و سرِ خمیده در z=-1.41، پشت گوش قرار می‌گیرد. */
-  for(const sd of[-1,1]){const arm=new THREE.Mesh(new THREE.PlaneGeometry(1.48,1.48*ta),tm);arm.rotation.y=-Math.PI/2;arm.position.set(sd*.705,-.040,-.67);arm.renderOrder=2;modelRoot.add(arm);}
+  const ta=(templeImage.naturalHeight||templeImage.height)/(templeImage.naturalWidth||templeImage.width),tm=new THREE.MeshBasicMaterial({map:tt,transparent:true,alphaTest:.075,depthWrite:false,side:THREE.DoubleSide,toneMapped:false});
+  /* دستهٔ واقعی به یک Ribbon خمیده تبدیل می‌شود: لولا در z=+0.07 و سرِ خمیده در z=-1.41 پشت گوش است. */
+  for(const sd of[-1,1]){const geo=new THREE.PlaneGeometry(1.48,1.48*ta,28,1),pa=geo.attributes.position;for(let i=0;i<pa.count;i++){const u=(pa.getX(i)+.74)/1.48,bulge=.035*Math.sin(Math.PI*u)-.018*(1-u);pa.setZ(i,-sd*bulge);}pa.needsUpdate=true;geo.computeVertexNormals();const arm=new THREE.Mesh(geo,tm);arm.rotation.y=-Math.PI/2;arm.position.set(sd*.705,-.040,-.67);arm.renderOrder=2;modelRoot.add(arm);}
  }else{
   const armMat=new THREE.MeshPhysicalMaterial({color:0x090a0c,metalness:.25,roughness:.42});for(const sd of[-1,1]){const arm=new THREE.Mesh(new THREE.BoxGeometry(.018,.023,.34),armMat);arm.position.set(sd*.700,.075,-.075);modelRoot.add(arm);}
  }
@@ -325,7 +294,7 @@ async function buildGlasses(){
  if(frame.glb){try{const wrap=await loadGLB(frame.glb);if(token!==buildToken)return;clearModel();const clone=wrap.clone(true);const off=frame.glbOffset||[0,0,0],rot=frame.glbRotation||[0,0,0];clone.position.set(off[0]||0,off[1]||0,.12+(off[2]||0));clone.rotation.set(rot[0]||0,rot[1]||0,rot[2]||0);clone.traverse(n=>{if(n.isMesh&&n.material){n.material=Array.isArray(n.material)?n.material.map(tuneGLBMaterial):tuneGLBMaterial(n.material);n.renderOrder=1;}});replaceProblemTemples(clone);modelRoot.add(clone);return;}catch(e){toast('⚠️ مدل GLB پیدا نشد؛ فریم جایگزین شد');}}
  procedural();
 }
- 
+
 async function initSegmenter(){if(segLoading||seg||segBroken)return;segLoading=true;
  try{seg=await createWithFallback((model,delegate)=>TV.ImageSegmenter.createFromOptions(vision,{baseOptions:{modelAssetPath:model,delegate},runningMode:'VIDEO',outputCategoryMask:true,outputConfidenceMasks:false}),SEG_MODELS);}
  catch(e){segBroken=true;toast('ℹ️ مدل مو در دسترس نیست؛ بقیهٔ پرو فعال است');}
@@ -348,7 +317,7 @@ async function start(){if(started)return;started=true;load.style.display='flex';
 document.getElementById('start').onclick=()=>{document.getElementById('intro').style.display='none';start();};
 document.addEventListener('visibilitychange',()=>{const was=running;running=!document.hidden;if(running&&!was&&started)requestAnimationFrame(loop);});
 window.addEventListener('orientationchange',()=>setTimeout(()=>{if(video.videoWidth)resizeCanvases();},300));
- 
+
 /* مختصات داخلی هر چهار canvas دقیقاً مختصات خام دوربین است؛ آینه فقط یک بار در CSS اعمال می‌شود. */
 const state={ready:false,pos:null,q:null,scale:100,last:0,eye:null,nose:null},scaleHistory=[];
 let scanning=false,samples=[],scanStart=0;
@@ -412,7 +381,7 @@ document.getElementById('pdCancel').onclick=()=>pdModal.classList.remove('show')
 pdModal.onclick=e=>{if(e.target===pdModal)pdModal.classList.remove('show');};
 document.getElementById('pdSave').onclick=()=>{if(autoPdToggle.checked){autoPD=true;autoPdHistory.length=0;autoPdMM=63;autoPdLocked=false;scaleHistory.length=0;try{localStorage.setItem('tryon-pd-mode','auto')}catch(e){}pdModal.classList.remove('show');refreshFitStatus();toast('فیت خودکار برای این مشتری فعال شد');return;}const v=+pdInput.value;if(v>=45&&v<=80){autoPD=false;pdMM=v;scaleHistory.length=0;try{localStorage.setItem('tryon-pd',pdMM);localStorage.setItem('tryon-pd-mode','manual')}catch(e){}pdModal.classList.remove('show');refreshFitStatus();toast('اندازه با PD '+pdMM+' میلی‌متر تنظیم شد');}else{pdInput.focus();toast('عدد PD باید بین ۴۵ تا ۸۰ باشد');}};
 document.getElementById('wa').onclick=()=>{const cn=frame.colors&&frame.colors.find(c=>c[1]===colorHex);open('https://wa.me/'+SHOP.wa+'?text='+encodeURIComponent('سلام! فریم «'+frame.name+'»'+(cn?' رنگ '+cn[0]:'')+(frame.price?' با قیمت '+frame.price:'')+' رو مجازی پرو کردم. برای خرید راهنمایی‌ام کنید.'),'_blank');};
- 
+
 const maskC=document.createElement('canvas'),mctx=maskC.getContext('2d'),maskState={ready:false};
 function updateHairMask(res){try{const mask=res.categoryMask,arr=mask.getAsUint8Array(),mw=mask.width||256,mh=mask.height||256;if(maskC.width!==mw||maskC.height!==mh){maskC.width=mw;maskC.height=mh;}const im=mctx.createImageData(mw,mh),d=im.data;for(let i=0;i<arr.length;i++){const o=i*4;d[o]=d[o+1]=d[o+2]=255;d[o+3]=arr[i]===1?255:0;}mctx.putImageData(im,0,0);maskState.ready=true;if(mask&&typeof mask.close==='function')mask.close();}catch(e){segBroken=true;seg=null;maskState.ready=false;}}
 function drawHair(){octx.clearRect(0,0,W,H);if(!maskState.ready)return;octx.save();octx.filter='blur(3px)';octx.drawImage(maskC,0,0,W,H);octx.filter='none';octx.globalCompositeOperation='source-in';octx.drawImage(video,0,0,W,H);octx.restore();}
@@ -423,8 +392,7 @@ function drawProduct(t){pctx.clearRect(0,0,W,H);if(activeMode!=='png'||!activeIm
 }
 function drawShadows(){
  if(activeMode!=='3d'||!anchor||!anchor.visible)return;anchor.updateMatrixWorld(true);
- for(const sd of[-1,1]){const wp=anchor.localToWorld(new THREE.Vector3(sd*.40,-.19,.015)).project(camera),x=(wp.x*.5+.5)*W,y=(-wp.y*.5+.5)*H,rad=Math.max(7,state.scale*.25);const g=ctx.createRadialGradient(x,y,rad*.12,x,y,rad);g.addColorStop(0,'rgba(0,0,0,.11)');g.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=g;ctx.beginPath();ctx.ellipse(x,y+rad*.20,rad,rad*.55,0,0,Math.PI*2);ctx.fill();}
- const bp=anchor.localToWorld(new THREE.Vector3(0,-.055,.02)).project(camera),bx=(bp.x*.5+.5)*W,by=(-bp.y*.5+.5)*H,br=Math.max(5,state.scale*.105),bg=ctx.createRadialGradient(bx,by,1,bx,by,br);bg.addColorStop(0,'rgba(0,0,0,.20)');bg.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=bg;ctx.beginPath();ctx.ellipse(bx,by+br*.16,br*.72,br,0,0,Math.PI*2);ctx.fill();
+ for(const sd of[-1,1]){const wp=anchor.localToWorld(new THREE.Vector3(sd*.40,-.19,.015)).project(camera),x=(wp.x*.5+.5)*W,y=(-wp.y*.5+.5)*H,rad=Math.max(7,state.scale*.25);const g=ctx.createRadialGradient(x,y,rad*.12,x,y,rad);g.addColorStop(0,'rgba(0,0,0,.075)');g.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=g;ctx.beginPath();ctx.ellipse(x,y+rad*.20,rad,rad*.50,0,0,Math.PI*2);ctx.fill();}
 }
 function renderTarget(t,now){
  if(scanTarget(t)){if(anchor)anchor.visible=false;pctx.clearRect(0,0,W,H);return;}
@@ -447,13 +415,13 @@ function loop(now){
  else if(lastResult&&now-lastFaceAt<350&&activeMode==='3d')drawShadows();
  drawHair();if(renderer){renderer.clear();renderer.render(scene,camera);}
 }
- 
+
 document.getElementById('snap').onclick=()=>{if(!W)return toast('اول دوربین را روشن کن');if(renderer)renderer.render(scene,camera);const out=document.createElement('canvas');out.width=W;out.height=H;const c2=out.getContext('2d');
- for(const layer of[cv,glc,prod,oc]){c2.save();c2.translate(W,0);c2.scale(-1,1);c2.drawImage(layer,0,0,W,H);c2.restore();}
+ for(const layer of[cv,glc,prod,oc]){c2.save();c2.filter=layer===cv?'brightness(1.022) contrast(.982) saturate(1.018) blur(.28px)':'none';c2.translate(W,0);c2.scale(-1,1);c2.drawImage(layer,0,0,W,H);c2.restore();}c2.filter='none';
  c2.direction='rtl';c2.font='bold '+Math.round(W*.035)+'px Vazirmatn,Tahoma';c2.textAlign='right';c2.shadowColor='rgba(0,0,0,.8)';c2.shadowBlur=8;c2.fillStyle='#fff';c2.fillText(SHOP.name+' | پرو مجازی',W-20,H-20);
  out.toBlob(async b=>{if(!b)return toast('گرفتن عکس ممکن نشد');try{const f=new File([b],'tryon.png',{type:'image/png'});if(navigator.share&&(!navigator.canShare||navigator.canShare({files:[f]})))await navigator.share({files:[f],title:SHOP.name});else throw 0;}catch(e){const a=document.createElement('a');a.download='tryon.png';a.href=URL.createObjectURL(b);a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000);}},'image/png');
 };
- 
+
 const SVG={
  square:'<svg viewBox="0 0 64 24" width="36" height="14"><g fill="none" stroke="currentColor" stroke-width="3"><rect x="3" y="4" width="24" height="17" rx="5"/><rect x="37" y="4" width="24" height="17" rx="5"/><path d="M27 10h10"/></g></svg>',
  round:'<svg viewBox="0 0 64 24" width="36" height="14"><g fill="none" stroke="currentColor" stroke-width="3"><circle cx="15" cy="13" r="10"/><circle cx="49" cy="13" r="10"/><path d="M25 10h14"/></g></svg>',
@@ -461,13 +429,3 @@ const SVG={
  aviator:'<svg viewBox="0 0 64 24" width="36" height="14"><g fill="none" stroke="currentColor" stroke-width="3"><ellipse cx="15" cy="12" rx="12" ry="10"/><ellipse cx="49" cy="12" rx="12" ry="10"/><path d="M26 8h12"/></g></svg>'
 };
 const fBox=document.getElementById('frames'),cBox=document.getElementById('colors'),productName=document.getElementById('productName'),productSize=document.getElementById('productSize'),fitStatus=document.getElementById('fitStatus');
-function refreshFitStatus(){const w='عرض '+(frame.widthMM||'—')+' mm • ';if(autoPD){fitStatus.textContent=w+'فیت خودکار '+autoPdMM.toFixed(1)+' mm';pdButton.textContent='⌁ PD خودکار';}else{fitStatus.textContent=w+'PD دستی '+pdMM+' mm';pdButton.textContent='⌁ PD دستی';}}
-function updateMeta(){productName.textContent=frame.name;productSize.textContent=frame.price||((frame.widthMM||'—')+' میلی‌متر');refreshFitStatus();}
-function buildColors(){cBox.innerHTML='';if(!frame.colors||!frame.colors.length){cBox.style.display='none';return;}cBox.style.display='flex';frame.colors.forEach(c=>{const d=document.createElement('div');d.className='dot';d.title=c[0];d.setAttribute('aria-label',c[0]);d.style.background=c[1];d.onclick=()=>{colorHex=c[1];metal=c[2];[...cBox.children].forEach(x=>x.classList.remove('on'));d.classList.add('on');buildGlasses();};if(c[1]===colorHex)d.classList.add('on');cBox.appendChild(d);});}
-FRAMES.forEach(f=>{const b=document.createElement('button');b.className='chip';b.innerHTML=(SVG[f.style]||'🕶')+'<span>'+f.name+'</span>';b.onclick=()=>{frame=f;[...fBox.children].forEach(x=>x.classList.remove('on'));b.classList.add('on');history.replaceState(null,'','#f='+f.id);if(f.colors&&f.colors.length){colorHex=f.colors[0][1];metal=f.colors[0][2];}scaleHistory.length=0;updateMeta();buildColors();buildGlasses();};if(f===frame)b.classList.add('on');fBox.appendChild(b);});
-updateMeta();buildColors();
- 
-window.addEventListener('error',e=>{if(started&&load.style.display!=='none')setLoad(friendly(e.error||e.message));});
-</script>
- </body>
-</html>
