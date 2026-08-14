@@ -114,7 +114,7 @@ const FRAMES=[
  {id:2,name:'گرد رترو',style:'round',glb:'./round.glb',widthMM:136,eyeZ:.055,bridgeY:.120,bridgeZ:.108,noseWeight:1,lensCenter:.36,lensBlocker:.82,colors:[['مشکی','#111214',0],['نقره‌ای','#b9bec5',1]]},
  {id:3,name:'گربه‌ای',style:'cat',glb:'./cat.glb',widthMM:140,eyeZ:.050,bridgeY:.110,bridgeZ:.107,noseWeight:1,lensCenter:.37,lensBlocker:.86,colors:[['مشکی','#111214',0],['قرمز','#7d1822',0]]},
  {id:4,name:'خلبانی',style:'aviator',glb:'./aviator.glb',widthMM:140,eyeZ:.068,bridgeY:.139,bridgeZ:.113,noseWeight:1,lensCenter:.40,lensBlocker:.94,colors:[['طلایی','#c8a33a',1],['مشکی','#111214',0]]},
- {id:5,name:'طبی اسپایدرمنی',style:'square',custom3d:'spidermanPhoto',photoTexture:'./arvin-spiderman-v3.png',photoHeightScale:1,widthMM:138,lensMM:53,bridgeMM:17,templeMM:142,eyeZ:.080,bridgeY:.145,bridgeZ:.080,noseWeight:1,price:'۲ میلیارد',colors:[['مشکی','#0b0c0e',0]]}
+ {id:5,name:'طبی اسپایدرمنی',style:'square',custom3d:'spidermanPhoto',photoTexture:'./arvin-spiderman-v3.png',templeTexture:'./arvin-temple-v1.png',photoHeightScale:1,widthMM:138,lensMM:53,bridgeMM:17,templeMM:142,eyeZ:.080,bridgeY:.145,bridgeZ:.080,noseWeight:1,price:'۲ میلیارد',colors:[['مشکی','#0b0c0e',0]]}
 ];
 /* مدل‌های GLB این نسخه تحت CC BY 4.0 هستند؛ مشخصات کامل سازندگان در MODEL-LICENSES.txt قرار دارد. */
 /* برای عکس واقعی به همان محصول png:'./frames/1.png' و برای مدل سه‌بعدی دلخواه glb:'./models/1.glb' اضافه کنید. */
@@ -244,7 +244,7 @@ function procedural(){
  }
  const bridge=new THREE.Mesh(new THREE.TubeGeometry(new THREE.QuadraticBezierCurve3(new THREE.Vector3(-.10,.07,.025),new THREE.Vector3(0,.13,.045),new THREE.Vector3(.10,.07,.025)),14,.025,8),mat);bridge.renderOrder=2;modelRoot.add(bridge);
 }
-function spidermanPhoto3D(image){
+function spidermanPhoto3D(image,templeImage){
  clearModel();
  const tex=new THREE.Texture(image);tex.needsUpdate=true;tex.encoding=THREE.sRGBEncoding;tex.minFilter=THREE.LinearMipmapLinearFilter;tex.magFilter=THREE.LinearFilter;
  const aspect=(image.naturalHeight||image.height)/(image.naturalWidth||image.width);
@@ -255,9 +255,14 @@ function spidermanPhoto3D(image){
  const depthMat=new THREE.MeshBasicMaterial({color:0,colorWrite:false,depthWrite:true,depthTest:true,side:THREE.DoubleSide});
  const glassMat=new THREE.MeshPhysicalMaterial({color:0xdcecff,transparent:true,opacity:.045,metalness:0,roughness:.07,clearcoat:1,clearcoatRoughness:.025,envMapIntensity:.32,depthWrite:false,side:THREE.DoubleSide});
  for(const sd of[-1,1]){const g=new THREE.ShapeGeometry(hole,28),d=new THREE.Mesh(g,depthMat);d.position.set(sd*.365,0,.073);d.renderOrder=-35;const glass=new THREE.Mesh(g,glassMat);glass.position.set(sd*.365,0,.084);glass.renderOrder=12;modelRoot.add(d,glass);}
- const armMat=new THREE.MeshPhysicalMaterial({color:0x090a0c,metalness:.30,roughness:.40,clearcoat:.25,envMapIntensity:.32});
- /* دسته از داخل لولای واقعی شروع می‌شود و پیش از ناحیه مو تمام می‌شود تا هیچ تکه‌ای شناور نماند. */
- for(const sd of[-1,1]){const arm=new THREE.Mesh(new THREE.BoxGeometry(.018,.023,.34),armMat);arm.position.set(sd*.700,.075,-.075);arm.renderOrder=2;modelRoot.add(arm);}
+ if(templeImage){
+  const tt=new THREE.Texture(templeImage);tt.needsUpdate=true;tt.encoding=THREE.sRGBEncoding;tt.minFilter=THREE.LinearMipmapLinearFilter;tt.magFilter=THREE.LinearFilter;
+  const ta=(templeImage.naturalHeight||templeImage.height)/(templeImage.naturalWidth||templeImage.width),tm=new THREE.MeshBasicMaterial({map:tt,transparent:true,alphaTest:.035,depthWrite:true,side:THREE.DoubleSide,toneMapped:false});
+  /* طول واقعی ۱۴۲mm: لولا در z=+0.07 و سرِ خمیده در z=-1.41، پشت گوش قرار می‌گیرد. */
+  for(const sd of[-1,1]){const arm=new THREE.Mesh(new THREE.PlaneGeometry(1.48,1.48*ta),tm);arm.rotation.y=-Math.PI/2;arm.position.set(sd*.705,-.054,-.67);arm.renderOrder=2;modelRoot.add(arm);}
+ }else{
+  const armMat=new THREE.MeshPhysicalMaterial({color:0x090a0c,metalness:.25,roughness:.42});for(const sd of[-1,1]){const arm=new THREE.Mesh(new THREE.BoxGeometry(.018,.023,.34),armMat);arm.position.set(sd*.700,.075,-.075);modelRoot.add(arm);}
+ }
 }
 function loadImage(url){if(imageCache[url])return imageCache[url];imageCache[url]=new Promise((res,rej)=>{const im=new Image();im.crossOrigin='anonymous';im.onload=()=>res(im);im.onerror=rej;im.src=url;});return imageCache[url];}
 function loadGLB(url){if(glbCache[url])return glbCache[url];glbCache[url]=new Promise((res,rej)=>{
@@ -285,7 +290,7 @@ async function buildGlasses(){
  if(!webglReady)return;
  if(frame.png){try{const im=await loadImage(frame.png);if(token!==buildToken)return;activeImage=im;activeMode='png';anchor.visible=false;badge.textContent='فیت هوشمند • عکس واقعی';return;}catch(e){toast('⚠️ عکس محصول پیدا نشد؛ مدل سه‌بعدی جایگزین شد');}}
  activeMode='3d';badge.textContent=lite?'فیت هوشمند 3D • سبک':'فیت هوشمند 3D';
- if(frame.custom3d==='spidermanPhoto'){try{const im=await loadImage(frame.photoTexture);if(token!==buildToken)return;spidermanPhoto3D(im);return;}catch(e){toast('عکس محصول پیدا نشد؛ مدل جایگزین فعال شد');procedural();return;}}
+ if(frame.custom3d==='spidermanPhoto'){try{const pair=await Promise.all([loadImage(frame.photoTexture),frame.templeTexture?loadImage(frame.templeTexture):Promise.resolve(null)]);if(token!==buildToken)return;spidermanPhoto3D(pair[0],pair[1]);return;}catch(e){toast('عکس محصول پیدا نشد؛ مدل جایگزین فعال شد');procedural();return;}}
  if(frame.glb){try{const wrap=await loadGLB(frame.glb);if(token!==buildToken)return;clearModel();const clone=wrap.clone(true);const off=frame.glbOffset||[0,0,0],rot=frame.glbRotation||[0,0,0];clone.position.set(off[0]||0,off[1]||0,.12+(off[2]||0));clone.rotation.set(rot[0]||0,rot[1]||0,rot[2]||0);clone.traverse(n=>{if(n.isMesh&&n.material){n.material=Array.isArray(n.material)?n.material.map(tuneGLBMaterial):tuneGLBMaterial(n.material);n.renderOrder=1;}});replaceProblemTemples(clone);modelRoot.add(clone);return;}catch(e){toast('⚠️ مدل GLB پیدا نشد؛ فریم جایگزین شد');}}
  procedural();
 }
