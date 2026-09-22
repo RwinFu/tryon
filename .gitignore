@@ -1,0 +1,18 @@
+node_modules/
+dist-bench/
+*.log
+.cache/
+.DS_Store
+.vscode/
+.idea/
+
+# تولیدی — با `npm run build` ساخته می‌شوند
+src/ui/styles.gen.js
+
+# خروجی bake (هر بار از کاتالوگ بازسازی می‌شود؛ ۷MB بی‌فایده در گیت)
+assets/frames/
+
+# نسخهٔ دیباگ (سورس‌مپ ۲٫۸ مگ) — با `npm run build` دوباره ساخته می‌شود
+dist/tryon.debug.js
+dist/tryon.debug.js.map
+*.bak
