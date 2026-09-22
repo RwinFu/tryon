@@ -1,0 +1,1358 @@
+{
+  "version": 2,
+  "updated": "2026-09-22",
+  "products": [
+    {
+      "id": "AR-101",
+      "sku": "AR-101",
+      "name": "مربعی کلاسیک",
+      "brand": "آروین",
+      "price": 4850000,
+      "currency": "تومان",
+      "size": "52□18-145",
+      "shape": "square",
+      "style": "full",
+      "material": "acetate",
+      "finish": "polished-black",
+      "lens": "clear",
+      "gender": "unisex",
+      "tags": [
+        "optical",
+        "classic"
+      ],
+      "bestFor": [
+        "round",
+        "oval",
+        "heart"
+      ],
+      "colors": [
+        {
+          "name": "مشکی براق",
+          "color": "#101114",
+          "finish": "polished-black"
+        },
+        {
+          "name": "لاک‌پشتی عسلی",
+          "color": "#7a4a22",
+          "finish": "havana"
+        },
+        {
+          "name": "خاکستری مات",
+          "color": "#4b4f55",
+          "finish": "matte-sand"
+        },
+        {
+          "name": "یشمی",
+          "color": "#2f4436",
+          "finish": "acetate"
+        }
+      ],
+      "spec": {
+        "shape": "square",
+        "style": "full",
+        "material": "acetate",
+        "lensW": 52,
+        "lensH": 44,
+        "dbn": 18,
+        "templeLen": 145,
+        "rimW": 5.4,
+        "rimT": 3.7,
+        "pantoDeg": 9
+      }
+    },
+    {
+      "id": "AR-102",
+      "sku": "AR-102",
+      "name": "مستطیل اداری",
+      "brand": "آروین",
+      "currency": "تومان",
+      "size": "54□16-145",
+      "shape": "rectangle",
+      "style": "full",
+      "material": "acetate",
+      "lens": "clear",
+      "gender": "unisex",
+      "tags": [
+        "optical",
+        "office"
+      ],
+      "bestFor": [
+        "round",
+        "oval",
+        "triangle"
+      ],
+      "colors": [
+        {
+          "name": "مشکی",
+          "color": "#14161a",
+          "finish": "polished-black"
+        },
+        {
+          "name": "سرمه‌ای",
+          "color": "#232f4c",
+          "finish": "denim-blue"
+        },
+        {
+          "name": "شفاف یخی",
+          "color": "#cfd8dc",
+          "finish": "crystal",
+          "translucent": 0.55
+        }
+      ],
+      "spec": {
+        "shape": "rectangle",
+        "style": "full",
+        "material": "acetate",
+        "lensW": 54,
+        "lensH": 33,
+        "dbn": 16,
+        "templeLen": 145,
+        "rimW": 4.4,
+        "rimT": 3.2
+      }
+    },
+    {
+      "id": "AR-103",
+      "sku": "AR-103",
+      "name": "گرد رترو",
+      "brand": "آروین",
+      "currency": "تومان",
+      "size": "49□21-145",
+      "shape": "round",
+      "style": "full",
+      "material": "acetate",
+      "lens": "clear",
+      "gender": "unisex",
+      "tags": [
+        "retro",
+        "optical"
+      ],
+      "bestFor": [
+        "square",
+        "oblong",
+        "diamond"
+      ],
+      "colors": [
+        {
+          "name": "عسلی تیره",
+          "color": "#6a4222",
+          "finish": "havana"
+        },
+        {
+          "name": "زرشکی",
+          "color": "#5e1a22",
+          "finish": "oxblood"
+        },
+        {
+          "name": "مشکی",
+          "color": "#111216",
+          "finish": "polished-black"
+        }
+      ],
+      "spec": {
+        "shape": "round",
+        "style": "full",
+        "material": "acetate",
+        "lensW": 49,
+        "lensH": 47,
+        "dbn": 21,
+        "templeLen": 145,
+        "rimW": 4.6
+      }
+    },
+    {
+      "id": "AR-104",
+      "sku": "AR-104",
+      "name": "گربه‌ای الكانسا",
+      "brand": "آروین",
+      "currency": "تومان",
+      "size": "54□17-140",
+      "shape": "cateye",
+      "style": "full",
+      "material": "acetate",
+      "lens": "clear",
+      "gender": "female",
+      "tags": [
+        "fashion",
+        "women"
+      ],
+      "bestFor": [
+        "round",
+        "oval",
+        "triangle",
+        "square"
+      ],
+      "colors": [
+        {
+          "name": "مشکی/طلایی",
+          "color": "#131418",
+          "finish": "polished-black",
+          "accentColor": "#d8b478"
+        },
+        {
+          "name": "شکلاتی",
+          "color": "#4a2c1c",
+          "finish": "tortoise-light"
+        },
+        {
+          "name": "یاسی شفاف",
+          "color": "#b9b3d6",
+          "finish": "crystal",
+          "translucent": 0.62
+        },
+        {
+          "name": "قرمز لاکی",
+          "color": "#7d1822",
+          "finish": "acetate"
+        }
+      ],
+      "spec": {
+        "shape": "cateye",
+        "style": "full",
+        "material": "acetate",
+        "lensW": 54,
+        "lensH": 42,
+        "dbn": 17,
+        "templeLen": 140,
+        "rimW": 5.6,
+        "catAmp": 0.46,
+        "catWidth": 0.34
+      }
+    },
+    {
+      "id": "AR-105",
+      "sku": "AR-105",
+      "name": "پانتو فرانسوی",
+      "brand": "آروین",
+      "currency": "تومان",
+      "size": "51□20-145",
+      "shape": "panto",
+      "style": "full",
+      "material": "acetate",
+      "lens": "clear",
+      "gender": "unisex",
+      "tags": [
+        "boutique"
+      ],
+      "bestFor": [
+        "square",
+        "oblong",
+        "diamond"
+      ],
+      "colors": [
+        {
+          "name": "لاک‌پشتی کهربایی",
+          "color": "#8a5a26",
+          "finish": "havana"
+        },
+        {
+          "name": "زیتونی مات",
+          "color": "#4a4a2c",
+          "finish": "olive"
+        }
+      ],
+      "spec": {
+        "shape": "panto",
+        "style": "full",
+        "material": "acetate",
+        "lensW": 51,
+        "lensH": 47,
+        "dbn": 20,
+        "templeLen": 145,
+        "rimW": 4.8
+      }
+    },
+    {
+      "id": "AR-106",
+      "sku": "AR-106",
+      "name": "ابروفلز (browline)",
+      "brand": "آروین",
+      "currency": "تومان",
+      "size": "53□18-145",
+      "shape": "browline",
+      "style": "brow",
+      "material": "acetate",
+      "lens": "clear",
+      "gender": "unisex",
+      "tags": [
+        "classic",
+        "unisex"
+      ],
+      "bestFor": [
+        "round",
+        "triangle",
+        "oval"
+      ],
+      "colors": [
+        {
+          "name": "مشکی/نقره‌ای",
+          "color": "#15171b",
+          "finish": "polished-black",
+          "metalColor": "#c2c7cd"
+        },
+        {
+          "name": "توسکی/طلایی",
+          "color": "#3e434b",
+          "finish": "matte-sand",
+          "metalColor": "#d3b273"
+        },
+        {
+          "name": "لاک‌پشتی",
+          "color": "#6a3f20",
+          "finish": "havana",
+          "metalColor": "#cbb27a"
+        }
+      ],
+      "spec": {
+        "shape": "browline",
+        "style": "brow",
+        "material": "acetate",
+        "lensW": 53,
+        "lensH": 43,
+        "dbn": 18,
+        "templeLen": 145,
+        "rimW": 5.8
+      }
+    },
+    {
+      "id": "AR-107",
+      "sku": "AR-107",
+      "name": "هشت‌ضلعی طوسی",
+      "brand": "آروین",
+      "currency": "تومان",
+      "size": "50□19-145",
+      "shape": "octagon",
+      "style": "full",
+      "material": "acetate",
+      "lens": "clear",
+      "gender": "unisex",
+      "tags": [
+        "designer"
+      ],
+      "bestFor": [
+        "round",
+        "square",
+        "oval"
+      ],
+      "colors": [
+        {
+          "name": "دودی شفاف",
+          "color": "#6a6f74",
+          "finish": "crystal",
+          "translucent": 0.7
+        },
+        {
+          "name": "مشکی",
+          "color": "#111215",
+          "finish": "polished-black"
+        }
+      ],
+      "spec": {
+        "shape": "octagon",
+        "style": "full",
+        "material": "acetate",
+        "lensW": 50,
+        "lensH": 45,
+        "dbn": 19,
+        "templeLen": 145,
+        "rimW": 4.2
+      }
+    },
+    {
+      "id": "AR-108",
+      "sku": "AR-108",
+      "name": "شش‌ضلعی هندسی",
+      "brand": "آروین",
+      "currency": "تومان",
+      "size": "51□20-145",
+      "shape": "geometric",
+      "style": "full",
+      "material": "acetate",
+      "lens": "clear",
+      "gender": "unisex",
+      "tags": [
+        "statement"
+      ],
+      "bestFor": [
+        "round",
+        "oval",
+        "heart"
+      ],
+      "colors": [
+        {
+          "name": "عنابی",
+          "color": "#4c1620",
+          "finish": "oxblood"
+        },
+        {
+          "name": "شتری",
+          "color": "#8a6a44",
+          "finish": "horn"
+        }
+      ],
+      "spec": {
+        "shape": "geometric",
+        "style": "full",
+        "material": "acetate",
+        "lensW": 51,
+        "lensH": 44,
+        "dbn": 20,
+        "templeLen": 145,
+        "rimW": 4.6
+      }
+    },
+    {
+      "id": "AR-109",
+      "sku": "AR-109",
+      "name": "بزرگ اورسایز",
+      "brand": "آروین",
+      "currency": "تومان",
+      "size": "56□17-145",
+      "shape": "oversize",
+      "style": "full",
+      "material": "acetate",
+      "lens": {
+        "type": "gradient",
+        "color": "#2c2f36",
+        "tint": 0.62
+      },
+      "gender": "unisex",
+      "tags": [
+        "sun",
+        "statement"
+      ],
+      "bestFor": [
+        "oblong",
+        "square",
+        "triangle"
+      ],
+      "colors": [
+        {
+          "name": "مشکی",
+          "color": "#0f1013",
+          "finish": "polished-black"
+        },
+        {
+          "name": "لاک‌پشتی",
+          "color": "#7d4c22",
+          "finish": "havana"
+        }
+      ],
+      "spec": {
+        "shape": "oversize",
+        "style": "full",
+        "material": "acetate",
+        "lensW": 56,
+        "lensH": 54,
+        "dbn": 17,
+        "templeLen": 145,
+        "rimW": 6.2
+      }
+    },
+    {
+      "id": "AR-110",
+      "sku": "AR-110",
+      "name": "پروانه‌ای تابستانی",
+      "brand": "آروین",
+      "currency": "تومان",
+      "size": "55□16-140",
+      "shape": "butterfly",
+      "style": "full",
+      "material": "acetate",
+      "lens": {
+        "type": "gradient",
+        "color": "#40302a",
+        "tint": 0.55
+      },
+      "gender": "female",
+      "tags": [
+        "sun",
+        "women"
+      ],
+      "bestFor": [
+        "round",
+        "square",
+        "diamond"
+      ],
+      "colors": [
+        {
+          "name": "مشکی/عدسی عسلی",
+          "color": "#121317",
+          "finish": "polished-black"
+        },
+        {
+          "name": "کرم",
+          "color": "#d8cbb6",
+          "finish": "acetate"
+        }
+      ],
+      "spec": {
+        "shape": "butterfly",
+        "style": "full",
+        "material": "acetate",
+        "lensW": 55,
+        "lensH": 45,
+        "dbn": 16,
+        "templeLen": 140,
+        "rimW": 5.2
+      }
+    },
+    {
+      "id": "AR-111",
+      "sku": "AR-111",
+      "name": "سپر اسپرت",
+      "brand": "آروین",
+      "currency": "تومان",
+      "size": "60□15-135",
+      "shape": "shield",
+      "style": "full",
+      "material": "acetate",
+      "lens": {
+        "type": "mirror",
+        "color": "#20343c",
+        "tint": 0.8
+      },
+      "gender": "unisex",
+      "tags": [
+        "sport",
+        "sun"
+      ],
+      "bestFor": [
+        "oblong",
+        "square"
+      ],
+      "colors": [
+        {
+          "name": "مشکی مات",
+          "color": "#141618",
+          "finish": "matte-black"
+        },
+        {
+          "name": "نئون مات",
+          "color": "#3b4a2f",
+          "finish": "matte-sand"
+        }
+      ],
+      "spec": {
+        "shape": "shield",
+        "style": "full",
+        "material": "acetate",
+        "lensW": 60,
+        "lensH": 42,
+        "dbn": 15,
+        "templeLen": 135,
+        "rimW": 6.4,
+        "rimT": 4.2
+      }
+    },
+    {
+      "id": "AR-112",
+      "sku": "AR-112",
+      "name": "مربعی شاخ گاو",
+      "brand": "آروین",
+      "currency": "تومان",
+      "size": "53□17-145",
+      "shape": "square",
+      "style": "full",
+      "material": "acetate",
+      "lens": "clear",
+      "gender": "unisex",
+      "tags": [
+        "natural",
+        "premium"
+      ],
+      "bestFor": [
+        "round",
+        "oval",
+        "heart"
+      ],
+      "colors": [
+        {
+          "name": "شاخ طبیعی",
+          "color": "#8a6a44",
+          "finish": "horn"
+        }
+      ],
+      "spec": {
+        "shape": "square",
+        "style": "full",
+        "material": "acetate",
+        "lensW": 53,
+        "lensH": 45,
+        "dbn": 17,
+        "templeLen": 145,
+        "rimW": 5.6
+      }
+    },
+    {
+      "id": "AR-201",
+      "sku": "AR-201",
+      "name": "خلبانی طلایی",
+      "brand": "آروین",
+      "currency": "تومان",
+      "size": "58□14-135",
+      "shape": "aviator",
+      "style": "full",
+      "material": "metal",
+      "lens": {
+        "type": "gradient",
+        "color": "#4a3a26",
+        "tint": 0.55
+      },
+      "gender": "unisex",
+      "tags": [
+        "sun",
+        "iconic"
+      ],
+      "bestFor": [
+        "square",
+        "round",
+        "oblong"
+      ],
+      "colors": [
+        {
+          "name": "طلایی/دودی",
+          "color": "#d8b478",
+          "metalColor": "#d8b478",
+          "finish": "polished"
+        },
+        {
+          "name": "نقره‌ای آینه‌ای",
+          "color": "#c6cbd2",
+          "metalColor": "#c6cbd2",
+          "lens": {
+            "type": "mirror",
+            "color": "#2a3b45"
+          }
+        },
+        {
+          "name": "مشکی مات",
+          "color": "#181a1d",
+          "metalColor": "#2c2f33",
+          "finish": "matte-black"
+        }
+      ],
+      "spec": {
+        "shape": "aviator",
+        "style": "full",
+        "material": "metal",
+        "lensW": 58,
+        "lensH": 54,
+        "dbn": 14,
+        "templeLen": 135,
+        "doubleBridge": true
+      }
+    },
+    {
+      "id": "AR-202",
+      "sku": "AR-202",
+      "name": "گرد فلزی ظریف",
+      "brand": "آروین",
+      "currency": "تومان",
+      "size": "47□21-145",
+      "shape": "roundmetal",
+      "style": "full",
+      "material": "metal",
+      "lens": "clear",
+      "gender": "unisex",
+      "tags": [
+        "vintage",
+        "light"
+      ],
+      "bestFor": [
+        "square",
+        "oblong",
+        "diamond"
+      ],
+      "colors": [
+        {
+          "name": "مسی",
+          "color": "#93683f",
+          "metalColor": "#93683f"
+        },
+        {
+          "name": "طلایی",
+          "color": "#d3b273",
+          "metalColor": "#d3b273"
+        },
+        {
+          "name": "روثنیوم",
+          "color": "#6a6f74",
+          "metalColor": "#6a6f74",
+          "finish": "brushed"
+        }
+      ],
+      "spec": {
+        "shape": "roundmetal",
+        "style": "full",
+        "material": "metal",
+        "lensW": 47,
+        "lensH": 46,
+        "dbn": 21,
+        "templeLen": 145,
+        "metalRimW": 1.9
+      }
+    },
+    {
+      "id": "AR-203",
+      "sku": "AR-203",
+      "name": "مستطیل تیتانیوم",
+      "brand": "آروین",
+      "currency": "تومان",
+      "size": "54□17-145",
+      "shape": "rectangle",
+      "style": "full",
+      "material": "titanium",
+      "lens": "clear",
+      "gender": "unisex",
+      "tags": [
+        "ultralight",
+        "office"
+      ],
+      "bestFor": [
+        "round",
+        "oval",
+        "heart",
+        "triangle"
+      ],
+      "colors": [
+        {
+          "name": "تیتانیوم نقره‌ای",
+          "color": "#a7a9ac",
+          "metalColor": "#a7a9ac",
+          "finish": "brushed"
+        },
+        {
+          "name": "تیتانیوم مشکی",
+          "color": "#26292d",
+          "metalColor": "#2c3035",
+          "finish": "brushed"
+        },
+        {
+          "name": "رزگلد",
+          "color": "#c58e75",
+          "metalColor": "#c58e75"
+        }
+      ],
+      "spec": {
+        "shape": "rectangle",
+        "style": "full",
+        "material": "titanium",
+        "lensW": 54,
+        "lensH": 34,
+        "dbn": 17,
+        "templeLen": 145,
+        "templeT": 1.5,
+        "metalRimW": 1.7
+      }
+    },
+    {
+      "id": "AR-204",
+      "sku": "AR-204",
+      "name": "نیم‌فریم مستطیلی",
+      "brand": "آروین",
+      "currency": "تومان",
+      "size": "55□16-145",
+      "shape": "rectangle",
+      "style": "half",
+      "material": "metal",
+      "lens": "clear",
+      "gender": "unisex",
+      "tags": [
+        "business"
+      ],
+      "bestFor": [
+        "round",
+        "oval",
+        "oblong"
+      ],
+      "colors": [
+        {
+          "name": "نقره‌ای",
+          "color": "#c3c8ce",
+          "metalColor": "#c3c8ce"
+        },
+        {
+          "name": "طلایی",
+          "color": "#d3b273",
+          "metalColor": "#d3b273"
+        }
+      ],
+      "spec": {
+        "shape": "rectangle",
+        "style": "half",
+        "material": "metal",
+        "lensW": 55,
+        "lensH": 37,
+        "dbn": 16,
+        "templeLen": 145
+      }
+    },
+    {
+      "id": "AR-205",
+      "sku": "AR-205",
+      "name": "بدون فریم (rimless)",
+      "brand": "آروین",
+      "currency": "تومان",
+      "size": "53□18-140",
+      "shape": "rectangle",
+      "style": "rimless",
+      "material": "metal",
+      "lens": "clear",
+      "gender": "unisex",
+      "tags": [
+        "minimal",
+        "light"
+      ],
+      "bestFor": [
+        "square",
+        "round",
+        "triangle",
+        "oblong"
+      ],
+      "colors": [
+        {
+          "name": "نقره‌ای براق",
+          "color": "#d4d9de",
+          "metalColor": "#d4d9de"
+        },
+        {
+          "name": "طلایی رز",
+          "color": "#c58e75",
+          "metalColor": "#c58e75"
+        }
+      ],
+      "spec": {
+        "shape": "rectangle",
+        "style": "rimless",
+        "material": "metal",
+        "lensW": 53,
+        "lensH": 38,
+        "dbn": 18,
+        "templeLen": 140
+      }
+    },
+    {
+      "id": "AR-206",
+      "sku": "AR-206",
+      "name": "هشت‌ضلعی فلزی",
+      "brand": "آروین",
+      "currency": "تومان",
+      "size": "49□20-145",
+      "shape": "octagon",
+      "style": "full",
+      "material": "metal",
+      "lens": "clear",
+      "gender": "unisex",
+      "tags": [
+        "vintage",
+        "unisex"
+      ],
+      "bestFor": [
+        "round",
+        "square",
+        "oval"
+      ],
+      "colors": [
+        {
+          "name": "مشکی/طلایی",
+          "color": "#1c1e22",
+          "metalColor": "#d3b273"
+        },
+        {
+          "name": "دودی",
+          "color": "#5c646d",
+          "metalColor": "#5c646d",
+          "finish": "brushed"
+        }
+      ],
+      "spec": {
+        "shape": "octagon",
+        "style": "full",
+        "material": "metal",
+        "lensW": 49,
+        "lensH": 45,
+        "dbn": 20,
+        "templeLen": 145,
+        "metalRimW": 1.8
+      }
+    },
+    {
+      "id": "AR-207",
+      "sku": "AR-207",
+      "name": "خلبانی مستطیلی مشکی",
+      "brand": "آروین",
+      "currency": "تومان",
+      "size": "56□16-140",
+      "shape": "aviator",
+      "style": "full",
+      "material": "metal",
+      "lens": {
+        "type": "photo",
+        "color": "#16181c",
+        "tint": 0.9
+      },
+      "gender": "unisex",
+      "tags": [
+        "sun",
+        "unisex"
+      ],
+      "bestFor": [
+        "round",
+        "oval",
+        "heart"
+      ],
+      "colors": [
+        {
+          "name": "مشکی/دودی",
+          "color": "#191b1f",
+          "metalColor": "#24272c"
+        },
+        {
+          "name": "سبز ارتشی",
+          "color": "#3c4632",
+          "metalColor": "#4d573f"
+        }
+      ],
+      "spec": {
+        "shape": "aviator",
+        "style": "full",
+        "material": "metal",
+        "lensW": 56,
+        "lensH": 48,
+        "dbn": 16,
+        "templeLen": 140,
+        "doubleBridge": true
+      }
+    },
+    {
+      "id": "AR-208",
+      "sku": "AR-208",
+      "name": "مربعی سیم‌ظریف",
+      "brand": "آروین",
+      "currency": "تومان",
+      "size": "51□19-145",
+      "shape": "square",
+      "style": "full",
+      "material": "metal",
+      "lens": "clear",
+      "gender": "unisex",
+      "tags": [
+        "optical",
+        "light"
+      ],
+      "bestFor": [
+        "round",
+        "oval",
+        "triangle"
+      ],
+      "colors": [
+        {
+          "name": "نقره‌ای",
+          "color": "#c4c9cf",
+          "metalColor": "#c4c9cf"
+        },
+        {
+          "name": "Gunmetal",
+          "color": "#5c646d",
+          "metalColor": "#5c646d"
+        },
+        {
+          "name": "طلایی مات",
+          "color": "#b39a68",
+          "metalColor": "#b39a68",
+          "finish": "brushed"
+        }
+      ],
+      "spec": {
+        "shape": "square",
+        "style": "full",
+        "material": "metal",
+        "lensW": 51,
+        "lensH": 44,
+        "dbn": 19,
+        "templeLen": 145,
+        "metalRimW": 1.8
+      }
+    },
+    {
+      "id": "AR-301",
+      "sku": "AR-301",
+      "name": "مربعی نوجوان",
+      "brand": "آروین",
+      "currency": "تومان",
+      "size": "46□16-130",
+      "shape": "square",
+      "style": "full",
+      "material": "acetate",
+      "lens": "clear",
+      "gender": "unisex",
+      "tags": [
+        "kids",
+        "flex"
+      ],
+      "bestFor": [
+        "round",
+        "square"
+      ],
+      "colors": [
+        {
+          "name": "آبی آسمانی",
+          "color": "#4a7ba8",
+          "finish": "acetate"
+        },
+        {
+          "name": "صورتی",
+          "color": "#c46a86",
+          "finish": "acetate"
+        },
+        {
+          "name": "سبز ارتشی",
+          "color": "#5a6b46",
+          "finish": "acetate"
+        }
+      ],
+      "spec": {
+        "shape": "square",
+        "style": "full",
+        "material": "acetate",
+        "lensW": 46,
+        "lensH": 38,
+        "dbn": 16,
+        "templeLen": 130,
+        "rimW": 4.8
+      }
+    },
+    {
+      "id": "AR-302",
+      "sku": "AR-302",
+      "name": "گرد بچگانه فلزی",
+      "brand": "آروین",
+      "currency": "تومان",
+      "size": "44□17-125",
+      "shape": "roundmetal",
+      "style": "full",
+      "material": "metal",
+      "lens": "clear",
+      "gender": "unisex",
+      "tags": [
+        "kids"
+      ],
+      "bestFor": [
+        "square",
+        "oblong"
+      ],
+      "colors": [
+        {
+          "name": "بنفش",
+          "color": "#7a5ea6",
+          "metalColor": "#7a5ea6"
+        },
+        {
+          "name": "فیروزه‌ای",
+          "color": "#3f9aa8",
+          "metalColor": "#3f9aa8"
+        }
+      ],
+      "spec": {
+        "shape": "roundmetal",
+        "style": "full",
+        "material": "metal",
+        "lensW": 44,
+        "lensH": 43,
+        "dbn": 17,
+        "templeLen": 125
+      }
+    },
+    {
+      "id": "AR-401",
+      "sku": "AR-401",
+      "name": "گربه‌ای آفتابی",
+      "brand": "آروین",
+      "currency": "تومان",
+      "size": "55□16-140",
+      "shape": "cateye",
+      "style": "full",
+      "material": "acetate",
+      "lens": {
+        "type": "gradient",
+        "color": "#3a2436",
+        "tint": 0.6
+      },
+      "gender": "female",
+      "tags": [
+        "sun",
+        "women"
+      ],
+      "bestFor": [
+        "round",
+        "square",
+        "oval"
+      ],
+      "colors": [
+        {
+          "name": "مشکی",
+          "color": "#111215",
+          "finish": "polished-black"
+        },
+        {
+          "name": "لاک‌پشتی",
+          "color": "#7a4a22",
+          "finish": "havana"
+        },
+        {
+          "name": "کرم مرواریدی",
+          "color": "#ddd3c2",
+          "finish": "acetate"
+        }
+      ],
+      "spec": {
+        "shape": "cateye",
+        "style": "full",
+        "material": "acetate",
+        "lensW": 55,
+        "lensH": 43,
+        "dbn": 16,
+        "templeLen": 140,
+        "rimW": 5.8,
+        "catAmp": 0.5
+      }
+    },
+    {
+      "id": "AR-402",
+      "sku": "AR-402",
+      "name": "مربعی پلاریزه",
+      "brand": "آروین",
+      "currency": "تومان",
+      "size": "54□18-145",
+      "shape": "square",
+      "style": "full",
+      "material": "acetate",
+      "lens": {
+        "type": "photo",
+        "color": "#141619",
+        "tint": 0.92
+      },
+      "gender": "unisex",
+      "tags": [
+        "sun",
+        "polarized"
+      ],
+      "bestFor": [
+        "round",
+        "oblong",
+        "heart"
+      ],
+      "colors": [
+        {
+          "name": "مشکی/سبز",
+          "color": "#15171a",
+          "finish": "polished-black",
+          "accentColor": "#6fa07a"
+        },
+        {
+          "name": "ماهی‌گوشتی",
+          "color": "#4a6b6b",
+          "finish": "acetate"
+        }
+      ],
+      "spec": {
+        "shape": "square",
+        "style": "full",
+        "material": "acetate",
+        "lensW": 54,
+        "lensH": 47,
+        "dbn": 18,
+        "templeLen": 145
+      }
+    },
+    {
+      "id": "AR-403",
+      "sku": "AR-403",
+      "name": "گرد آفتابی متال",
+      "brand": "آروین",
+      "currency": "تومان",
+      "size": "50□20-140",
+      "shape": "round",
+      "style": "full",
+      "material": "metal",
+      "lens": {
+        "type": "mirror",
+        "color": "#1f3a3f",
+        "tint": 0.8
+      },
+      "gender": "unisex",
+      "tags": [
+        "sun",
+        "retro"
+      ],
+      "bestFor": [
+        "square",
+        "oblong"
+      ],
+      "colors": [
+        {
+          "name": "طلایی/آینه سبز",
+          "color": "#d0ad6c",
+          "metalColor": "#d0ad6c"
+        },
+        {
+          "name": "مشکی/آینه آبی",
+          "color": "#1a1c20",
+          "metalColor": "#2a2e34"
+        }
+      ],
+      "spec": {
+        "shape": "round",
+        "style": "full",
+        "material": "metal",
+        "lensW": 50,
+        "lensH": 49,
+        "dbn": 20,
+        "templeLen": 140
+      }
+    },
+    {
+      "id": "AR-404",
+      "sku": "AR-404",
+      "name": "هندسی آفتابی مات",
+      "brand": "آروین",
+      "currency": "تومان",
+      "size": "55□17-145",
+      "shape": "geometric",
+      "style": "full",
+      "material": "acetate",
+      "lens": {
+        "type": "photo",
+        "color": "#191a1d",
+        "tint": 0.88
+      },
+      "gender": "unisex",
+      "tags": [
+        "sun",
+        "designer"
+      ],
+      "bestFor": [
+        "round",
+        "oval"
+      ],
+      "colors": [
+        {
+          "name": "خاکی مات",
+          "color": "#6f6552",
+          "finish": "matte-sand"
+        },
+        {
+          "name": "مشکی مات",
+          "color": "#16181b",
+          "finish": "matte-black"
+        }
+      ],
+      "spec": {
+        "shape": "geometric",
+        "style": "full",
+        "material": "acetate",
+        "lensW": 55,
+        "lensH": 48,
+        "dbn": 17,
+        "templeLen": 145,
+        "rimW": 5.4
+      }
+    },
+    {
+      "id": "AR-405",
+      "sku": "AR-405",
+      "name": "کروازئوس پل بلندی",
+      "brand": "آروین",
+      "currency": "تومان",
+      "size": "52□18-145",
+      "shape": "oval",
+      "style": "full",
+      "material": "acetate",
+      "lens": "clear",
+      "gender": "unisex",
+      "tags": [
+        "fit-asian",
+        "optical"
+      ],
+      "bestFor": [
+        "round",
+        "square",
+        "triangle"
+      ],
+      "colors": [
+        {
+          "name": "قهوه‌ای شفاف",
+          "color": "#7d5a3c",
+          "finish": "translucent-amber"
+        },
+        {
+          "name": "مشکی",
+          "color": "#141519",
+          "finish": "polished-black"
+        }
+      ],
+      "spec": {
+        "shape": "oval",
+        "style": "full",
+        "material": "acetate",
+        "lensW": 52,
+        "lensH": 40,
+        "dbn": 18,
+        "templeLen": 145,
+        "highBridge": true
+      }
+    },
+    {
+      "id": "AR-406",
+      "sku": "AR-406",
+      "name": "ورزشی کبریتی",
+      "brand": "آروین",
+      "currency": "تومان",
+      "size": "62□14-135",
+      "shape": "shield",
+      "style": "full",
+      "material": "acetate",
+      "lens": {
+        "type": "mirror",
+        "color": "#3a2a1e",
+        "tint": 0.85
+      },
+      "gender": "unisex",
+      "tags": [
+        "sport",
+        "sun"
+      ],
+      "bestFor": [
+        "square",
+        "oblong"
+      ],
+      "colors": [
+        {
+          "name": "مشکی/نارنجی",
+          "color": "#17181b",
+          "finish": "matte-black",
+          "accentColor": "#d97a3a"
+        },
+        {
+          "name": "آبی متالیک",
+          "color": "#2a4a6b",
+          "finish": "brushed",
+          "metalColor": "#4c7299"
+        }
+      ],
+      "spec": {
+        "shape": "shield",
+        "style": "full",
+        "material": "acetate",
+        "lensW": 62,
+        "lensH": 46,
+        "dbn": 14,
+        "templeLen": 135,
+        "rimW": 6.8,
+        "templeW": 6.4,
+        "templeT": 3
+      }
+    }
+  ]
+}

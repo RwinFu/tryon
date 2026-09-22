@@ -1,0 +1,483 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>راهنمای نصب — افزونهٔ پرو مجازی عینک</title>
+    <meta name="description" content="نصب افزونهٔ پرو مجازی روی Shopify، WooCommerce و هر سایت دیگری؛ سه روش، بدون سرور، بدون آپلود تصویر مشتری." />
+    <link rel="stylesheet" href="https://fontcdn.ir/v2/Vazirmatn/font.css" onerror="this.remove()" />
+    <style>
+      :root {
+        --paper: #f1f3f4;
+        --ink: #0d1013;
+        --mut: #5b646c;
+        --gold: #8a6b2f;
+        --rule: #d7dce0;
+        --code: #10151a;
+        --num: ui-monospace, "JetBrains Mono", Menlo, monospace;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+      }
+      body {
+        background: var(--paper);
+        color: var(--ink);
+        font: 400 16px/1.9 Vazirmatn, system-ui, Tahoma, sans-serif;
+      }
+      .sheet {
+        max-width: 940px;
+        margin: 0 auto;
+        padding: 0 22px 90px;
+      }
+      header {
+        padding: 54px 0 26px;
+        border-bottom: 3px solid var(--ink);
+      }
+      .kicker {
+        font-family: var(--num);
+        font-size: 11px;
+        letter-spacing: 0.6px;
+        color: var(--gold);
+        font-weight: 700;
+      }
+      h1 {
+        font-size: clamp(30px, 5vw, 46px);
+        line-height: 1.25;
+        font-weight: 900;
+        letter-spacing: -0.8px;
+        margin: 8px 0 10px;
+      }
+      header p {
+        color: var(--mut);
+        max-width: 62ch;
+      }
+      nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        padding: 16px 0;
+        border-bottom: 1px solid var(--rule);
+        position: sticky;
+        top: 0;
+        background: rgba(241, 243, 244, 0.93);
+        backdrop-filter: blur(10px);
+        z-index: 5;
+      }
+      nav a {
+        font-size: 12.5px;
+        font-weight: 700;
+        color: var(--ink);
+        text-decoration: none;
+        padding: 7px 12px;
+        border: 1px solid var(--rule);
+        border-radius: 99px;
+        background: #fff;
+      }
+      nav a:hover {
+        border-color: var(--gold);
+        color: var(--gold);
+      }
+      section {
+        padding: 38px 0 8px;
+        border-bottom: 1px solid var(--rule);
+      }
+      h2 {
+        font-size: 23px;
+        font-weight: 900;
+        letter-spacing: -0.3px;
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+      }
+      h2 span {
+        font-family: var(--num);
+        font-size: 12px;
+        color: var(--gold);
+        border: 1px solid var(--gold);
+        border-radius: 6px;
+        padding: 1px 7px;
+      }
+      h3 {
+        margin: 22px 0 8px;
+        font-size: 15.5px;
+        font-weight: 800;
+      }
+      p + p,
+      ul + p {
+        margin-top: 10px;
+      }
+      .lead {
+        color: var(--mut);
+        max-width: 70ch;
+        margin: 8px 0 4px;
+      }
+      pre {
+        direction: ltr;
+        text-align: left;
+        background: var(--code);
+        color: #dfe7ec;
+        border-radius: 12px;
+        padding: 15px 16px;
+        overflow: auto;
+        font-family: var(--num);
+        font-size: 12.4px;
+        line-height: 1.8;
+        margin: 12px 0 4px;
+        border: 1px solid #232c35;
+      }
+      pre .c {
+        color: #7f929e;
+      }
+      pre .k {
+        color: #f0c987;
+      }
+      code {
+        font-family: var(--num);
+        font-size: 0.88em;
+        background: #e3e7ea;
+        border-radius: 5px;
+        padding: 1.5px 5px;
+        direction: ltr;
+        display: inline-block;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 14px 0 6px;
+        font-size: 13.5px;
+        background: #fff;
+        border: 1px solid var(--rule);
+        border-radius: 12px;
+        overflow: hidden;
+      }
+      th,
+      td {
+        text-align: start;
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--rule);
+        vertical-align: top;
+      }
+      th {
+        font-size: 11.5px;
+        font-weight: 800;
+        color: var(--mut);
+        background: #eaedee;
+        white-space: nowrap;
+      }
+      tr:last-child td {
+        border-bottom: 0;
+      }
+      td code {
+        background: #f0ede6;
+        color: var(--gold);
+      }
+      .two {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(272px, 1fr));
+        gap: 14px;
+        margin: 14px 0;
+      }
+      .card {
+        background: #fff;
+        border: 1px solid var(--rule);
+        border-radius: 14px;
+        padding: 16px 17px;
+      }
+      .card b {
+        display: block;
+        font-size: 14.5px;
+        margin-bottom: 6px;
+      }
+      .card p {
+        font-size: 13px;
+        color: var(--mut);
+      }
+      .warn {
+        border-inline-start: 4px solid var(--gold);
+        background: #fff8ea;
+        padding: 12px 15px;
+        border-radius: 0 12px 12px 0;
+        margin: 16px 0;
+        font-size: 14px;
+      }
+      footer {
+        padding: 28px 0 0;
+        font-size: 12.5px;
+        color: var(--mut);
+      }
+      a.pill {
+        display: inline-block;
+        margin-top: 10px;
+        font-size: 13px;
+        font-weight: 800;
+        color: #fff;
+        background: var(--ink);
+        border-radius: 11px;
+        padding: 11px 18px;
+        text-decoration: none;
+      }
+      @media print {
+        body {
+          background: #fff;
+        }
+        nav {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="sheet">
+      <header>
+        <p class="kicker">OPTIC ARVIN · VIRTUAL TRY-ON · v2.0</p>
+        <h1>نصب افزونهٔ پرو مجازی عینک روی سایت فروشگاه</h1>
+        <p>
+          یک فایل JS، یک <code>&lt;div&gt;</code>. پردازش کامل روی گوشی/سیستم مشتری انجام می‌شود؛ سرور شما
+          هیچ تصویری دریافت نمی‌کند. برای Shopify، WooCommerce و هر سایت دیگری.
+        </p>
+      </header>
+
+      <nav>
+        <a href="#files">فایل‌ها</a> <a href="#tag">تگ اسکریپت</a> <a href="#shopify">Shopify</a>
+        <a href="#woo">WooCommerce</a> <a href="#api">API</a> <a href="#json">products.json</a>
+        <a href="#studio">فریم جدید</a> <a href="#trouble">عیب‌یابی</a>
+      </nav>
+
+      <section id="files">
+        <h2><span>۰۱</span>فایل‌هایی که لازم دارید</h2>
+        <div class="two">
+          <div class="card">
+            <b><code>dist/tryon.js</code></b>
+            <p>خودِ افزونه. تک‌فایل، بدون npm، بدون build سمت شما. ۲۳۳KB gzip.</p>
+          </div>
+          <div class="card">
+            <b><code>products.json</code></b>
+            <p>کاتالوگ فریم‌ها: نام، قیمت، رنگ‌ها، سایز چاپی، شکل فریم.</p>
+          </div>
+          <div class="card">
+            <b><code>lib/</code></b>
+            <p>مدل تشخیص چهره و wasm. اگر میزبانی نکنید، افزونه از CDN می‌گیرد.</p>
+          </div>
+          <div class="card">
+            <b><code>assets/frames/*.glb</code></b>
+            <p>اختیاری — مدل سه‌بعدی آماده برای صفحهٔ محصول و AR آیفون.</p>
+          </div>
+        </div>
+        <p class="warn">صفحه باید روی <b>HTTPS</b> باشد (یا <code>localhost</code>)؛ وگرنه مرورگر دوربین را باز نمی‌کند.</p>
+      </section>
+
+      <section id="tag">
+        <h2><span>۰۲</span>بدون کدنویسی: فقط attribute</h2>
+        <p class="lead">فایل‌ها را در سایت کپی کنید، این سه تکه را جای‌گذاری کنید. تمام.</p>
+        <pre><span class="c">&lt;!-- ۱) در &lt;head&gt; یا قبل از &lt;/body&gt; --&gt;</span>
+&lt;<span class="k">script</span> src=<span class="c">"/tryon/dist/tryon.js"</span>
+        data-tryon-products=<span class="c">"/tryon/products.json"</span>
+        data-tryon-lang=<span class="c">"fa"</span>
+        data-tryon-accent=<span class="c">"#d8b478"</span>
+        data-tryon-whatsapp=<span class="c">"989190051635"</span> defer&gt;&lt;/script&gt;
+
+<span class="c">&lt;!-- ۲) روی صفحهٔ محصول: پرو داخل صفحه --&gt;</span>
+&lt;<span class="k">div</span> data-tryon data-tryon-mode=<span class="c">"inline"</span> data-tryon-sku=<span class="c">"AR-104"</span> style=<span class="c">"height:620px"</span>&gt;&lt;/div&gt;
+
+<span class="c">&lt;!-- ۳) هر جای دیگر: دکمهٔ پرو تمام‌صفحه --&gt;</span>
+&lt;<span class="k">button</span> data-tryon-open data-tryon-sku=<span class="c">"AR-104"</span>&gt;پرو مجازی این مدل&lt;/button&gt;</pre>
+
+        <h3>attributeهایی که افزونه می‌فهمد</h3>
+        <table>
+          <tr>
+            <th>attribute</th>
+            <th>کار</th>
+          </tr>
+          <tr>
+            <td><code>data-tryon</code></td>
+            <td>حضورش کافی است؛ همان‌جا نصب می‌شود.</td>
+          </tr>
+          <tr>
+            <td><code>data-tryon-mode</code></td>
+            <td><code>inline</code> داخل المان · <code>overlay</code> پنل کشویی · <code>fullscreen</code></td>
+          </tr>
+          <tr>
+            <td><code>data-tryon-products</code></td>
+            <td>URL به JSON کاتالوگ، یا فهرست SKU جداشده با کاما.</td>
+          </tr>
+          <tr>
+            <td><code>data-tryon-sku</code></td>
+            <td>با کدام مدل شروع کند (و همان دسته را نگه دارد).</td>
+          </tr>
+          <tr>
+            <td><code>data-tryon-lang</code> / <code>-theme</code></td>
+            <td><code>fa</code> \| <code>en</code> — و <code>auto</code> \| <code>light</code> \| <code>dark</code>.</td>
+          </tr>
+          <tr>
+            <td><code>data-tryon-accent</code> / <code>-brand</code> / <code>-whatsapp</code></td>
+            <td>رنگ، نام فروشگاه روی واترمارک، شماره واتساپ برای «افزودن به سبد».</td>
+          </tr>
+          <tr>
+            <td><code>data-tryon-cart</code></td>
+            <td><code>event</code> (به سبد خودتان) · <code>whatsapp</code> · <code>link</code></td>
+          </tr>
+          <tr>
+            <td><code>data-tryon-config</code></td>
+            <td>هر تنظیم دیگری به‌صورت JSON (همان options مربوط به <code>init</code>).</td>
+          </tr>
+        </table>
+
+        <h3>سازگاری با استایل سایت شما</h3>
+        <p>
+          افزونه داخل Shadow DOM است، پس CSS شما روی آن اثر ندارد و استایلش هم به سایت شما نشتی ندارد.
+          برای شخصی‌سازی، متغیرها و <code>part</code>ها را بفرستید:
+        </p>
+        <pre>virtual-tryon {
+  --vt-accent: #c9a24a;  --vt-radius: 18px;  --vt-font: "IRANSans", Tahoma, sans-serif;
+}
+virtual-tryon::part(stage) { background: #fff; }</pre>
+      </section>
+
+      <section id="shopify">
+        <h2><span>۰۳</span>Shopify</h2>
+        <h3>الف) یک Section در تم (پیشنهادی)</h3>
+        <p>فایل <code>sections/tryon.liquid</code> را بسازید؛ بعد از آن در Edit Theme می‌توانید بلوک «پرو مجازی عینک» را به قالب محصول اضافه کنید.</p>
+        <pre>{% style %} #Tryon-{{ section.id }} { height: {{ section.height }}px; } {% endstyle %}
+&lt;div id=<span class="c">"Tryon-{{ section.id }}"</span> data-tryon data-tryon-mode=<span class="c">"inline"</span>
+     data-tryon-sku=<span class="c">"{{ product.selected_or_first_available_variant.sku }}"</span>&gt;&lt;/div&gt;</pre>
+
+        <h3>ب) کاتالوگ از خودِ محصولات (بدون JSON دستی)</h3>
+        <p>
+          برای هر محصول یک metafield از نوع JSON با کلید <code>custom.tryon_frame</code>:
+          <code>{ "shape": "cateye", "size": "53-19-145", "material": "acetate" }</code>.
+          رنگ‌ها و سایزها را افزونه از <code>options</code> محصول می‌خواند؛ اسم رنگ («مشکی براق»، «Havana Tan») را خودش
+          به رنگ متریال تبدیل می‌کند و <code>available=false</code> را «ناموجود» می‌زند.
+        </p>
+        <pre>window.TryOn.init({
+  mount: "#tryon",
+  products: [TryOn.fromShopify({{ product | json }}, {{ product.metafields.custom.tryon_frame.value | json }})],
+});</pre>
+
+        <h3>ج) مدل سه‌بعدی محصول</h3>
+        <p>
+          با <code>npm run bake</code> برای هر مدل یک <code>.glb</code> می‌سازید؛ همان را در Shopify به‌عنوان 3D Model
+          آپلود کنید تا مشتری آیفونی بتواند عینک را در اتاقش (AR Quick Look) ببیند. اگر ترجیح می‌دهید افزونه همان GLB
+          را روی صورت بنشاند، در JSON محصول کلید <code>glb</code> و <code>widthMM</code> را بگذارید.
+        </p>
+      </section>
+
+      <section id="woo">
+        <h2><span>۰۴</span>WooCommerce</h2>
+        <p>یک فایل PHP در <code>wp-content/plugins/tryon/tryon.php</code> — enqueue + شورت‌کد + فیلد محصول:</p>
+        <pre>&lt;?php
+/* Plugin Name: پرو مجازی عینک */
+add_action('wp_enqueue_scripts', function () {
+  wp_enqueue_script('tryon', content_url('/tryon/tryon.js'), [], null, true);
+  wp_add_inline_script('tryon', 'window.__TRYON__ = ' . wp_json_encode([
+    'products' =&gt; content_url('/tryon/products.json'),
+    'brand'    =&gt; [ 'name' =&gt; get_bloginfo('name'), 'whatsapp' =&gt; get_option('tryon_whatsapp') ],
+  ]) . ';', 'before');
+});
+add_shortcode('tryon', function ($a) {
+  return '&lt;div data-tryon data-tryon-mode="inline" data-tryon-sku="'
+       . esc_attr($a['sku'] ?? '') . '" style="height:620px"&gt;&lt;/div&gt;';
+});</pre>
+        <p>
+          در صفحهٔ محصول: <code>[tryon sku="AR-104"]</code>. برای دادهٔ سه‌بعدی هر محصول هم می‌توانید متای
+          <code>_tryon_frame</code> (JSON) بگذارید؛ <code>TryOn.fromWoo(product, meta)</code> همان را می‌خواند.
+        </p>
+      </section>
+
+      <section id="api">
+        <h2><span>۰۵</span>API — هر سایت دیگری</h2>
+        <pre>const tryon = TryOn.init({
+  mount: "#tryon",              mode: "inline",
+  products: "/tryon/products.json",
+  brand: { name: "اپتیک آروین", accent: "#d8b478", whatsapp: "989190051635" },
+  cart: { mode: "event", add: (item) =&gt; cart.add(item) },
+  features: { hairLayer: true, contactShadow: true, fitSheet: true },
+});
+
+tryon.on("tryon:cart", (e) =&gt; cart.add({ sku: e.detail.sku, variant: e.detail.variant }));
+tryon.on("tryon:fit",  (e) =&gt; console.log(e.detail.pd, e.detail.faceW));
+
+tryon.select("AR-104");   // عوض کردن فریم
+tryon.setVariant(1);      // عوض کردن رنگ
+tryon.screenshot();       // عکس پرو با واترمارک فروشگاه
+tryon.measurements();      // { pd, faceW, faceH, nose } به میلی‌متر
+tryon.fitScore();          // { score, level, summary }
+tryon.destroy();           // بستن دوربین و حذف کامل</pre>
+        <p>
+          رویدادها: <code>ready</code> · <code>product</code> · <code>variant</code> · <code>fit</code> ·
+          <code>faceshape</code> · <code>snapshot</code> · <code>cart</code> · <code>log</code> · <code>error</code>.
+        </p>
+      </section>
+
+      <section id="json">
+        <h2><span>۰۶</span>شکل فایل کاتالوگ</h2>
+        <pre>{
+  "version": 2,
+  "products": [{
+    "id": "AR-104", "sku": "AR-104", "name": "گربه‌ای استات",
+    "price": 6200000, "currency": "تومان", "size": "53□19-145",
+    "shape": "cateye", "material": "acetate", "finish": "tortoise", "lens": "clear",
+    "bestFor": ["round", "square"], "tags": ["fashion"],
+    "colors": [{ "name": "لاک‌پشتی", "color": "#8a5a2b", "lens": "brown-gradient" }]
+  }]
+}</pre>
+        <p>
+          فقط <code>name</code> اجباری است؛ بقیه از <code>shape</code> و <code>size</code> و پیش‌فرض‌های امن ساخته
+          می‌شوند. برای دیدن همهٔ شکل‌ها و رنگ‌های ممکن، فایل <code>docs/EMBEDDING.md</code> را ببینید.
+        </p>
+      </section>
+
+      <section id="studio">
+        <h2><span>۰۷</span>فریم جدید بدون مدل‌سازی سه‌بعدی</h2>
+        <p>
+          لازم نیست هر محصول را در Blender بسازید. در <a href="../studio.html">استودیوی فریم</a> عکس
+          تمام‌جبههٔ فریم را بکشید و عدد چاپی روی دسته را وارد کنید: لبهٔ عدسی‌ها اندازه‌گیری می‌شود، فریم با
+          میلی‌مترهای واقعی ساخته می‌شود، و خروجی GLB + PNG + JSON همان لحظه قابل گرفتن است.
+        </p>
+        <a class="pill" href="../studio.html">باز کردن استودیو</a>
+        <a class="pill" href="../#collection" style="background:#8a6b2f">دیدن دموی فروشگاه</a>
+      </section>
+
+      <section id="trouble">
+        <h2><span>۰۸</span>عیب‌یابی</h2>
+        <table>
+          <tr>
+            <th>نشانه</th>
+            <th>علت و راه</th>
+          </tr>
+          <tr>
+            <td>دوربین باز نمی‌شود</td>
+            <td>
+              صفحه HTTP است → HTTPS. یا کاربر اجازه نداده → پیام خود افزونه را ببینید. در iframe باید
+              <code>allow="camera"</code> باشد.
+            </td>
+          </tr>
+          <tr>
+            <td>صفحه سفید/خطای <code>Failed to fetch</code></td>
+            <td>مسیر <code>products.json</code> یا <code>lib/</code> غلط است؛ <code>baseURL</code> را در init بدهید.</td>
+          </tr>
+          <tr>
+            <td>عینک بزرگ/کوچک است</td>
+            <td>
+              عدد <code>size</code> محصول را از چاپ روی دسته بردارید؛ اگر نیست فاصلهٔ مردمک را دستی در برگهٔ فیت
+              وارد کنید.
+            </td>
+          </tr>
+          <tr>
+            <td>کند است</td>
+            <td><code>quality: "lite"</code> یا <code>features: { hairLayer:false, contactShadow:false }</code>.</td>
+          </tr>
+          <tr>
+            <td>استایل افزونه با تم شما نمی‌خواند</td>
+            <td><code>theme: "light"</code> یا متغیرهای <code>--vt-accent</code> و <code>--vt-surface</code>.</td>
+          </tr>
+        </table>
+      </section>
+
+      <footer>
+        نسخهٔ افزونه ۲٫۰ — هندسهٔ فریم رویه‌ای با میلی‌متر واقعی · تشخیص چهره با MediaPipe Face Landmarker ·
+        رندر با three.js. هیچ تصویری از مشتری از دستگاه خارج نمی‌شود.
+      </footer>
+    </div>
+  </body>
+</html>

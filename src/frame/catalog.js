@@ -1,0 +1,561 @@
+/**
+ * catalog.js — کاتالوگ پیش‌فرض (۲۸ فریم با مشخصات واقعی اپتیک)
+ *
+ * هر قلم فقط «اعداد میلی‌متری + شکل + متریال» است؛ هندسه و رندر از موتور
+ * رویه‌ای ساخته می‌شود. فروشگاه‌ها همین schema را در products.json خودشان
+ * می‌نویسند (یا از API محصول map می‌کنند) → فریم بی‌نهایت، بدون Blender.
+ *
+ * فیلدهای اختیاریِ هندسه (exp، catAmp، teardrop…) برای تنظیم دقیق شکل‌اند.
+ */
+
+/** @typedef {{name:string,color:string,finish?:string,metalTint?:string,lens?:string|object,translucent?:number}} Variant */
+/** @typedef {{id:string,name:string,brand?:string,price?:number,currency?:string,sku?:string,url?:string,shape:string,style?:string,material?:string,finish?:string,size:string,lensH?:number,colors:Variant[],bestFor?:string[],tags?:string[],gender?:string,spec?:object,lens?:string|object}} Product */
+
+export const CATALOG = [
+  // ── استات (acetate) ─────────────────────────────────────────────────
+  {
+    id: "AR-101",
+    name: "مربعی کلاسیک",
+    brand: "آروین",
+    price: 4850000,
+    shape: "square",
+    material: "acetate",
+    finish: "polished-black",
+    size: "52□18-145",
+    lensH: 44,
+    rimW: 5.4,
+    rimT: 3.7,
+    pantoDeg: 9,
+    tags: ["optical", "classic"],
+    bestFor: ["round", "oval", "heart"],
+    colors: [
+      { name: "مشکی براق", color: "#101114", finish: "polished-black" },
+      { name: "لاک‌پشتی عسلی", color: "#7a4a22", finish: "havana" },
+      { name: "خاکستری مات", color: "#4b4f55", finish: "matte-sand" },
+      { name: "یشمی", color: "#2f4436", finish: "acetate" },
+    ],
+  },
+  {
+    id: "AR-102",
+    name: "مستطیل اداری",
+    shape: "rectangle",
+    material: "acetate",
+    size: "54□16-145",
+    lensH: 33,
+    rimW: 4.4,
+    rimT: 3.2,
+    tags: ["optical", "office"],
+    bestFor: ["round", "oval", "triangle"],
+    colors: [
+      { name: "مشکی", color: "#14161a", finish: "polished-black" },
+      { name: "سرمه‌ای", color: "#232f4c", finish: "denim-blue" },
+      { name: "شفاف یخی", color: "#cfd8dc", finish: "crystal", translucent: 0.55 },
+    ],
+  },
+  {
+    id: "AR-103",
+    name: "گرد رترو",
+    shape: "round",
+    material: "acetate",
+    size: "49□21-145",
+    lensH: 47,
+    rimW: 4.6,
+    tags: ["retro", "optical"],
+    bestFor: ["square", "oblong", "diamond"],
+    colors: [
+      { name: "عسلی تیره", color: "#6a4222", finish: "havana" },
+      { name: "زرشکی", color: "#5e1a22", finish: "oxblood" },
+      { name: "مشکی", color: "#111216", finish: "polished-black" },
+    ],
+  },
+  {
+    id: "AR-104",
+    name: "گربه‌ای الكانسا",
+    shape: "cateye",
+    material: "acetate",
+    size: "54□17-140",
+    lensH: 42,
+    rimW: 5.6,
+    catAmp: 0.46,
+    catWidth: 0.34,
+    tags: ["fashion", "women"],
+    gender: "female",
+    bestFor: ["round", "oval", "triangle", "square"],
+    colors: [
+      { name: "مشکی/طلایی", color: "#131418", finish: "polished-black", accentColor: "#d8b478" },
+      { name: "شکلاتی", color: "#4a2c1c", finish: "tortoise-light" },
+      { name: "یاسی شفاف", color: "#b9b3d6", finish: "crystal", translucent: 0.62 },
+      { name: "قرمز لاکی", color: "#7d1822", finish: "acetate" },
+    ],
+  },
+  {
+    id: "AR-105",
+    name: "پانتو فرانسوی",
+    shape: "panto",
+    material: "acetate",
+    size: "51□20-145",
+    lensH: 47,
+    rimW: 4.8,
+    tags: ["boutique"],
+    bestFor: ["square", "oblong", "diamond"],
+    colors: [
+      { name: "لاک‌پشتی کهربایی", color: "#8a5a26", finish: "havana" },
+      { name: "زیتونی مات", color: "#4a4a2c", finish: "olive" },
+    ],
+  },
+  {
+    id: "AR-106",
+    name: "ابروفلز (browline)",
+    shape: "browline",
+    style: "brow",
+    material: "acetate",
+    size: "53□18-145",
+    lensH: 43,
+    rimW: 5.8,
+    metalTint: "gunmetal",
+    tags: ["classic", "unisex"],
+    bestFor: ["round", "triangle", "oval"],
+    colors: [
+      { name: "مشکی/نقره‌ای", color: "#15171b", finish: "polished-black", metalColor: "#c2c7cd" },
+      { name: "توسکی/طلایی", color: "#3e434b", finish: "matte-sand", metalColor: "#d3b273" },
+      { name: "لاک‌پشتی", color: "#6a3f20", finish: "havana", metalColor: "#cbb27a" },
+    ],
+  },
+  {
+    id: "AR-107",
+    name: "هشت‌ضلعی طوسی",
+    shape: "octagon",
+    material: "acetate",
+    size: "50□19-145",
+    lensH: 45,
+    rimW: 4.2,
+    tags: ["designer"],
+    bestFor: ["round", "square", "oval"],
+    colors: [
+      { name: "دودی شفاف", color: "#6a6f74", finish: "crystal", translucent: 0.7 },
+      { name: "مشکی", color: "#111215", finish: "polished-black" },
+    ],
+  },
+  {
+    id: "AR-108",
+    name: "شش‌ضلعی هندسی",
+    shape: "geometric",
+    material: "acetate",
+    size: "51□20-145",
+    lensH: 44,
+    rimW: 4.6,
+    tags: ["statement"],
+    bestFor: ["round", "oval", "heart"],
+    colors: [
+      { name: "عنابی", color: "#4c1620", finish: "oxblood" },
+      { name: "شتری", color: "#8a6a44", finish: "horn" },
+    ],
+  },
+  {
+    id: "AR-109",
+    name: "بزرگ اورسایز",
+    shape: "oversize",
+    material: "acetate",
+    size: "56□17-145",
+    lensH: 54,
+    rimW: 6.2,
+    tags: ["sun", "statement"],
+    bestFor: ["oblong", "square", "triangle"],
+    lens: { type: "gradient", color: "#2c2f36", tint: 0.62 },
+    colors: [
+      { name: "مشکی", color: "#0f1013", finish: "polished-black" },
+      { name: "لاک‌پشتی", color: "#7d4c22", finish: "havana" },
+    ],
+  },
+  {
+    id: "AR-110",
+    name: "پروانه‌ای تابستانی",
+    shape: "butterfly",
+    material: "acetate",
+    size: "55□16-140",
+    lensH: 45,
+    rimW: 5.2,
+    tags: ["sun", "women"],
+    gender: "female",
+    bestFor: ["round", "square", "diamond"],
+    lens: { type: "gradient", color: "#40302a", tint: 0.55 },
+    colors: [
+      { name: "مشکی/عدسی عسلی", color: "#121317", finish: "polished-black" },
+      { name: "کرم", color: "#d8cbb6", finish: "acetate" },
+    ],
+  },
+  {
+    id: "AR-111",
+    name: "سپر اسپرت",
+    shape: "shield",
+    material: "acetate",
+    size: "60□15-135",
+    lensH: 42,
+    rimW: 6.4,
+    rimT: 4.2,
+    tags: ["sport", "sun"],
+    bestFor: ["oblong", "square"],
+    lens: { type: "mirror", color: "#20343c", tint: 0.8 },
+    colors: [
+      { name: "مشکی مات", color: "#141618", finish: "matte-black" },
+      { name: "نئون مات", color: "#3b4a2f", finish: "matte-sand" },
+    ],
+  },
+  {
+    id: "AR-112",
+    name: "مربعی شاخ گاو",
+    shape: "square",
+    material: "acetate",
+    size: "53□17-145",
+    lensH: 45,
+    rimW: 5.6,
+    tags: ["natural", "premium"],
+    bestFor: ["round", "oval", "heart"],
+    colors: [{ name: "شاخ طبیعی", color: "#8a6a44", finish: "horn" }],
+  },
+  // ── فلزی (metal) ────────────────────────────────────────────────────
+  {
+    id: "AR-201",
+    name: "خلبانی طلایی",
+    shape: "aviator",
+    material: "metal",
+    size: "58□14-135",
+    lensH: 54,
+    doubleBridge: true,
+    metalTint: "gold",
+    tags: ["sun", "iconic"],
+    bestFor: ["square", "round", "oblong"],
+    lens: { type: "gradient", color: "#4a3a26", tint: 0.55 },
+    colors: [
+      { name: "طلایی/دودی", color: "#d8b478", metalColor: "#d8b478", finish: "polished" },
+      { name: "نقره‌ای آینه‌ای", color: "#c6cbd2", metalColor: "#c6cbd2", lens: { type: "mirror", color: "#2a3b45" } },
+      { name: "مشکی مات", color: "#181a1d", metalColor: "#2c2f33", finish: "matte-black" },
+    ],
+  },
+  {
+    id: "AR-202",
+    name: "گرد فلزی ظریف",
+    shape: "roundmetal",
+    material: "metal",
+    size: "47□21-145",
+    lensH: 46,
+    metalRimW: 1.9,
+    metalTint: "bronze",
+    tags: ["vintage", "light"],
+    bestFor: ["square", "oblong", "diamond"],
+    colors: [
+      { name: "مسی", color: "#93683f", metalColor: "#93683f" },
+      { name: "طلایی", color: "#d3b273", metalColor: "#d3b273" },
+      { name: "روثنیوم", color: "#6a6f74", metalColor: "#6a6f74", finish: "brushed" },
+    ],
+  },
+  {
+    id: "AR-203",
+    name: "مستطیل تیتانیوم",
+    shape: "rectangle",
+    material: "titanium",
+    size: "54□17-145",
+    lensH: 34,
+    metalRimW: 1.7,
+    templeT: 1.5,
+    tags: ["ultralight", "office"],
+    bestFor: ["round", "oval", "heart", "triangle"],
+    metalTint: "titanium",
+    colors: [
+      { name: "تیتانیوم نقره‌ای", color: "#a7a9ac", metalColor: "#a7a9ac", finish: "brushed" },
+      { name: "تیتانیوم مشکی", color: "#26292d", metalColor: "#2c3035", finish: "brushed" },
+      { name: "رزگلد", color: "#c58e75", metalColor: "#c58e75" },
+    ],
+  },
+  {
+    id: "AR-204",
+    name: "نیم‌فریم مستطیلی",
+    shape: "rectangle",
+    style: "half",
+    material: "metal",
+    size: "55□16-145",
+    lensH: 37,
+    tags: ["business"],
+    bestFor: ["round", "oval", "oblong"],
+    colors: [
+      { name: "نقره‌ای", color: "#c3c8ce", metalColor: "#c3c8ce" },
+      { name: "طلایی", color: "#d3b273", metalColor: "#d3b273" },
+    ],
+  },
+  {
+    id: "AR-205",
+    name: "بدون فریم (rimless)",
+    shape: "rectangle",
+    style: "rimless",
+    material: "metal",
+    size: "53□18-140",
+    lensH: 38,
+    tags: ["minimal", "light"],
+    bestFor: ["square", "round", "triangle", "oblong"],
+    colors: [
+      { name: "نقره‌ای براق", color: "#d4d9de", metalColor: "#d4d9de" },
+      { name: "طلایی رز", color: "#c58e75", metalColor: "#c58e75" },
+    ],
+  },
+  {
+    id: "AR-206",
+    name: "هشت‌ضلعی فلزی",
+    shape: "octagon",
+    material: "metal",
+    size: "49□20-145",
+    lensH: 45,
+    metalRimW: 1.8,
+    tags: ["vintage", "unisex"],
+    bestFor: ["round", "square", "oval"],
+    colors: [
+      { name: "مشکی/طلایی", color: "#1c1e22", metalColor: "#d3b273" },
+      { name: "دودی", color: "#5c646d", metalColor: "#5c646d", finish: "brushed" },
+    ],
+  },
+  {
+    id: "AR-207",
+    name: "خلبانی مستطیلی مشکی",
+    shape: "aviator",
+    material: "metal",
+    size: "56□16-140",
+    lensH: 48,
+    doubleBridge: true,
+    tags: ["sun", "unisex"],
+    bestFor: ["round", "oval", "heart"],
+    lens: { type: "photo", color: "#16181c", tint: 0.9 },
+    colors: [
+      { name: "مشکی/دودی", color: "#191b1f", metalColor: "#24272c" },
+      { name: "سبز ارتشی", color: "#3c4632", metalColor: "#4d573f" },
+    ],
+  },
+  {
+    id: "AR-208",
+    name: "مربعی سیم‌ظریف",
+    shape: "square",
+    material: "metal",
+    size: "51□19-145",
+    lensH: 44,
+    metalRimW: 1.8,
+    tags: ["optical", "light"],
+    bestFor: ["round", "oval", "triangle"],
+    colors: [
+      { name: "نقره‌ای", color: "#c4c9cf", metalColor: "#c4c9cf" },
+      { name: "Gunmetal", color: "#5c646d", metalColor: "#5c646d" },
+      { name: "طلایی مات", color: "#b39a68", metalColor: "#b39a68", finish: "brushed" },
+    ],
+  },
+  // ── بچگانه / نوجوان ─────────────────────────────────────────────────
+  {
+    id: "AR-301",
+    name: "مربعی نوجوان",
+    shape: "square",
+    material: "acetate",
+    size: "46□16-130",
+    lensH: 38,
+    rimW: 4.8,
+    templeLen: 130,
+    tags: ["kids", "flex"],
+    bestFor: ["round", "square"],
+    colors: [
+      { name: "آبی آسمانی", color: "#4a7ba8", finish: "acetate" },
+      { name: "صورتی", color: "#c46a86", finish: "acetate" },
+      { name: "سبز ارتشی", color: "#5a6b46", finish: "acetate" },
+    ],
+  },
+  {
+    id: "AR-302",
+    name: "گرد بچگانه فلزی",
+    shape: "roundmetal",
+    material: "metal",
+    size: "44□17-125",
+    lensH: 43,
+    templeLen: 125,
+    tags: ["kids"],
+    bestFor: ["square", "oblong"],
+    colors: [
+      { name: "بنفش", color: "#7a5ea6", metalColor: "#7a5ea6" },
+      { name: "فیروزه‌ای", color: "#3f9aa8", metalColor: "#3f9aa8" },
+    ],
+  },
+  // ── آفتابی‌های ویژه ──────────────────────────────────────────────────
+  {
+    id: "AR-401",
+    name: "گربه‌ای آفتابی",
+    shape: "cateye",
+    material: "acetate",
+    size: "55□16-140",
+    lensH: 43,
+    rimW: 5.8,
+    catAmp: 0.5,
+    tags: ["sun", "women"],
+    gender: "female",
+    bestFor: ["round", "square", "oval"],
+    lens: { type: "gradient", color: "#3a2436", tint: 0.6 },
+    colors: [
+      { name: "مشکی", color: "#111215", finish: "polished-black" },
+      { name: "لاک‌پشتی", color: "#7a4a22", finish: "havana" },
+      { name: "کرم مرواریدی", color: "#ddd3c2", finish: "acetate" },
+    ],
+  },
+  {
+    id: "AR-402",
+    name: "مربعی پلاریزه",
+    shape: "square",
+    material: "acetate",
+    size: "54□18-145",
+    lensH: 47,
+    tags: ["sun", "polarized"],
+    bestFor: ["round", "oblong", "heart"],
+    lens: { type: "photo", color: "#141619", tint: 0.92 },
+    colors: [
+      { name: "مشکی/سبز", color: "#15171a", finish: "polished-black", accentColor: "#6fa07a" },
+      { name: "ماهی‌گوشتی", color: "#4a6b6b", finish: "acetate" },
+    ],
+  },
+  {
+    id: "AR-403",
+    name: "گرد آفتابی متال",
+    shape: "round",
+    material: "metal",
+    size: "50□20-140",
+    lensH: 49,
+    tags: ["sun", "retro"],
+    bestFor: ["square", "oblong"],
+    lens: { type: "mirror", color: "#1f3a3f", tint: 0.8 },
+    colors: [
+      { name: "طلایی/آینه سبز", color: "#d0ad6c", metalColor: "#d0ad6c" },
+      { name: "مشکی/آینه آبی", color: "#1a1c20", metalColor: "#2a2e34" },
+    ],
+  },
+  {
+    id: "AR-404",
+    name: "هندسی آفتابی مات",
+    shape: "geometric",
+    material: "acetate",
+    size: "55□17-145",
+    lensH: 48,
+    rimW: 5.4,
+    tags: ["sun", "designer"],
+    bestFor: ["round", "oval"],
+    lens: { type: "photo", color: "#191a1d", tint: 0.88 },
+    colors: [
+      { name: "خاکی مات", color: "#6f6552", finish: "matte-sand" },
+      { name: "مشکی مات", color: "#16181b", finish: "matte-black" },
+    ],
+  },
+  {
+    id: "AR-405",
+    name: "کروازئوس پل بلندی",
+    shape: "oval",
+    material: "acetate",
+    size: "52□18-145",
+    lensH: 40,
+    highBridge: true,
+    tags: ["fit-asian", "optical"],
+    bestFor: ["round", "square", "triangle"],
+    colors: [
+      { name: "قهوه‌ای شفاف", color: "#7d5a3c", finish: "translucent-amber" },
+      { name: "مشکی", color: "#141519", finish: "polished-black" },
+    ],
+  },
+  {
+    id: "AR-406",
+    name: "ورزشی کبریتی",
+    shape: "shield",
+    material: "acetate",
+    size: "62□14-135",
+    lensH: 46,
+    rimW: 6.8,
+    templeW: 6.4,
+    templeT: 3.0,
+    tags: ["sport", "sun"],
+    bestFor: ["square", "oblong"],
+    lens: { type: "mirror", color: "#3a2a1e", tint: 0.85 },
+    colors: [
+      { name: "مشکی/نارنجی", color: "#17181b", finish: "matte-black", accentColor: "#d97a3a" },
+      { name: "آبی متالیک", color: "#2a4a6b", finish: "brushed", metalColor: "#4c7299" },
+    ],
+  },
+];
+
+/** شکل‌های صورت که در موتور پیشنهاد استفاده می‌شوند. */
+export const FACE_SHAPES = {
+  oblong: { label: "کشیده (مستطیلی)" },
+  round: { label: "گرد" },
+  square: { label: "مربعی" },
+  oval: { label: "بیضی" },
+  heart: { label: "قلبی" },
+  diamond: { label: "الماسی" },
+  triangle: { label: "مثلثی" },
+};
+
+// جنسیت را از تگ‌ها می‌سازیم تا فروشگاه لازم نباشد دستی پر کند
+for (const p of CATALOG) {
+  if (!p.gender)
+    p.gender = (p.tags || []).includes("women") ? "female" : (p.tags || []).includes("men") ? "male" : "unisex";
+}
+
+export const CATALOG_BY_ID = new Map(CATALOG.map((p) => [String(p.id), p]));
+
+/** نرمال‌سازی قلم کاتالوگ → spec هندسه + متریال (برای موتور رندر). */
+export function toEngineSpec(product) {
+  const sizeParts = String(product.size || "")
+    .split(/[^0-9.]+/)
+    .filter(Boolean)
+    .map(Number);
+  const spec = {
+    shape: product.shape || "square",
+    style: product.style || "full",
+    material: product.material || "acetate",
+    lensW: sizeParts[0] || product.lensW || 52,
+    dbn: sizeParts[1] || product.dbn || 18,
+    templeLen: sizeParts[2] || product.templeLen || 145,
+    lensH: product.lensH || undefined,
+    finish: product.finish,
+    ...product.spec,
+  };
+  for (const k of [
+    "rimW",
+    "rimT",
+    "bevel",
+    "pantoDeg",
+    "splayDeg",
+    "templeW",
+    "templeT",
+    "templeTaper",
+    "earDrop",
+    "metalRimW",
+    "metalRimT",
+    "doubleBridge",
+    "highBridge",
+    "nosePads",
+    "bridgeDrop",
+    "bridgeArch",
+    "baseCurve",
+    "catAmp",
+    "catWidth",
+    "teardrop",
+    "exp",
+    "depth",
+    "topFlatten",
+    "nasalNotch",
+    "topWide",
+    "hexBlend",
+    "lensTiltDeg",
+  ])
+    if (product[k] !== undefined) spec[k] = product[k];
+  return spec;
+}
+
+/** «52□18-145» → { lensW, dbn, temple } — همان عددی که روی دستهٔ عینک چاپ شده */
+export function parseSize(str) {
+  const m = String(str || "")
+    .replace(/\s+/g, " ")
+    .match(/(\d{2,3})\s*[□×x-]?\s*(\d{1,2})\s*[- ]?\s*(\d{2,3})/i);
+  if (!m) return null;
+  const lensW = +m[1],
+    dbn = +m[2],
+    temple = +m[3];
+  if (lensW < 30 || lensW > 78 || dbn < 8 || dbn > 30 || temple < 95 || temple > 175) return null;
+  return { lensW, dbn, temple };
+}

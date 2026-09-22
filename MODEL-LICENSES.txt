@@ -1,60 +1,33 @@
-3D MODEL ATTRIBUTIONS — CC BY 4.0
+THIRD-PARTY NOTICES — tryon v2.0 (2026-09-22)
 
-Square frame:
-"Cartoon Glasses" by Lucas_Bartolomeo
-https://sketchfab.com/3d-models/cartoon-glasses-fddd63a49615405fb17f5c7ff65345c2
-Licensed under CC BY 4.0: https://creativecommons.org/licenses/by/4.0/
+This plugin is commercial software (see LICENSE.md). The pieces below are used under
+their own licenses and remain governed by them.
 
-Round frame:
-"Glasses 07" by Dokono Kinokoda
-https://sketchfab.com/3d-models/glasses-07-06b22104f56a4356aa9ffa825abd8d6b
-Licensed under CC BY 4.0: https://creativecommons.org/licenses/by/4.0/
+1) three.js — MIT
+   Bundled from node_modules/three (v0.169.0) into dist/tryon.js at build time.
+   Copyright © 2010-2024 three.js authors — https://github.com/mrdoob/three.js
 
-Cat/plastic frame:
-"Plastic Sunglasses" by Incg5764
-https://sketchfab.com/3d-models/plastic-sunglasses-d5417dcb97fb41b39f57fc8772a7ecab
-Licensed under CC BY 4.0: https://creativecommons.org/licenses/by/4.0/
+2) @mediapipe/tasks-vision 0.10.14 + model assets — Apache-2.0
+   Vendored locally: lib/tasks-vision/ (JS + wasm),
+   lib/face_landmarker.task, lib/hair_segmenter.tflite, lib/selfie_multiclass_256x256.tflite
+   Copyright 2023 The MediaPipe Authors. Full text in section A below.
 
-Aviator frame:
-"Aviator sunglasses" by Kimppo
-https://sketchfab.com/3d-models/aviator-sunglasses-00d1cb5aa82745228a3b764c97f867de
-Licensed under CC BY 4.0: https://creativecommons.org/licenses/by/4.0/
+3) Vazirmatn — SIL Open Font License 1.1
+   Loaded from CDN for the demo page only; not redistributed in this repository.
+   Copyright © 2015 www.Rastikar.com — https://github.com/rastikerdar/vazirmatn
 
-Models were converted to GLB and optimized for mobile delivery. No endorsement by the original authors is implied.
+4) 3D frame geometry — generated procedurally by src/frame/*. No third-party model
+   data is shipped in v2. Version 1 of this project displayed four CC BY 4.0 glasses
+   models from Sketchfab (square.glb / round.glb / cat.glb / aviator.glb); those files
+   are no longer part of the product and are not redistributed here. Attribution below
+   is kept for the git history of that version.
 
-═══════════════════════════════════════════════════════════════════
-BUNDLED JS LIBRARY LICENSES (vendored locally in /lib)
-═══════════════════════════════════════════════════════════════════
+5) assets/samples/*.png — product photographs owned by Optic Arvin (this repository's
+   author). Provided only as input samples for the photo→3D studio; do not reuse for
+   other shops.
 
-three.js r147 (lib/three.min.js, lib/GLTFLoader.js)
-Copyright © 2010-2022 three.js authors
-https://github.com/mrdoob/three.js — Licensed under the MIT License:
 
--------------------------------------------------------------------
-The MIT License
-
-Copyright © 2010-2022 three.js authors
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
--------------------------------------------------------------------
-
-MediaPipe Tasks Vision 0.10.14 (lib/tasks-vision/)
+A) MediaPipe Tasks Vision 0.10.14 (lib/tasks-vision/ + model files)
 Copyright 2023 The MediaPipe Authors
 https://developers.google.com/mediapipe — Licensed under the Apache License,
 Version 2.0 (full text below):
@@ -260,3 +233,62 @@ Version 2.0 (full text below):
       WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
       See the License for the specific language governing permissions and
       limitations under the License.
+
+───────────────────────────────────────────────────────────────────
+B) CC BY 4.0 attributions — legacy v1 models (no longer shipped)
+───────────────────────────────────────────────────────────────────
+
+Square frame:
+"Cartoon Glasses" by Lucas_Bartolomeo
+https://sketchfab.com/3d-models/cartoon-glasses-fddd63a49615405fb17f5c7ff65345c2
+Licensed under CC BY 4.0: https://creativecommons.org/licenses/by/4.0/
+
+Round frame:
+"Glasses 07" by Dokono Kinokoda
+https://sketchfab.com/3d-models/glasses-07-06b22104f56a4356aa9ffa825abd8d6b
+Licensed under CC BY 4.0: https://creativecommons.org/licenses/by/4.0/
+
+Cat/plastic frame:
+"Plastic Sunglasses" by Incg5764
+https://sketchfab.com/3d-models/plastic-sunglasses-d5417dcb97fb41b39f57fc8772a7ecab
+Licensed under CC BY 4.0: https://creativecommons.org/licenses/by/4.0/
+
+Aviator frame:
+"Aviator sunglasses" by Kimppo
+https://sketchfab.com/3d-models/aviator-sunglasses-00d1cb5aa82745228a3b764c97f867de
+Licensed under CC BY 4.0: https://creativecommons.org/licenses/by/4.0/
+
+Models were converted to GLB and optimized for mobile delivery. No endorsement by the original authors is implied.
+
+═══════════════════════════════════════════════════════════════════
+C) three.js — MIT (bundled from node_modules into dist/tryon.js)
+═══════════════════════════════════════════════════════════════════
+
+three.js (0.169.0)
+Copyright © 2010-2024 three.js authors
+https://github.com/mrdoob/three.js — Licensed under the MIT License:
+
+-------------------------------------------------------------------
+The MIT License
+
+Copyright © 2010-2024 three.js authors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+-------------------------------------------------------------------
+
