@@ -558,7 +558,7 @@ export class VirtualTryOn extends Native {
       this.maybeHint(pose);
     } else {
       this.stage.hide();
-      this.ctx.gl.getContext("2d") || this.stage.renderer.clear();
+      this.stage.renderer.clear();
       this.ctx.sh.clearRect(0, 0, this.el.sh.width, this.el.sh.height);
       this.setStatus("search", t(this.cfg.lang, "looking"));
     }
@@ -566,15 +566,10 @@ export class VirtualTryOn extends Native {
 
     if (this.cfg.features.hairLayer && tr.segmenter && now - (this.lastSeg || 0) > (this.quality === "lite" ? 260 : 130)) {
       this.lastSeg = now;
-      if (tr.segmentHair(this.el.oc)) {
-        const c = this.ctx.oc;
-        c.save();
-        c.globalCompositeOperation = "destination-in";
-        c.filter = "blur(2.2px)";
-        c.fillStyle = "#fff";
-        c.fillRect(0, 0, this.el.oc.width, this.el.oc.height);
-        c.restore();
-      }
+      // ماسک مو در بوم جدا؛ روی لایهٔ oc پیکسل‌های واقعی مو از ویدیو کشیده می‌شود (نه لکهٔ سفید)
+      this.hairCv = this.hairCv || document.createElement("canvas");
+      if (tr.segmentHair(this.hairCv)) this.stage.drawHairLayer(this.ctx.oc, this.hairCv);
+      else this.ctx.oc.clearRect(0, 0, this.el.oc.width, this.el.oc.height);
     }
     this.scan.draw(pose);
   }
@@ -681,7 +676,7 @@ export class VirtualTryOn extends Native {
       const d = e.key === "ArrowRight" ? (this.dir === "rtl" ? -1 : 1) : e.key === "ArrowLeft" ? (this.dir === "rtl" ? 1 : -1) : 0;
       if (!d) return;
       e.preventDefault();
-      this.select(Math.max(0, Math.min(this.products.length - 1), this.byIndex + d));
+      this.select(Math.max(0, Math.min(this.products.length - 1, this.byIndex + d)));
       this.cards[this.byIndex].scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
     });
     document.addEventListener("visibilitychange", () => {
@@ -926,11 +921,26 @@ export class VirtualTryOn extends Native {
     document.documentElement.style.setProperty("overflow", "hidden", "important");
     this.el.gate.hidden = this.booted;
     if (!this.booted) this.$("start").focus?.();
+    else if (this.state === "paused") this.resume();
+  }
+  async resume() {
+    try {
+      if (!this.tracker.stream) await this.tracker.startCamera({ light: this.quality === "lite" });
+      this.syncSize();
+      this.state = "live";
+      this.setStatus("live", t(this.cfg.lang, "live"));
+    } catch (e) {
+      this.setStatus("error", t(this.cfg.lang, "cameraBlocked"));
+      this.emit("error", { where: "resume", message: String(e?.message || e), name: e?.name });
+    }
   }
   close() {
     this.hidden = true;
     document.documentElement.style.removeProperty("overflow");
-    this.state = this.booted ? "paused" : "idle";
+    if (this.booted && this.tracker) {
+      this.tracker.stopCamera(); // چراغ دوربین خاموش شود؛ با open() دوباره روشن می‌شود
+      this.state = "paused";
+    } else this.state = "idle";
   }
   setProducts(list) {
     this.cfg.products = list;

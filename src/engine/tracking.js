@@ -428,7 +428,8 @@ export class FaceTracker {
     const front = applyQ(q, [0, 0, 1]);
     // فاصلهٔ تقریبی دوربین تا صورت (پیکسل) — از اندازهٔ مردمک و فاصلهٔ کانونی فرضی
     const focalPx = this.focalScale * Math.max(W, H);
-    const Lpx = clamp((focalPx * pdMm) / iris, 0.55 * focalPx, 4.2 * focalPx);
+    // در «فضای پیکسلیِ صفحهٔ چشم» فاصلهٔ دوربین دقیقاً برابر فاصلهٔ کانونی (پیکسل) است
+    const Lpx = focalPx;
     const vgPx = (this.vg * iris) / pdMm; // فریم، vg میلی‌متر جلوتر از صفحهٔ چشم
     const scale = iris / pdMm; // پیکسل بر میلی‌متر در صفحهٔ چشم (عمق را پرسپکتیو اصلاح می‌کند)
 

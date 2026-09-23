@@ -178,6 +178,7 @@ export function autoEmbed(root) {
   const doc = root || (typeof document !== "undefined" ? document : null);
   if (!doc || typeof doc.querySelectorAll !== "function") return []; // Node/SSR: بی‌خطر
   const made = [];
+  let overlay = null;
   const globalCfg = (typeof window !== "undefined" && window.__TRYON__) || readScriptConfig();
 
   for (const host of doc.querySelectorAll("[data-tryon]:not([data-tryon-done])")) {
@@ -198,14 +199,17 @@ export function autoEmbed(root) {
       const sku = btn.dataset ? btn.dataset.tryonSku : undefined;
       const target = btn.getAttribute ? btn.getAttribute("data-tryon-target") : null;
       const hostEl = target ? doc.querySelector(target) : null;
-      // نمونهٔ داخل مقصد (یا همان اسلات) را پیدا کن؛ اگر نبود یکی بساز
-      let api =
-        made.find((a) => (hostEl ? hostEl.contains(a.el) : a.el.isConnected && a.el.cfg.mode !== "overlay")) || made[0];
-      if (!api || !api.el.isConnected) api = init({ ...globalCfg, mode: "overlay" });
+      // data-tryon-target → همان نمونهٔ inline داخل مقصد؛ وگرنه یک overlay مشترک (دکمهٔ کنار هر عینک)
+      let api = hostEl ? made.find((a) => hostEl.contains(a.el)) : null;
+      if (hostEl && !api) api = init({ ...globalCfg, mode: "inline", mount: hostEl });
+      if (!api) {
+        api = overlay && overlay.el.isConnected ? overlay : (overlay = init({ ...globalCfg, mode: "overlay" }));
+      }
       if (sku) {
         filterBySku(api, sku);
         api.select(sku);
       }
+      if (hostEl) hostEl.scrollIntoView?.({ behavior: "smooth", block: "center" });
       api.open();
       if (typeof document !== "undefined")
         document.dispatchEvent(new CustomEvent("tryon:open", { detail: { sku: sku || null, source: btn } }));
