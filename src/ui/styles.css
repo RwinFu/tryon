@@ -650,6 +650,34 @@ button {
   line-height: 1.8;
   color: rgba(255, 255, 255, 0.58);
 }
+.gateProd {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: -6px auto 14px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 11px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.gateProd span {
+  color: rgba(255, 255, 255, 0.55);
+}
+.gateProd b {
+  color: var(--vt-accent-2, #f2d9a8);
+  font-weight: 800;
+}
+.gateProd small {
+  direction: ltr;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.55);
+}
+.gateProd[hidden] {
+  display: none;
+}
 .steps {
   display: grid;
   gap: 1px;

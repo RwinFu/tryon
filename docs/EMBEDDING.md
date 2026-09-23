@@ -9,7 +9,8 @@
 ## ۰) فایل‌ها
 
 ```
-dist/tryon.js          ← همین را در سایت بگذارید (تک‌فایل، بدون وابستگی npm)
+dist/tryon-loader.js   ← لودر ۲KB (توصیه‌شده): موتور فقط با اولین کلیک/نزدیک‌شدن اسلات بار می‌شود
+dist/tryon.js          ← موتور کامل (تک‌فایل، بدون وابستگی npm) — کنارِ لودر باید باشد
 dist/tryon.debug.js    ← نسخهٔ خوانا + سورس‌مپ (فقط برای دیباگ، build شده؛ در گیت نیست)
 dist/tryon.esm.js      ← برای پروژه‌های bandlerدار (Vite/Next/Rollup)
 products.json          ← کاتالوگ فریم‌ها (از store شما یا فایل آماده)
@@ -25,11 +26,11 @@ assets/frames/*.glb    ← خروجی npm run bake (برای مدل سه‌بع�
 
 ## ۱) نصب بدون کدنویسی (توصیه‌شده)
 
-یک `<script>` در `<head>` یا انتهای `body`:
+یک `<script>` در `<head>` یا انتهای `body` (لودر؛ `dist/tryon.js` باید در همان پوشه باشد):
 
 ```html
 <script
-  src="/tryon/dist/tryon.js"
+  src="/tryon/dist/tryon-loader.js"
   data-tryon-products="/tryon/products.json"
   data-tryon-lang="fa"
   data-tryon-accent="#d8b478"
@@ -44,9 +45,23 @@ assets/frames/*.glb    ← خروجی npm run bake (برای مدل سه‌بع�
 <!-- الف) پرو به‌صورت بلوک داخل صفحه (روی صفحهٔ محصول عالی است) -->
 <div data-tryon data-tryon-mode="inline" data-tryon-sku="AR-104" style="height: 620px"></div>
 
-<!-- ب) دکمه که پرو تمام‌صفحه را باز می‌کند -->
-<button data-tryon-open data-tryon-sku="AR-104">پرو مجازی این مدل</button>
+<!-- ب) دکمه که پرو تمام‌صفحه را باز می‌کند (کنار هر عینک در لیست محصولات) -->
+<button class="tryon-btn" data-tryon-open data-tryon-sku="AR-104">پرو مجازی این مدل</button>
 ```
+
+**رفتار دکمه:** هر `[data-tryon-open]` یک overlay تمام‌صفحهٔ *مشترک* باز می‌کند و همان SKU را روی صورت می‌نشاند
+(بقیهٔ فریم‌های هم‌شکل هم در ریل می‌آیند). اگر می‌خواهید دکمه به یک اسلات inline مشخص برود:
+`data-tryon-target="#slot"` — صفحه به اسلات اسکرول می‌شود و همان فریم انتخاب می‌شود.
+
+**استایل دکمه:** کلاس `tryon-btn` یک دکمهٔ آماده با آیکون عینک و حالت «در حال بارگذاری» می‌دهد؛ رنگ از
+`data-tryon-accent` یا `--tryon-accent` می‌آید. `tryon-btn ghost` (توخالی) و `tryon-btn block` (تمام‌عرض) هم هست.
+دکمهٔ خودتان را می‌خواهید؟ کلاس را نگذارید؛ فقط `data-tryon-open` کافی است.
+
+**لودر:** `data-tryon-preload="prefetch"` (پیش‌فرض: در بیکاری مرورگر prefetch)، `"eager"` (در بیکاری کامل بار شود)،
+`"none"`. `window.TryOnLoader.load()` یک Promise به `window.TryOn` می‌دهد؛ رویداد `tryon:loaded` هم روی `document` می‌آید.
+
+**مسیر مدل‌ها:** افزونه `lib/` را نسبت به آدرس خودِ اسکریپت پیدا می‌کند (اگر اسکریپت داخل `dist/` باشد، یک پله بالاتر).
+پس `/tryon/dist/tryon.js` ⇒ `/tryon/lib/…`. اگر جای دیگری است: `data-tryon-base-u-r-l="/cdn/tryon"` یا `baseURL` در `init()`.
 
 attributeهایی که روی المان میزبان خوانده می‌شوند:
 

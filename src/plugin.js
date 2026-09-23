@@ -19,10 +19,29 @@ import { frameFromImage, guessShape } from "./frame/photogram.js";
 import { exportGLB } from "./frame/glb.js";
 import { fitReport, fitScore, recommend, classifyShape, faceShapeMetrics } from "./engine/fit.js";
 import { guessColorHex, isColorOption, pickSizeOption } from "./frame/colornames.js";
+import { injectEmbedCss, EMBED_CSS } from "./ui/embed-css.js";
 
 export const VERSION = "2.0.0";
 
 const instances = new Set();
+
+/** نشانی همین اسکریپت در لحظهٔ اجرا (برای پیدا کردن lib/ و مدل‌ها، مستقل از آدرس صفحهٔ فروشگاه) */
+const SCRIPT_URL = (typeof document !== "undefined" && document.currentScript && document.currentScript.src) || "";
+
+/**
+ * baseURL پیش‌فرض = پوشهٔ اسکریپت (اگر داخل dist/ بود، یک پله بالاتر) — نه آدرس صفحه.
+ * صفحهٔ محصول /products/x با اسکریپت /tryon/dist/tryon.js ⇒ مدل‌ها از /tryon/lib/… می‌آیند.
+ */
+export function defaultBaseURL() {
+  try {
+    const u = new URL(".", SCRIPT_URL || document.baseURI);
+    let s = u.href.replace(/\/$/, "");
+    if (/\/dist$/.test(s)) s = s.slice(0, -5);
+    return s;
+  } catch (e) {
+    return "";
+  }
+}
 
 /* ─────────────────────────── ابزار پیکربندی ─────────────────────────── */
 
@@ -118,6 +137,7 @@ function readScriptConfig() {
 export function init(config = {}) {
   if (typeof document === "undefined") throw new Error("TryOn.init: این افزونه در مرورگر کار می‌کند (بدون DOM).");
   const cfg = { ...config };
+  if (!cfg.baseURL) cfg.baseURL = defaultBaseURL();
   let el = cfg.element || (typeof cfg.mount === "string" ? document.querySelector(cfg.mount) : cfg.mount);
   if (el && !(el instanceof VirtualTryOn)) {
     const wrap = document.createElement("virtual-tryon");
@@ -178,7 +198,14 @@ export function autoEmbed(root) {
   const doc = root || (typeof document !== "undefined" ? document : null);
   if (!doc || typeof doc.querySelectorAll !== "function") return []; // Node/SSR: بی‌خطر
   const made = [];
+  let overlay = null;
   const globalCfg = (typeof window !== "undefined" && window.__TRYON__) || readScriptConfig();
+  // فقط در نصب بدون کدنویسی (دکمه‌های data-tryon-open / کلاس tryon-btn) CSS کوچکِ دکمه تزریق می‌شود؛ init() چیزی به صفحه نمی‌ریزد
+  if (doc.querySelector("[data-tryon-open],.tryon-btn")) {
+    injectEmbedCss(doc);
+    if (globalCfg.brand && globalCfg.brand.accent && doc.documentElement)
+      doc.documentElement.style.setProperty("--tryon-accent", globalCfg.brand.accent);
+  }
 
   for (const host of doc.querySelectorAll("[data-tryon]:not([data-tryon-done])")) {
     host.setAttribute("data-tryon-done", "1");
@@ -198,14 +225,17 @@ export function autoEmbed(root) {
       const sku = btn.dataset ? btn.dataset.tryonSku : undefined;
       const target = btn.getAttribute ? btn.getAttribute("data-tryon-target") : null;
       const hostEl = target ? doc.querySelector(target) : null;
-      // نمونهٔ داخل مقصد (یا همان اسلات) را پیدا کن؛ اگر نبود یکی بساز
-      let api =
-        made.find((a) => (hostEl ? hostEl.contains(a.el) : a.el.isConnected && a.el.cfg.mode !== "overlay")) || made[0];
-      if (!api || !api.el.isConnected) api = init({ ...globalCfg, mode: "overlay" });
+      // data-tryon-target → همان نمونهٔ inline داخل مقصد؛ وگرنه یک overlay مشترک (دکمهٔ کنار هر عینک)
+      let api = hostEl ? made.find((a) => hostEl.contains(a.el)) : null;
+      if (hostEl && !api) api = init({ ...globalCfg, mode: "inline", mount: hostEl });
+      if (!api) {
+        api = overlay && overlay.el.isConnected ? overlay : (overlay = init({ ...globalCfg, mode: "overlay" }));
+      }
       if (sku) {
         filterBySku(api, sku);
         api.select(sku);
       }
+      if (hostEl) hostEl.scrollIntoView?.({ behavior: "smooth", block: "center" });
       api.open();
       if (typeof document !== "undefined")
         document.dispatchEvent(new CustomEvent("tryon:open", { detail: { sku: sku || null, source: btn } }));
@@ -345,6 +375,9 @@ const api = {
   guessColorHex,
   isColorOption,
   tryonAttrs,
+  defaultBaseURL,
+  injectEmbedCss,
+  EMBED_CSS,
   // موتور (برای سفارشی‌سازی و ساخت کاتالوگ)
   toEngineSpec,
   buildFrame,

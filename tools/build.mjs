@@ -64,6 +64,13 @@ const builds = [
   },
   {
     ...common,
+    entryPoints: ["src/loader.js"],
+    outfile: "dist/tryon-loader.js",
+    format: "iife",
+    minify: true,
+  },
+  {
+    ...common,
     entryPoints: ["src/studio/studio.js"],
     outfile: "dist/studio.js",
     format: "iife",
@@ -87,7 +94,7 @@ try {
 
 // kpiها
 const rows = [];
-for (const f of ["dist/tryon.js", "dist/tryon.esm.js", "dist/studio.js"]) {
+for (const f of ["dist/tryon.js", "dist/tryon.esm.js", "dist/tryon-loader.js", "dist/studio.js"]) {
   const p = path.join(root, f);
   if (!fs.existsSync(p)) continue;
   const buf = fs.readFileSync(p);

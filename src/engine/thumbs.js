@@ -4,12 +4,17 @@
  * فروشگاه هیچ عکسی آپلود نمی‌کند؛ ردیف محصولات و کارت محصول همیشه عکسِ
  * دقیقاً هم‌رنگ/هم‌مدلِ انتخاب‌شده دارد.
  */
-import { createFrameObject } from "../frame/index.js";
+import { createFrameObject, frameKey } from "../frame/index.js";
 import { buildStudioEnvironment } from "../frame/materials.js";
 import { toEngineSpec } from "../frame/catalog.js";
 import * as THREE_NS from "three";
 
 let shared = null;
+/** کش تامبنیل‌ها بین نمونه‌ها (inline + overlay + کارت‌های فروشگاه همان فریم را دوباره رندر نمی‌کنند) */
+const urlCache = new Map();
+const CACHE_MAX = 240;
+const thumbKey = (p, spec, W, H, quality, bg) =>
+  [frameKey(spec), p.finish, p.color, JSON.stringify(p.lens || "clear"), p.metalTint, p.metalColor, p.accentColor, p.translucent, W, H, quality, bg || ""].join("|");
 
 export async function renderThumbnails(products, opts = {}) {
   if (typeof document === "undefined") throw new Error("renderThumbnails در مرورگر کار می‌کند (به WebGL نیاز دارد).");
@@ -41,6 +46,11 @@ export async function renderThumbnails(products, opts = {}) {
   const urls = [];
   for (const p of products) {
     const spec = p.spec || toEngineSpec(p);
+    const ck = thumbKey(p, spec, W, H, quality, bg);
+    if (urlCache.has(ck)) {
+      urls.push(urlCache.get(ck));
+      continue;
+    }
     const obj = createFrameObject(THREE, { ...spec, ...pick(p, ["finish", "color", "lens", "metalTint", "metalColor", "accentColor", "translucent"]) }, {
       quality,
       occluder: false,
@@ -60,7 +70,10 @@ export async function renderThumbnails(products, opts = {}) {
       renderer.setClearColor(new THREE.Color(bg), 1);
     } else renderer.setClearColor(0x000000, 0);
     renderer.render(scene, camera);
-    urls.push(canvas.toDataURL("image/png"));
+    const url = canvas.toDataURL("image/png");
+    if (urlCache.size >= CACHE_MAX) urlCache.delete(urlCache.keys().next().value);
+    urlCache.set(ck, url);
+    urls.push(url);
     scene.remove(g);
     obj.dispose();
     await new Promise((r) => setTimeout(r, 0));

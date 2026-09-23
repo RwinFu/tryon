@@ -242,7 +242,8 @@ export class Stage {
     this.applyCamera();
     const k = (this.camZ - pose.z) / this.camZ;
     const g = this.frame.group;
-    g.position.set(pose.x * k, pose.y * k, pose.z);
+    // پیکسل ویدیو (مبدأ بالا-چپ، y رو به پایین) → فضای صحنه (مبدأ مرکز، y رو به بالا)
+    g.position.set((pose.x - this.W / 2) * k, (this.H / 2 - pose.y) * k, pose.z);
     g.scale.setScalar(pose.scale);
     g.quaternion.set(pose.q[0], pose.q[1], pose.q[2], pose.q[3]);
     g.visible = true;
@@ -277,8 +278,8 @@ export class Stage {
     const q = pose.q,
       s = pose.scale,
       k = (this.camZ - pose.z) / this.camZ,
-      px = pose.x * k,
-      py = pose.y * k,
+      px = (pose.x - W / 2) * k,
+      py = (H / 2 - pose.y) * k,
       pz = pose.z;
     for (const stroke of this.shadowPath) {
       c.lineWidth = Math.max(1.5, stroke.sw * s * 1.5);
@@ -286,7 +287,8 @@ export class Stage {
       let started = false;
       for (let i = 0; i < stroke.path.length; i += 2) {
         const p = stroke.path[i];
-        const wp = applyQ(q, [p.x * s + px, p.y * s + py, p.z * s + pz]);
+        const r = applyQ(q, [p.x * s, p.y * s, p.z * s]);
+        const wp = [r[0] + px, r[1] + py, r[2] + pz];
         const depth = this.camZ - wp[2];
         if (depth < 20) continue;
         const f = this.camZ / depth;

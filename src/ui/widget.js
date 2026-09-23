@@ -137,6 +137,7 @@ export class VirtualTryOn extends Native {
       <div class="mark">${ICONS.cateye}</div>
       <h2 data-sub="VIRTUAL FIT STUDIO">${esc(c.brand.name || L("title"))}</h2>
       <p class="sub">${L("gateSub")}</p>
+      <p class="gateProd" id="gateProduct" hidden></p>
       <div id="gateBody">
         <div class="steps">
           <div><b>۱</b><span>${L("step1")}</span></div>
@@ -288,6 +289,9 @@ export class VirtualTryOn extends Native {
   /** تامبنیل‌ها از همان هندسهٔ سه‌بعدی رندر می‌شوند → فروشگاه لازم نیست عکس محصول آپلود کند */
   async makeThumbs() {
     try {
+      // در بیکاری مرورگر؛ اولین رندر/تعامل صفحه معطل ۲۸ تامبنیل سه‌بعدی نمی‌ماند
+      await new Promise((r) => (window.requestIdleCallback ? requestIdleCallback(r, { timeout: 1500 }) : setTimeout(r, 120)));
+      if (this.dead) return;
       const urls = await renderThumbnails(this.products, { THREE, size: 200, quality: this.cfg.quality === "lite" ? "lite" : "high" });
       this.cards.forEach((c, i) => {
         if (!urls[i]) return;
@@ -370,6 +374,13 @@ export class VirtualTryOn extends Native {
       ? `${new Intl.NumberFormat(this.lang === "fa" ? "fa-IR" : "en-US").format(price)}<small> ${esc(p.currency || t(this.lang, "toman"))}</small>`
       : esc(p.size || "");
     this.$("pFit").textContent = this.fitSummary || t(this.lang, "fitPending");
+    const gp = this.$("gateProduct");
+    if (gp) {
+      gp.hidden = false;
+      gp.innerHTML = `<span>${esc(t(this.lang, "selectedFrame"))}</span><b>${esc(p.name)}${v.name ? " · " + esc(v.name) : ""}</b>${
+        p.size ? `<small>${esc(String(p.size))}</small>` : ""
+      }`;
+    }
     this.renderSpec();
   }
 
@@ -393,9 +404,21 @@ export class VirtualTryOn extends Native {
   }
 
   /* ─────────────────────────── اتصال موتور ──────────────────────── */
-  async boot() {
-    if (this.booted) return;
-    this.booted = true;
+  pickQuality() {
+    const cfg = this.cfg;
+    return cfg.quality === "auto"
+      ? navigator.hardwareConcurrency > 4 && !/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+        ? "high"
+        : "lite"
+      : cfg.quality;
+  }
+
+  /**
+   * گرم‌کردن پیش از «شروع»: کتابخانهٔ MediaPipe + WASM + مدل (≈۱۳MB بار اول، بعداً از کش) در پس‌زمینه
+   * بار می‌شود تا وقتی مشتری «شروع» را زد فقط اجازهٔ دوربین بماند. دوربین اینجا باز نمی‌شود (نیاز به کلیک کاربر).
+   */
+  prewarm() {
+    if (this.booted || this.prewarmP) return this.prewarmP;
     const cfg = this.cfg;
     this.THREE = THREE;
     const base = cfg.baseURL || new URL(".", document.baseURI).href.replace(/\/$/, "");
@@ -408,39 +431,58 @@ export class VirtualTryOn extends Native {
       focalScale: cfg.tracking.focalScale,
       log: (k, m) => this.emit("log", { k, m }),
     });
+    this.prewarmP = this.tracker
+      .init((where, msg) => this.starting && this.busy(msg))
+      .then(() => this.tracker)
+      .catch((e) => {
+        this.prewarmP = null; // در boot دوباره تلاش می‌شود
+        throw e;
+      });
+    return this.prewarmP;
+  }
+
+  async boot() {
+    if (this.booted) return;
+    this.booted = true;
+    this.starting = true;
+    const cfg = this.cfg;
     this.state = "loading";
     this.setStatus("search", t(cfg.lang, "loading"));
     try {
-      await this.tracker.init((where, msg) => this.busy(msg));
-      this.quality =
-        cfg.quality === "auto"
-          ? navigator.hardwareConcurrency > 4 && !/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
-            ? "high"
-            : "lite"
-          : cfg.quality;
+      const initP = this.prewarmP || this.prewarm();
+      initP.catch(() => {}); // اگر دوربین زودتر خطا داد، رد شدنِ این یکی unhandled نشود
+      this.quality = this.pickQuality();
+      // دوربین (اجازهٔ کاربر) موازی با بارگذاری مدل: طولانی‌ترین کارها هم‌زمان
+      this.busy(t(cfg.lang, "cameraAsk"));
+      const camP = this.tracker.startCamera({ light: this.quality === "lite" });
       this.stage = new Stage({
         canvas: this.el.gl,
         THREE: this.THREE,
         quality: this.quality,
         video: this.tracker.video,
       });
-      this.stage.buildEnv();
       this.stage.onFrameError = (e) => this.hint(t(cfg.lang, "modelFailed") + " — " + (e?.message || ""), true);
       this.stage.setProduct({ ...this.product, ...(this.variants?.[this.variant] || {}) }, { quality: this.quality });
-      this.busy(t(cfg.lang, "cameraAsk"));
-      await this.tracker.startCamera({ light: this.quality === "lite" });
+      await camP;
+      this.busy(t(cfg.lang, "loading"));
+      await initP;
       this.syncSize();
-      window.addEventListener("resize", () => this.syncSize());
+      this.onResize = this.onResize || (() => this.syncSize());
+      window.addEventListener("resize", this.onResize);
       this.busy("");
+      this.starting = false;
       this.el.gate.hidden = true;
       this.state = "live";
       this.setStatus("live", t(cfg.lang, "live"));
-      this.tracker.initHair?.().catch(() => {});
-      if (cfg.features.hairLayer && this.quality !== "lite") setTimeout(() => this.tracker.initHair(), 4000);
       this.loop();
+      // محیط نوری (PMREM) بعد از اولین فریم: دوربین زودتر دیده می‌شود
+      requestAnimationFrame(() => this.stage?.buildEnv());
+      if (cfg.features.hairLayer && this.quality !== "lite") setTimeout(() => this.tracker?.initHair?.().catch(() => {}), 4000);
       this.emit("ready", { quality: this.quality, products: this.products.length });
     } catch (e) {
       this.booted = false;
+      this.starting = false;
+      this.tracker?.stopCamera?.();
       this.state = "error";
       this.setStatus("error", t(cfg.lang, "cameraBlocked"));
       this.showError(e);
@@ -558,7 +600,7 @@ export class VirtualTryOn extends Native {
       this.maybeHint(pose);
     } else {
       this.stage.hide();
-      this.ctx.gl.getContext("2d") || this.stage.renderer.clear();
+      this.stage.renderer.clear();
       this.ctx.sh.clearRect(0, 0, this.el.sh.width, this.el.sh.height);
       this.setStatus("search", t(this.cfg.lang, "looking"));
     }
@@ -566,15 +608,10 @@ export class VirtualTryOn extends Native {
 
     if (this.cfg.features.hairLayer && tr.segmenter && now - (this.lastSeg || 0) > (this.quality === "lite" ? 260 : 130)) {
       this.lastSeg = now;
-      if (tr.segmentHair(this.el.oc)) {
-        const c = this.ctx.oc;
-        c.save();
-        c.globalCompositeOperation = "destination-in";
-        c.filter = "blur(2.2px)";
-        c.fillStyle = "#fff";
-        c.fillRect(0, 0, this.el.oc.width, this.el.oc.height);
-        c.restore();
-      }
+      // ماسک مو در بوم جدا؛ روی لایهٔ oc پیکسل‌های واقعی مو از ویدیو کشیده می‌شود (نه لکهٔ سفید)
+      this.hairCv = this.hairCv || document.createElement("canvas");
+      if (tr.segmentHair(this.hairCv)) this.stage.drawHairLayer(this.ctx.oc, this.hairCv);
+      else this.ctx.oc.clearRect(0, 0, this.el.oc.width, this.el.oc.height);
     }
     this.scan.draw(pose);
   }
@@ -669,6 +706,9 @@ export class VirtualTryOn extends Native {
       this.$("start").textContent = t(this.cfg.lang, "starting");
       this.boot().catch(() => {});
     });
+    // inline: با اولین نشانهٔ قصد (هاور/لمس/فوکوس روی کارت شروع) مدل در پس‌زمینه بار می‌شود
+    const intent = () => this.prewarm()?.catch(() => {});
+    for (const ev of ["pointerenter", "touchstart", "focusin"]) this.el.gate.addEventListener(ev, intent, { once: true, passive: true });
     this.$("close")?.addEventListener("click", () => this.close());
     this.$("openFit").addEventListener("click", () => this.openSheet());
     this.$("sheetClose").addEventListener("click", () => this.openSheet(false));
@@ -681,7 +721,7 @@ export class VirtualTryOn extends Native {
       const d = e.key === "ArrowRight" ? (this.dir === "rtl" ? -1 : 1) : e.key === "ArrowLeft" ? (this.dir === "rtl" ? 1 : -1) : 0;
       if (!d) return;
       e.preventDefault();
-      this.select(Math.max(0, Math.min(this.products.length - 1), this.byIndex + d));
+      this.select(Math.max(0, Math.min(this.products.length - 1, this.byIndex + d)));
       this.cards[this.byIndex].scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
     });
     document.addEventListener("visibilitychange", () => {
@@ -925,12 +965,29 @@ export class VirtualTryOn extends Native {
     this.hidden = false;
     document.documentElement.style.setProperty("overflow", "hidden", "important");
     this.el.gate.hidden = this.booted;
-    if (!this.booted) this.$("start").focus?.();
+    if (!this.booted) {
+      this.$("start").focus?.();
+      this.prewarm()?.catch(() => {}); // مشتری قصدش را نشان داده؛ مدل را از حالا بیاور
+    } else if (this.state === "paused") this.resume();
+  }
+  async resume() {
+    try {
+      if (!this.tracker.stream) await this.tracker.startCamera({ light: this.quality === "lite" });
+      this.syncSize();
+      this.state = "live";
+      this.setStatus("live", t(this.cfg.lang, "live"));
+    } catch (e) {
+      this.setStatus("error", t(this.cfg.lang, "cameraBlocked"));
+      this.emit("error", { where: "resume", message: String(e?.message || e), name: e?.name });
+    }
   }
   close() {
     this.hidden = true;
     document.documentElement.style.removeProperty("overflow");
-    this.state = this.booted ? "paused" : "idle";
+    if (this.booted && this.tracker) {
+      this.tracker.stopCamera(); // چراغ دوربین خاموش شود؛ با open() دوباره روشن می‌شود
+      this.state = "paused";
+    } else this.state = "idle";
   }
   setProducts(list) {
     this.cfg.products = list;
@@ -955,6 +1012,7 @@ export class VirtualTryOn extends Native {
   }
   disconnectedCallback() {
     this.dead = true;
+    this.onResize && window.removeEventListener("resize", this.onResize);
     this.mountListener && this.mountBtn?.removeEventListener("click", this.mountListener);
     this.tracker?.dispose();
     this.stage?.dispose();
