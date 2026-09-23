@@ -137,6 +137,7 @@ export class VirtualTryOn extends Native {
       <div class="mark">${ICONS.cateye}</div>
       <h2 data-sub="VIRTUAL FIT STUDIO">${esc(c.brand.name || L("title"))}</h2>
       <p class="sub">${L("gateSub")}</p>
+      <p class="gateProd" id="gateProduct" hidden></p>
       <div id="gateBody">
         <div class="steps">
           <div><b>۱</b><span>${L("step1")}</span></div>
@@ -370,6 +371,13 @@ export class VirtualTryOn extends Native {
       ? `${new Intl.NumberFormat(this.lang === "fa" ? "fa-IR" : "en-US").format(price)}<small> ${esc(p.currency || t(this.lang, "toman"))}</small>`
       : esc(p.size || "");
     this.$("pFit").textContent = this.fitSummary || t(this.lang, "fitPending");
+    const gp = this.$("gateProduct");
+    if (gp) {
+      gp.hidden = false;
+      gp.innerHTML = `<span>${esc(t(this.lang, "selectedFrame"))}</span><b>${esc(p.name)}${v.name ? " · " + esc(v.name) : ""}</b>${
+        p.size ? `<small>${esc(String(p.size))}</small>` : ""
+      }`;
+    }
     this.renderSpec();
   }
 

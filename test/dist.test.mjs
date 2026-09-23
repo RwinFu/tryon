@@ -88,3 +88,30 @@ test("products.json با کاتالوگ داخل بیلد هم‌خوان است
     assert.ok(!/NaN|null/.test(JSON.stringify(p.spec || {})), p.id + " spec خراب است");
   }
 });
+
+test("dist/tryon-loader.js: با کلیک روی دکمه، موتور اصلی را تزریق می‌کند و حالت بارگذاری می‌گذارد", async (t) => {
+  const loaderPath = path.join(root, "dist/tryon-loader.js");
+  if (!fs.existsSync(loaderPath)) return t.skip("بیلد نیست");
+  const src = fs.readFileSync(loaderPath, "utf8");
+  assert.ok(src.length < 8_000, "لودر باید کوچک بماند: " + src.length);
+  assert.ok(!/WebGLRenderer/.test(src), "three داخل لودر نباید باشد");
+  const dom = new JSDOM(
+    `<!doctype html><html><head><script id="ld" src="https://shop.test/tryon/dist/tryon-loader.js" data-tryon-products="/tryon/products.json" data-tryon-accent="#ff0066"></script></head>
+     <body><button id="b" class="tryon-btn" data-tryon-open data-tryon-sku="AR-104">پرو</button></body></html>`,
+    { url: "https://shop.test/products/x", runScripts: "outside-only" },
+  );
+  const { window } = dom;
+  // currentScript را شبیه‌سازی می‌کنیم (jsdom در eval آن را ست نمی‌کند)
+  Object.defineProperty(window.document, "currentScript", { value: window.document.getElementById("ld"), configurable: true });
+  window.eval(src);
+  assert.ok(window.TryOnLoader, "window.TryOnLoader ساخته نشد");
+  assert.equal(window.TryOnLoader.src, "https://shop.test/tryon/dist/tryon.js", "نشانی موتور نسبت به لودر حل نشد");
+  assert.ok(window.document.getElementById("tryon-embed-css"), "CSS دکمه تزریق نشد");
+  assert.equal(window.document.documentElement.style.getPropertyValue("--tryon-accent"), "#ff0066");
+  const b = window.document.getElementById("b");
+  b.click();
+  assert.equal(b.getAttribute("aria-busy"), "true", "حالت بارگذاری روی دکمه نیامد");
+  const inj = window.document.querySelector('script[src="https://shop.test/tryon/dist/tryon.js"]');
+  assert.ok(inj, "اسکریپت موتور تزریق نشد");
+  assert.equal(inj.getAttribute("data-tryon-products"), "/tryon/products.json", "پیکربندی به اسکریپت موتور کپی نشد");
+});

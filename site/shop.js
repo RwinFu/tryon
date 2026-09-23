@@ -41,7 +41,7 @@ document.addEventListener("tryon:ready", () => document.querySelectorAll(".heroS
           <span class="price">${p.price ? fmt.format(p.price) + " تومان" : "استعلام قیمت"}</span>
         </div>
         <div class="foot">
-          <button data-tryon-open data-tryon-sku="${p.id}">پرو مجازی</button>
+          <button class="tryon-btn" data-tryon-open data-tryon-sku="${p.id}">پرو مجازی</button>
           <span class="sw">${(p.colors || [])
             .slice(0, 4)
             .map((c) => `<i style="background:${c.color || "#333"}" title="${c.name || ""}"></i>`)

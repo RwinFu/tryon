@@ -7,10 +7,19 @@
 </p>
 
 ```html
-<script src="/tryon/tryon.js" data-tryon-products="/tryon/products.json" defer></script>
+<!-- لودر ۲KB: موتور ۲۳۵KB فقط با اولین کلیک (یا نزدیک‌شدن اسلات inline به دید) دانلود می‌شود -->
+<script src="/tryon/dist/tryon-loader.js" data-tryon-products="/tryon/products.json" defer></script>
+
+<!-- کنار هر عینک: با کلیک، overlay تمام‌صفحه با همان فریم روی صورت مشتری باز می‌شود -->
+<button class="tryon-btn" data-tryon-open data-tryon-sku="AR-104">پرو مجازی</button>
+
+<!-- اختیاری: نسخهٔ داخل صفحه -->
 <div data-tryon data-tryon-mode="inline" data-tryon-sku="AR-104" style="height:620px"></div>
-<button data-tryon-open data-tryon-sku="AR-104">پرو مجازی</button>
 ```
+
+پوشهٔ `dist/` و `lib/` را کنار هم (مثلاً زیر `/tryon/`) بگذارید؛ افزونه مدل‌ها را نسبت به **آدرس خودِ اسکریپت**
+پیدا می‌کند، نه آدرس صفحهٔ محصول. اگر جای دیگری هستند: `data-tryon-base-u-r-l="/cdn/tryon"`.
+برای بارگذاری فوری (بدون لودر): `dist/tryon.js` را مستقیم بگذارید.
 
 نصب کامل (Shopify / WooCommerce / API / حریم خصوصی / عیب‌یابی):
 📄 **[docs/INSTALL.html](docs/INSTALL.html)** · 📐 **[docs/EMBEDDING.md](docs/EMBEDDING.md)**
