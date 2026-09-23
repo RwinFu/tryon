@@ -6,9 +6,8 @@ dist-bench/
 .vscode/
 .idea/
 
-# تولیدی — با `npm run build` ساخته می‌شوند
-src/ui/styles.gen.js
-
+# src/ui/styles.gen.js عمداً در گیت می‌ماند: ورودی src/plugin.js به آن نیاز دارد.
+# dist/tryon.debug.js و سورس‌مپ build محلی نگه‌داری نمی‌شوند.
 # خروجی bake (هر بار از کاتالوگ بازسازی می‌شود؛ ۷MB بی‌فایده در گیت)
 assets/frames/
 

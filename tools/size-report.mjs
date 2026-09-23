@@ -1,9 +1,10 @@
 /** tools/size-report.mjs — اندازهٔ بارِ نهایی افزونه (برای README و صفحهٔ فروش) */
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { gzipSync, brotliCompressSync } from "node:zlib";
 
-const root = path.resolve(import.meta.dirname, "..");
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const files = ["dist/tryon.js", "dist/tryon.debug.js", "products.json", "lib/tasks-vision/vision_bundle.mjs", "lib/tasks-vision/wasm", "lib/face_landmarker.task"];
 let total = 0;
 console.log("فایل".padEnd(38) + "خام".padStart(11) + "gzip".padStart(11) + "brotli".padStart(11));

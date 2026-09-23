@@ -7,14 +7,17 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { JSDOM } from "jsdom";
 
-const root = path.resolve(import.meta.dirname, "..");
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const dom = new JSDOM(`<!doctype html><html lang="fa" dir="rtl"><head><title>فروشگاه</title></head><body></body></html>`, {
   url: "https://optics.test/",
   pretendToBeVisual: true,
 });
 const { window } = dom;
+window.requestIdleCallback = () => 0; // مدل سه‌بعدیِ تامبنیل در تست‌های DOM لازم نیست.
+Object.defineProperty(window.HTMLCanvasElement.prototype, "getContext", { configurable: true, value: () => null });
 const GLOBALS = [
   "window",
   "document",
@@ -126,12 +129,17 @@ test("انتخاب محصول و رویدادها", () => {
 
 test("open/close فقط در حالت overlay", () => {
   const inline = init({ mode: "inline" });
+  const inlineVisibility = inline.el.hidden;
   inline.open();
-  assert.ok(inline.el.hidden !== false, "inline نباید با open نمایان/پنهان شود");
+  assert.equal(inline.el.hidden, inlineVisibility, "open روی نمونهٔ inline نباید visibility را عوض کند");
   inline.destroy();
 
   const ov = init({ mode: "overlay" });
   assert.equal(ov.el.hidden, true, "overlay باید پنهان شروع کند");
+  window.document.documentElement.style.setProperty("overflow", "clip");
+  ov.close();
+  assert.equal(window.document.documentElement.style.getPropertyValue("overflow"), "clip", "بستن overlay بسته نباید سبک میزبان را پاک کند");
+  window.document.documentElement.style.removeProperty("overflow");
   ov.open();
   assert.equal(ov.el.hidden, false);
   assert.equal(window.document.documentElement.style.getPropertyValue("overflow"), "hidden");
@@ -159,6 +167,79 @@ test("autoEmbed: data-tryon و data-tryon-open", () => {
   assert.equal(made2.length, 0, "اسلات دوباره جاسازی نشود (data-tryon-done)"); void made2;
   window.document.getElementById("btn").dispatchEvent(new window.Event("click", { bubbles: true, cancelable: true }));
   assert.ok(el.isConnected, "کلیک روی دکمه نباید عنصر را از DOM بردارد");
+});
+
+test("SKU کلیک‌شده تا پایان بارگذاری async کاتالوگ حفظ می‌شود", async () => {
+  const previousFetch = globalThis.fetch;
+  globalThis.fetch = async () => {
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    return {
+      ok: true,
+      json: async () => ({
+        products: [
+          { id: "slow-1", sku: "SLOW-A", name: "A", shape: "round", size: "49-20-145" },
+          {
+            id: "slow-2",
+            sku: "SLOW-B",
+            name: "B",
+            shape: "square",
+            size: "52-18-145",
+            colors: [{ name: "مشکی", sku: "SLOW-B" }, { name: "رزگلد", sku: "SLOW-B-ROSE" }],
+          },
+        ],
+      }),
+    };
+  };
+  try {
+    const api = init({ mode: "overlay", products: "https://optics.test/catalog.json", features: { thumbnails: false } });
+    assert.equal(api.el.productsLoaded, false);
+    assert.equal(api.select("SLOW-B-ROSE"), true, "SKU واریانت در حال بارگذاری باید به‌عنوان انتخاب معلق ثبت شود");
+    await api.el.productsReady;
+    assert.equal(api.current.id, "slow-2", "پس از پاسخ products.json مدل اول به‌جای SKU کلیک‌شده انتخاب شد");
+    assert.equal(api.el.variant, 1, "SKU واریانت رنگ صحیح را انتخاب نکرد");
+    api.destroy();
+  } finally {
+    globalThis.fetch = previousFetch;
+  }
+});
+
+test("دکمهٔ پویای فروشگاه SKU کاتالوگ خود فروشنده را روی overlay انتخاب می‌کند", () => {
+  window.document.body.innerHTML = "<main></main>";
+  window.__TRYON__ = {
+    features: { thumbnails: false },
+    products: [
+      { id: "merchant-501", sku: "FRAME-X9", name: "فریم فروشگاه X9", shape: "round", size: "49-20-145" },
+      {
+        id: "merchant-502",
+        sku: "FRAME-Y4",
+        name: "فریم فروشگاه Y4",
+        shape: "cateye",
+        size: "53-18-140",
+        colors: [{ name: "مشکی", sku: "FRAME-Y4" }, { name: "رزگلد", sku: "FRAME-Y4-ROSE" }],
+      },
+    ],
+  };
+  autoEmbed(window.document); // ابتدا فقط handler نصب می‌شود، دکمه بعداً با AJAX می‌آید.
+  const cards = window.document.createElement("section");
+  cards.innerHTML = '<button data-tryon-open data-tryon-sku="FRAME-Y4-ROSE">پرو</button><button data-tryon-open data-tryon-sku="FRAME-X9">پرو دوم</button>';
+  window.document.body.appendChild(cards);
+  const [second, first] = cards.querySelectorAll("button");
+
+  second.click();
+  const overlay = [...window.document.querySelectorAll("virtual-tryon")].find((el) => el.cfg.mode === "overlay");
+  assert.ok(overlay, "overlay مشترک ساخته نشد");
+  assert.equal(overlay.product.id, "merchant-502", "SKU متنیِ فروشنده به فریم اشتباه نگاشت شد");
+  assert.equal(overlay.variant, 1, "SKU واریانت رنگ انتخاب‌شده توسط مشتری را نگاشت نکرد");
+  assert.equal(overlay.products.length, 2, "کاتالوگ فروشگاه با کاتالوگ داخلی جایگزین شد");
+  assert.equal(overlay.hidden, false, "کلیک overlay را باز نکرد");
+
+  first.click();
+  assert.equal(overlay.product.id, "merchant-501", "دکمهٔ بعدی همان overlay را به فریم جدید نبرد");
+  assert.equal([...window.document.querySelectorAll("virtual-tryon")].filter((el) => el.cfg.mode === "overlay").length, 1, "برای هر محصول overlay جدا ساخته شد");
+
+  window.TryOn.instances.delete(overlay);
+  overlay.remove();
+  delete window.__TRYON__;
 });
 
 test("نگاشت Shopify: رنگ‌ها از options، قیمت از variants، متافیلد برنده", () => {

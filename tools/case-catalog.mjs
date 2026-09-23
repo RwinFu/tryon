@@ -4,6 +4,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { CATALOG, toEngineSpec } from "../src/frame/catalog.js";
 
 const args = process.argv.slice(2);
@@ -14,7 +15,7 @@ const get = (k, d) => {
 const only = get("only", "").split(",").filter(Boolean);
 const KEYS = ["shape","style","material","lensW","lensH","dbn","templeLen","rimW","rimT","bevel","baseCurve","pantoDeg","splayDeg","templeW","templeT","templeTaper","earDrop","bridgeDrop","bridgeArch","doubleBridge","highBridge","nosePads","hinge","endpiece","metalRimW","metalRimT","catAmp","catWidth","teardrop","nasalNotch","topWide","exp","depth","lensTiltDeg"];
 
-const out = path.resolve(import.meta.dirname, "..", get("out", "products.json"));
+const out = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", get("out", "products.json"));
 const products = CATALOG.filter((p) => !only.length || only.includes(p.id)).map((p) => {
   const spec = toEngineSpec(p);
   const entry = {

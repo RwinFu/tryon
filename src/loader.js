@@ -1,7 +1,7 @@
 /**
  * loader.js → dist/tryon-loader.js  (~۲KB)
  *
- * موتور اصلی (dist/tryon.js ≈ ۲۳۵KB gzip، شامل three.js) روی صفحهٔ محصول بار نمی‌شود مگر لازم شود:
+ * موتور اصلی (dist/tryon.js ≈ ۲۳۸KB gzip، شامل three.js) روی صفحهٔ محصول بار نمی‌شود مگر لازم شود:
  *  - دکمهٔ [data-tryon-open]: با اولین کلیک بار می‌شود (روی دکمه حالت «در حال بارگذاری») و همان کلیک بازپخش می‌شود
  *  - اسلات [data-tryon] (inline): وقتی به دید کاربر نزدیک شد
  *  - در بیکاری مرورگر فقط prefetch می‌شود تا اولین کلیک آنی باشد
@@ -17,9 +17,12 @@ import { injectEmbedCss } from "./ui/embed-css.js";
   if (typeof window === "undefined" || typeof document === "undefined") return;
   if (window.TryOnLoader) return;
   const me = document.currentScript;
-  const src =
-    (me && me.getAttribute("data-tryon-src")) ||
-    (me && me.src ? new URL("tryon.js", me.src).href : "tryon.js");
+  const customSrc = me && me.getAttribute("data-tryon-src");
+  const src = customSrc
+    ? new URL(customSrc, me.src || document.baseURI).href
+    : me && me.src
+      ? new URL("tryon.js", me.src).href
+      : new URL("tryon.js", document.baseURI).href;
   let loading = null;
 
   injectEmbedCss(document);
@@ -36,7 +39,11 @@ import { injectEmbedCss } from "./ui/embed-css.js";
       // پیکربندی (data-tryon-*) از تگ لودر روی اسکریپت اصلی کپی می‌شود تا همان readScriptConfig آن را بخواند
       if (me) for (const a of Array.from(me.attributes)) if (a.name.indexOf("data-tryon") === 0) s.setAttribute(a.name, a.value);
       s.onload = () => {
-        if (!window.TryOn) return reject(new Error("TryOn در " + src + " پیدا نشد"));
+        if (!window.TryOn) {
+          loading = null;
+          s.remove();
+          return reject(new Error("TryOn در " + src + " پیدا نشد"));
+        }
         document.dispatchEvent(new CustomEvent("tryon:loaded", { detail: window.TryOn }));
         resolve(window.TryOn);
       };
@@ -49,26 +56,54 @@ import { injectEmbedCss } from "./ui/embed-css.js";
     return loading;
   }
 
-  // ── دکمه‌ها: capture تا قبل از handlerهای تم عمل کند؛ بعد از بارگذاری، خودِ افزونه دکمه را دارد
+  function clearButtonStatus(btn) {
+    btn.__tryonStatus?.remove();
+    btn.__tryonStatus = null;
+  }
+
+  function showButtonStatus(btn, message) {
+    if (!btn.__tryonStatus) {
+      const status = document.createElement("span");
+      status.className = "tryon-loader-status";
+      status.setAttribute("role", "status");
+      status.setAttribute("aria-live", "polite");
+      btn.insertAdjacentElement("afterend", status);
+      btn.__tryonStatus = status;
+    }
+    btn.__tryonStatus.textContent = message;
+  }
+
+  // ── دکمه‌ها: تا پایان بارگذاری، کلیک اول را نگه می‌دارد و سپس بازپخش می‌کند.
   document.addEventListener(
     "click",
     (e) => {
       const btn = e.target && e.target.closest ? e.target.closest("[data-tryon-open]") : null;
       if (!btn || window.TryOn) return;
+      if (btn.__tryonLoading) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        return;
+      }
       e.preventDefault();
       e.stopImmediatePropagation();
+      btn.__tryonLoading = true;
       btn.classList.add("tryon-loading");
       btn.setAttribute("aria-busy", "true");
+      clearButtonStatus(btn);
       load()
         .then((T) => {
-          if (!btn.__vtBound) T.autoEmbed(document);
+          if (!btn.isConnected) return;
+          T.autoEmbed(document); // دکمه‌های فروشگاه ممکن است بعد از بارگذاری HTML ساخته شده باشند.
           btn.classList.remove("tryon-loading");
           btn.removeAttribute("aria-busy");
-          btn.click(); // اکنون handler خودِ افزونه روی دکمه است
+          btn.__tryonLoading = false;
+          btn.click(); // اکنون handler تفویض‌شدهٔ افزونه دکمه را می‌گیرد.
         })
         .catch((err) => {
           btn.classList.remove("tryon-loading");
           btn.removeAttribute("aria-busy");
+          btn.__tryonLoading = false;
+          showButtonStatus(btn, "پرو مجازی بارگیری نشد؛ برای تلاش دوباره دکمه را بزنید.");
           console.error("[TryOn]", err);
         });
     },

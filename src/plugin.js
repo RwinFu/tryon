@@ -24,6 +24,8 @@ import { injectEmbedCss, EMBED_CSS } from "./ui/embed-css.js";
 export const VERSION = "2.0.0";
 
 const instances = new Set();
+// یک handler سراسری برای هر سند: دکمه‌های کارت‌های AJAX / فروشگاه‌های پویا هم کار می‌کنند.
+const embedStates = new WeakMap();
 
 /** نشانی همین اسکریپت در لحظهٔ اجرا (برای پیدا کردن lib/ و مدل‌ها، مستقل از آدرس صفحهٔ فروشگاه) */
 const SCRIPT_URL = (typeof document !== "undefined" && document.currentScript && document.currentScript.src) || "";
@@ -109,8 +111,7 @@ export function tryonAttrs(dataset = {}) {
 }
 
 /** تگی که تنظیمات سراسری روی آن است: config → currentScript → هر script با data-tryon-* */
-function scriptTag() {
-  const doc = typeof document !== "undefined" ? document : null;
+function scriptTag(doc = typeof document !== "undefined" ? document : null) {
   if (!doc) return null;
   const byConfig = doc.querySelector("script[data-tryon-config]");
   if (byConfig) return byConfig;
@@ -121,14 +122,27 @@ function scriptTag() {
   return null;
 }
 
-function readScriptConfig() {
+function readScriptConfig(doc) {
   try {
-    const s = scriptTag();
+    const s = scriptTag(doc);
     if (!s) return {};
     return tryonAttrs(s.dataset || {});
   } catch (e) {
     return {};
   }
+}
+
+function globalConfigFor(doc) {
+  return (doc && doc.defaultView && doc.defaultView.__TRYON__) || readScriptConfig(doc);
+}
+
+function embedStateFor(doc) {
+  let state = embedStates.get(doc);
+  if (!state) {
+    state = { overlay: null, clickBound: false, observer: null };
+    embedStates.set(doc, state);
+  }
+  return state;
 }
 
 /* ─────────────────────────── ساخت نمونه ─────────────────────────── */
@@ -139,20 +153,23 @@ export function init(config = {}) {
   const cfg = { ...config };
   if (!cfg.baseURL) cfg.baseURL = defaultBaseURL();
   let el = cfg.element || (typeof cfg.mount === "string" ? document.querySelector(cfg.mount) : cfg.mount);
+  let appendTo = null;
   if (el && !(el instanceof VirtualTryOn)) {
-    const wrap = document.createElement("virtual-tryon");
-    wrap.style.cssText = "position:relative;display:block;width:100%;height:100%;min-height:100%";
-    const radius = getComputedStyle(el).borderRadius;
-    if (radius && radius !== "0px") wrap.style.borderRadius = radius;
-    el.appendChild(wrap);
-    el = wrap;
+    const host = el;
+    el = document.createElement("virtual-tryon");
+    el.style.cssText = "position:relative;display:block;width:100%;height:100%;min-height:100%";
+    const radius = getComputedStyle(host).borderRadius;
+    if (radius && radius !== "0px") el.style.borderRadius = radius;
+    appendTo = host;
   }
   if (!el) {
     el = document.createElement("virtual-tryon");
     el.style.cssText = "position:fixed;inset:0;z-index:2147483000";
-    document.body.appendChild(el);
+    appendTo = document.body || document.documentElement;
   }
+  // پیکربندی پیش از اتصال اعمال می‌شود تا connectedCallback دوباره Canvas و کاتالوگ نسازد.
   el.configure({ ...cfg, mount: undefined, element: undefined, mountButton: cfg.mountButton || null });
+  if (appendTo) appendTo.appendChild(el);
   el.__vt = true;
   instances.add(el);
 
@@ -183,10 +200,8 @@ export function init(config = {}) {
     off: (n, f) => el.off(n, f),
     destroy: () => {
       instances.delete(el);
-      try {
-        el.disconnectedCallback();
-      } catch (e) {}
-      el.remove();
+      if (el.isConnected) el.remove();
+      else el.disconnectedCallback();
     },
   };
   el.dispatchEvent(new CustomEvent("tryon:init", { detail: { config: cfg }, bubbles: true }));
@@ -195,59 +210,115 @@ export function init(config = {}) {
 
 /** جاسازی خودکار از روی data-attributeها (نصب بدون کدنویسی) */
 export function autoEmbed(root) {
-  const doc = root || (typeof document !== "undefined" ? document : null);
-  if (!doc || typeof doc.querySelectorAll !== "function") return []; // Node/SSR: بی‌خطر
+  const source = root || (typeof document !== "undefined" ? document : null);
+  const doc = source && source.nodeType === 9 ? source : source && source.ownerDocument;
+  if (!doc || typeof source.querySelectorAll !== "function") return []; // Node/SSR: بی‌خطر
+
+  const scope = source;
+  const find = (selector) => {
+    const matches = [];
+    if (scope.nodeType === 1 && scope.matches?.(selector)) matches.push(scope);
+    matches.push(...scope.querySelectorAll(selector));
+    return matches;
+  };
   const made = [];
-  let overlay = null;
-  const globalCfg = (typeof window !== "undefined" && window.__TRYON__) || readScriptConfig();
-  // فقط در نصب بدون کدنویسی (دکمه‌های data-tryon-open / کلاس tryon-btn) CSS کوچکِ دکمه تزریق می‌شود؛ init() چیزی به صفحه نمی‌ریزد
-  if (doc.querySelector("[data-tryon-open],.tryon-btn")) {
+  const state = embedStateFor(doc);
+  const globalCfg = globalConfigFor(doc);
+  const buttons = find("[data-tryon-open],.tryon-btn");
+  if (buttons.length) {
     injectEmbedCss(doc);
-    if (globalCfg.brand && globalCfg.brand.accent && doc.documentElement)
-      doc.documentElement.style.setProperty("--tryon-accent", globalCfg.brand.accent);
+    if (globalCfg.brand?.accent && doc.documentElement) doc.documentElement.style.setProperty("--tryon-accent", globalCfg.brand.accent);
   }
 
-  for (const host of doc.querySelectorAll("[data-tryon]:not([data-tryon-done])")) {
-    host.setAttribute("data-tryon-done", "1");
-    // اولویت: attributeهای خود المان ← پیکربندی سراسری ← پیش‌فرض افزونه
+  for (const host of find("[data-tryon]:not([data-tryon-done])")) {
+    // اولویت: ویژگی‌های همان اسلات ← پیکربندی فروشگاه ← پیش‌فرض افزونه
     const local = tryonAttrs(host.dataset || {});
-    const cfg = deepMerge({ ...globalCfg, mode: "inline" }, local);
-    const api = init({ ...cfg, mount: host });
-    if (local.sku) filterBySku(api, local.sku);
-    made.push(api);
+    const cfg = deepMerge(deepMerge({}, globalCfg), { mode: "inline", ...local });
+    try {
+      const api = init({ ...cfg, mount: host });
+      host.setAttribute("data-tryon-done", "1");
+      made.push(api);
+    } catch (error) {
+      host.removeAttribute("data-tryon-done");
+      console.error("[TryOn] نصب اسلات ناموفق بود:", error);
+    }
   }
 
-  for (const btn of doc.querySelectorAll("[data-tryon-open]")) {
-    if (btn.__vtBound) continue;
-    btn.__vtBound = true;
-    btn.addEventListener("click", (e) => {
-      e.preventDefault();
-      const sku = btn.dataset ? btn.dataset.tryonSku : undefined;
-      const target = btn.getAttribute ? btn.getAttribute("data-tryon-target") : null;
-      const hostEl = target ? doc.querySelector(target) : null;
-      // data-tryon-target → همان نمونهٔ inline داخل مقصد؛ وگرنه یک overlay مشترک (دکمهٔ کنار هر عینک)
-      let api = hostEl ? made.find((a) => hostEl.contains(a.el)) : null;
-      if (hostEl && !api) api = init({ ...globalCfg, mode: "inline", mount: hostEl });
-      if (!api) {
-        api = overlay && overlay.el.isConnected ? overlay : (overlay = init({ ...globalCfg, mode: "overlay" }));
+  // Event delegation باعث می‌شود دکمه‌هایی که بعداً با AJAX/React/Vue به صفحه می‌آیند هم کار کنند.
+  if (!state.clickBound) {
+    state.clickBound = true;
+    doc.addEventListener("click", (event) => {
+      const btn = event.target?.closest?.("[data-tryon-open]");
+      if (!btn || btn.disabled || btn.getAttribute("aria-busy") === "true") return;
+      event.preventDefault();
+
+      const config = globalConfigFor(doc);
+      const sku = btn.getAttribute("data-tryon-sku") || "";
+      const selector = btn.getAttribute("data-tryon-target");
+      let hostEl = null;
+      if (selector) {
+        try {
+          hostEl = doc.querySelector(selector);
+        } catch (error) {
+          console.warn("[TryOn] data-tryon-target نامعتبر است:", selector);
+        }
       }
+
+      // اگر از قبل inline است، همان را باز/انتخاب کن؛ در غیر این صورت یک overlay مشترک بساز.
+      let api = hostEl ? [...instances].find((instance) => hostEl.contains(instance.el)) : null;
+      if (hostEl && !api) {
+        const local = tryonAttrs(hostEl.dataset || {});
+        const hostCfg = deepMerge(deepMerge({}, config), { mode: "inline", ...local });
+        if (sku) hostCfg.sku = sku;
+        api = init({ ...hostCfg, mount: hostEl });
+        hostEl.setAttribute("data-tryon-done", "1");
+      }
+      if (!api) {
+        if (!state.overlay?.el.isConnected) {
+          const overlayCfg = deepMerge(deepMerge({}, config), { mode: "overlay" });
+          if (sku) overlayCfg.sku = sku;
+          state.overlay = init(overlayCfg);
+        }
+        api = state.overlay;
+      }
+
       if (sku) {
-        filterBySku(api, sku);
-        api.select(sku);
+        const reportMissing = () => {
+          if (api.el.cfg.sku !== sku || api.el.products?.some((product) => api.el.matchesProduct(product, sku))) return;
+          const message =
+            api.el.cfg.lang === "fa"
+              ? "این عینک در کاتالوگ افزونه پیدا نشد؛ شناسهٔ SKU را بررسی کنید."
+              : "This frame was not found in the try-on catalog. Check the product SKU.";
+          api.el.hint(message, true);
+          api.el.emit("error", { where: "product", sku, message });
+        };
+        const selected = api.select(sku);
+        if (api.el.productsLoaded) {
+          if (!selected) reportMissing();
+        } else api.el.productsReady?.then(reportMissing).catch(() => {});
       }
       if (hostEl) hostEl.scrollIntoView?.({ behavior: "smooth", block: "center" });
       api.open();
-      if (typeof document !== "undefined")
-        document.dispatchEvent(new CustomEvent("tryon:open", { detail: { sku: sku || null, source: btn } }));
+      const EventCtor = doc.defaultView?.CustomEvent || CustomEvent;
+      doc.dispatchEvent(new EventCtor("tryon:open", { detail: { sku: sku || null, source: btn } }));
     });
   }
-  return made;
-}
 
-/** با SKU/id داده شود، لیست را به همان مدل + شبیه‌هایش محدود می‌کند */
-function filterBySku(api, sku) {
-  const p = CATALOG_BY_ID.get(String(sku));
-  if (p) api.setProducts([p, ...CATALOG.filter((x) => x.shape === p.shape && x.id !== p.id).slice(0, 5)]);
+  // اسلات‌های inline که بعد از بارگذاری افزونه به صورت پویا درج می‌شوند نیز نصب شوند.
+  const MutationObserverCtor = doc.defaultView?.MutationObserver;
+  if (!state.observer && MutationObserverCtor && doc.documentElement) {
+    state.observer = new MutationObserverCtor((records) => {
+      for (const record of records) {
+        for (const node of record.addedNodes) {
+          if (node.nodeType !== 1) continue;
+          if (node.matches?.("[data-tryon], [data-tryon-open], .tryon-btn") || node.querySelector?.("[data-tryon], [data-tryon-open], .tryon-btn"))
+            autoEmbed(node);
+        }
+      }
+    });
+    state.observer.observe(doc.documentElement, { childList: true, subtree: true });
+  }
+  return made;
 }
 
 /* ─────────────────────────── نگاشت فروشگاه‌ها ─────────────────────────── */

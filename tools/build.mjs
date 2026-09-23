@@ -7,10 +7,11 @@
 import esbuild from "esbuild";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { gzipSync } from "node:zlib";
 import { execSync } from "node:child_process";
 
-const root = path.resolve(import.meta.dirname, "..");
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const out = path.join(root, "dist");
 fs.mkdirSync(out, { recursive: true });
 const version = process.env.VT_VERSION || readVersion();

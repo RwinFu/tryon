@@ -7,7 +7,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-const root = path.resolve(import.meta.dirname, "..");
+import { fileURLToPath } from "node:url";
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 function topLevelBlocks(src) {
   const lines = src.split("\n");

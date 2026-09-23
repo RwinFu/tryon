@@ -19,6 +19,7 @@ export const EMBED_CSS = `
 .tryon-btn.block{display:flex;width:100%}
 .tryon-btn.tryon-loading,.tryon-btn[aria-busy="true"]{opacity:.72;cursor:progress;pointer-events:none}
 .tryon-btn.tryon-loading::before,.tryon-btn[aria-busy="true"]::before{background:none;-webkit-mask:none;mask:none;border-radius:50%;border:2px solid currentColor;border-top-color:transparent;box-sizing:border-box;animation:tryon-spin .8s linear infinite}
+.tryon-loader-status{display:block;margin:.45em 0;color:#a33;font:500 12px/1.6 system-ui,sans-serif}
 @keyframes tryon-spin{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.tryon-btn{transition:none}.tryon-btn.tryon-loading::before{animation-duration:1.6s}}
 `;

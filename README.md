@@ -7,7 +7,7 @@
 </p>
 
 ```html
-<!-- لودر ۲KB: موتور ۲۳۵KB فقط با اولین کلیک (یا نزدیک‌شدن اسلات inline به دید) دانلود می‌شود -->
+<!-- لودر حدود ۲KB: موتور حدود ۲۳۸KB فقط با اولین کلیک (یا نزدیک‌شدن اسلات inline به دید) دانلود می‌شود -->
 <script src="/tryon/dist/tryon-loader.js" data-tryon-products="/tryon/products.json" defer></script>
 
 <!-- کنار هر عینک: با کلیک، overlay تمام‌صفحه با همان فریم روی صورت مشتری باز می‌شود -->
@@ -76,7 +76,7 @@ lib/                   MediaPipe tasks-vision + مدل‌ها (میزبانی م
 
 ```bash
 npm install
-npm run build     # dist/tryon.js (۲۳۳KB gzip) + dist/studio.js
+npm run build     # dist/tryon.js (حدود ۲۳۸KB gzip) + dist/studio.js
 npm test          # ۴۳ تست: هندسه، فیت، GLB، عکس‌سنجی، DOM، قالب‌ها
 npm run dev       # سرور محلی روی :8080 (دمو + استودیو)
 npm run bake      # assets/frames/*.glb (خروجی تولیدی؛ در گیت نمی‌آید)
