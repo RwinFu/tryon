@@ -62,16 +62,34 @@ function resize() {
 new ResizeObserver(resize).observe(canvas);
 
 let obj = null;
+let rebuildReq = 0;
+const currentProductSpec = () => ({ spec: effectiveSpec(), finish: state.finish, color: state.color, lens: state.lens, metalColor: state.metalColor });
+/** بازسازی هندسه — چند رویداد اسلایدر در یک فریم، یک بار ساخته می‌شود (کشیدن اسلایدر روان می‌ماند) */
 function rebuild() {
-  const spec = effectiveSpec();
-  const product = { spec, finish: state.finish, color: state.color, lens: state.lens, metalColor: state.metalColor };
-  if (obj) holder.remove(obj.group);
+  if (rebuildReq) return;
+  rebuildReq = requestAnimationFrame(() => {
+    rebuildReq = 0;
+    rebuildNow();
+  });
+}
+function rebuildNow() {
+  const product = currentProductSpec();
+  const spec = product.spec;
+  if (obj) {
+    holder.remove(obj.group);
+    obj.dispose();
+  }
   clearFrameCache();
   obj = createFrameObject(THREE, product, { quality: "high", occluder: false, envIntensity: 1.15 });
   obj.group.traverse((o) => (o.matrixAutoUpdate = true));
   holder.add(obj.group);
   $("#triCount").textContent = new Intl.NumberFormat("en").format(obj.group.userData.meta.tris);
   $("#sizeOut").textContent = `${(spec.lensW ?? 0)}□${spec.dbn} ${spec.templeLen} · کل ${Math.round(2 * (spec.lensW || 52) + spec.dbn)}mm`;
+}
+/** فقط رنگ/عدسی: متریال عوض می‌شود، هندسه دست‌نخورده (پیش‌نمایش زندهٔ رنگ بدون مکث) */
+function recolor() {
+  if (!obj) return rebuild();
+  obj.setVariant(currentProductSpec());
 }
 const effectiveSpec = () => ({ ...state.spec, ...(state.traced || {}) });
 
@@ -181,11 +199,11 @@ function onControl(k, c, el) {
   if (k === "color" || k === "metalColor") {
     state[k] = v;
     el.parentElement.querySelector("code").textContent = v;
-    return rebuild();
+    return recolor();
   }
   if (k === "lens") {
     state.lens = v;
-    return rebuild();
+    return recolor();
   }
   if (k === "shape") {
     if (v === "custom") {
@@ -277,6 +295,12 @@ $("#btnGlb").onclick = () => {
   toast("GLB آماده شد · " + (bytes.length / 1024).toFixed(0) + "KB");
 };
 $("#btnPng").onclick = () => {
+  if (rebuildReq) {
+    cancelAnimationFrame(rebuildReq);
+    rebuildReq = 0;
+    rebuildNow();
+  }
+  frameCam();
   renderer.render(scene, camera);
   const a = document.createElement("a");
   a.href = canvas.toDataURL("image/png");
@@ -324,7 +348,13 @@ $("#photo").onchange = async (e) => {
     const r = frameFromImage(data, { lensW: hint });
     const box = $("#photoOut");
     if (!r.ok) {
-      box.innerHTML = `<div class="err">ماسکِ فریم از این عکس درنیامد (${r.reason}). عکسِ تمام‌جبهه با پس‌زمینهٔ روشن/شفاف بده.</div>`;
+      box.innerHTML = `<div class="err"><b>خط عدسی از این عکس درنیامد</b> <small>(${esc(r.reason)})</small>
+        <ul style="margin:6px 14px 0 0;padding:0;line-height:1.9">
+          <li>عکس <b>تمام‌رخ از روبه‌رو</b> باشد (نه سه‌رخ یا تاشده)</li>
+          <li>پس‌زمینهٔ <b>شفاف (PNG)</b> یا سفیدِ یکدست؛ بدون سایه و انعکاس</li>
+          <li>فریم حداقل ۶۰٪ عرض عکس را بگیرد؛ عدسی‌ها روشن‌تر از فریم</li>
+          <li>اگر عدسی آینه‌ای/تیره است، عدد چاپی روی دسته را وارد کن و از «قالب‌های آماده» نزدیک‌ترین فرم را بردار</li>
+        </ul></div>`;
       return;
     }
     const shape = guessShape(r.lensPath);
@@ -427,7 +457,7 @@ $("#productSelect").onchange = (e) => {
 };
 buildPresets();
 buildControls();
-rebuild();
+rebuildNow();
 void resample;
 void smoothPts;
 void lensOutline;

@@ -289,6 +289,9 @@ export class VirtualTryOn extends Native {
   /** تامبنیل‌ها از همان هندسهٔ سه‌بعدی رندر می‌شوند → فروشگاه لازم نیست عکس محصول آپلود کند */
   async makeThumbs() {
     try {
+      // در بیکاری مرورگر؛ اولین رندر/تعامل صفحه معطل ۲۸ تامبنیل سه‌بعدی نمی‌ماند
+      await new Promise((r) => (window.requestIdleCallback ? requestIdleCallback(r, { timeout: 1500 }) : setTimeout(r, 120)));
+      if (this.dead) return;
       const urls = await renderThumbnails(this.products, { THREE, size: 200, quality: this.cfg.quality === "lite" ? "lite" : "high" });
       this.cards.forEach((c, i) => {
         if (!urls[i]) return;
@@ -401,9 +404,21 @@ export class VirtualTryOn extends Native {
   }
 
   /* ─────────────────────────── اتصال موتور ──────────────────────── */
-  async boot() {
-    if (this.booted) return;
-    this.booted = true;
+  pickQuality() {
+    const cfg = this.cfg;
+    return cfg.quality === "auto"
+      ? navigator.hardwareConcurrency > 4 && !/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+        ? "high"
+        : "lite"
+      : cfg.quality;
+  }
+
+  /**
+   * گرم‌کردن پیش از «شروع»: کتابخانهٔ MediaPipe + WASM + مدل (≈۱۳MB بار اول، بعداً از کش) در پس‌زمینه
+   * بار می‌شود تا وقتی مشتری «شروع» را زد فقط اجازهٔ دوربین بماند. دوربین اینجا باز نمی‌شود (نیاز به کلیک کاربر).
+   */
+  prewarm() {
+    if (this.booted || this.prewarmP) return this.prewarmP;
     const cfg = this.cfg;
     this.THREE = THREE;
     const base = cfg.baseURL || new URL(".", document.baseURI).href.replace(/\/$/, "");
@@ -416,39 +431,58 @@ export class VirtualTryOn extends Native {
       focalScale: cfg.tracking.focalScale,
       log: (k, m) => this.emit("log", { k, m }),
     });
+    this.prewarmP = this.tracker
+      .init((where, msg) => this.starting && this.busy(msg))
+      .then(() => this.tracker)
+      .catch((e) => {
+        this.prewarmP = null; // در boot دوباره تلاش می‌شود
+        throw e;
+      });
+    return this.prewarmP;
+  }
+
+  async boot() {
+    if (this.booted) return;
+    this.booted = true;
+    this.starting = true;
+    const cfg = this.cfg;
     this.state = "loading";
     this.setStatus("search", t(cfg.lang, "loading"));
     try {
-      await this.tracker.init((where, msg) => this.busy(msg));
-      this.quality =
-        cfg.quality === "auto"
-          ? navigator.hardwareConcurrency > 4 && !/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
-            ? "high"
-            : "lite"
-          : cfg.quality;
+      const initP = this.prewarmP || this.prewarm();
+      initP.catch(() => {}); // اگر دوربین زودتر خطا داد، رد شدنِ این یکی unhandled نشود
+      this.quality = this.pickQuality();
+      // دوربین (اجازهٔ کاربر) موازی با بارگذاری مدل: طولانی‌ترین کارها هم‌زمان
+      this.busy(t(cfg.lang, "cameraAsk"));
+      const camP = this.tracker.startCamera({ light: this.quality === "lite" });
       this.stage = new Stage({
         canvas: this.el.gl,
         THREE: this.THREE,
         quality: this.quality,
         video: this.tracker.video,
       });
-      this.stage.buildEnv();
       this.stage.onFrameError = (e) => this.hint(t(cfg.lang, "modelFailed") + " — " + (e?.message || ""), true);
       this.stage.setProduct({ ...this.product, ...(this.variants?.[this.variant] || {}) }, { quality: this.quality });
-      this.busy(t(cfg.lang, "cameraAsk"));
-      await this.tracker.startCamera({ light: this.quality === "lite" });
+      await camP;
+      this.busy(t(cfg.lang, "loading"));
+      await initP;
       this.syncSize();
-      window.addEventListener("resize", () => this.syncSize());
+      this.onResize = this.onResize || (() => this.syncSize());
+      window.addEventListener("resize", this.onResize);
       this.busy("");
+      this.starting = false;
       this.el.gate.hidden = true;
       this.state = "live";
       this.setStatus("live", t(cfg.lang, "live"));
-      this.tracker.initHair?.().catch(() => {});
-      if (cfg.features.hairLayer && this.quality !== "lite") setTimeout(() => this.tracker.initHair(), 4000);
       this.loop();
+      // محیط نوری (PMREM) بعد از اولین فریم: دوربین زودتر دیده می‌شود
+      requestAnimationFrame(() => this.stage?.buildEnv());
+      if (cfg.features.hairLayer && this.quality !== "lite") setTimeout(() => this.tracker?.initHair?.().catch(() => {}), 4000);
       this.emit("ready", { quality: this.quality, products: this.products.length });
     } catch (e) {
       this.booted = false;
+      this.starting = false;
+      this.tracker?.stopCamera?.();
       this.state = "error";
       this.setStatus("error", t(cfg.lang, "cameraBlocked"));
       this.showError(e);
@@ -672,6 +706,9 @@ export class VirtualTryOn extends Native {
       this.$("start").textContent = t(this.cfg.lang, "starting");
       this.boot().catch(() => {});
     });
+    // inline: با اولین نشانهٔ قصد (هاور/لمس/فوکوس روی کارت شروع) مدل در پس‌زمینه بار می‌شود
+    const intent = () => this.prewarm()?.catch(() => {});
+    for (const ev of ["pointerenter", "touchstart", "focusin"]) this.el.gate.addEventListener(ev, intent, { once: true, passive: true });
     this.$("close")?.addEventListener("click", () => this.close());
     this.$("openFit").addEventListener("click", () => this.openSheet());
     this.$("sheetClose").addEventListener("click", () => this.openSheet(false));
@@ -928,8 +965,10 @@ export class VirtualTryOn extends Native {
     this.hidden = false;
     document.documentElement.style.setProperty("overflow", "hidden", "important");
     this.el.gate.hidden = this.booted;
-    if (!this.booted) this.$("start").focus?.();
-    else if (this.state === "paused") this.resume();
+    if (!this.booted) {
+      this.$("start").focus?.();
+      this.prewarm()?.catch(() => {}); // مشتری قصدش را نشان داده؛ مدل را از حالا بیاور
+    } else if (this.state === "paused") this.resume();
   }
   async resume() {
     try {
@@ -973,6 +1012,7 @@ export class VirtualTryOn extends Native {
   }
   disconnectedCallback() {
     this.dead = true;
+    this.onResize && window.removeEventListener("resize", this.onResize);
     this.mountListener && this.mountBtn?.removeEventListener("click", this.mountListener);
     this.tracker?.dispose();
     this.stage?.dispose();
