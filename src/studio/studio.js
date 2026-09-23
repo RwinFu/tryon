@@ -12,6 +12,20 @@ import { frameFromImage, guessShape } from "../frame/photogram.js";
 import { buildStudioEnvironment } from "../frame/materials.js";
 
 const $ = (s) => document.querySelector(s);
+/* ابزارهای کوچک — بالای فایل، چون کدِ سطحِ ماژول (هنگام لود) از آن‌ها استفاده می‌کند
+   (const در پایین فایل = Temporal Dead Zone = «Ec is not a function» و صفحهٔ سفید) */
+function esc(s) {
+  return String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+}
+function fmt(v, u) {
+  return v === undefined || v === null ? "—" : String(+Number(v).toFixed(2)) + (u ? " " + u : "");
+}
+function circlePath(rx, ry, n = 96) {
+  return Array.from({ length: n }, (_, i) => {
+    const a = (i / n) * Math.PI * 2;
+    return { x: +(Math.cos(a) * rx).toFixed(2), y: +(Math.sin(a) * ry).toFixed(2) };
+  });
+}
 const state = {
   spec: { ...toEngineSpec(CATALOG[0]), name: CATALOG[0].name },
   finish: CATALOG[0].finish || "polished-black",
@@ -226,15 +240,6 @@ function onControl(k, c, el) {
   rebuild();
 }
 
-const fmt = (v, u) =>
-  v === undefined || v === null
-    ? "—"
-    : String(+Number(v).toFixed(2)) + (u ? " " + u : "");
-const circlePath = (rx, ry, n = 96) =>
-  Array.from({ length: n }, (_, i) => {
-    const a = (i / n) * Math.PI * 2;
-    return { x: +(Math.cos(a) * rx).toFixed(2), y: +(Math.sin(a) * ry).toFixed(2) };
-  });
 
 /* ── پریست‌ها، ذخیره، خروجی ────────────────────────────────────────── */
 function buildPresets() {
@@ -438,7 +443,6 @@ function download(name, text, mime) {
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 3000);
 }
-const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
 /* URL: ?p=AR-104 برای لینک‌کردن محصول */
 const pid = new URLSearchParams(location.search).get("p");
