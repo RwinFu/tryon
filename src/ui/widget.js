@@ -200,6 +200,8 @@ export class VirtualTryOn extends Native {
     } else {
       this.hidden = true;
     }
+    this.$("start").disabled = true;
+    this.$("start").setAttribute("aria-busy", "true");
     this.loadProducts();
     if (c.theme === "auto") this.detectHostTheme();
   }
@@ -234,37 +236,75 @@ export class VirtualTryOn extends Native {
   }
 
   /* ─────────────────────────── محصولات ──────────────────────────── */
-  async loadProducts() {
-    let src = this.cfg.products;
-    let items = null;
-    if (typeof src === "string") {
-      try {
-        const r = await fetch(src, { headers: { accept: "application/json" } });
-        const data = await r.json();
-        items = Array.isArray(data) ? data : data.products || data.items;
-      } catch (e) {
-        this.emit("error", { where: "products", message: String(e.message || e) });
+  loadProducts() {
+    const requestId = (this.productRequestId || 0) + 1;
+    this.productRequestId = requestId;
+    this.productsLoaded = false;
+    const promise = (async () => {
+      const src = this.cfg.products;
+      let items = null;
+      if (typeof src === "string") {
+        try {
+          const response = await fetch(src, { headers: { accept: "application/json" } });
+          if (!response.ok) throw new Error(`HTTP ${response.status} while loading ${src}`);
+          const data = await response.json();
+          items = Array.isArray(data) ? data : data.products || data.items;
+        } catch (error) {
+          this.emit("error", { where: "products", message: String(error.message || error) });
+        }
+      } else if (Array.isArray(src) && src.length) items = src;
+
+      // اگر هم‌زمان کاتالوگ جدیدی تنظیم شده، پاسخ قدیمی را نادیده بگیر.
+      if (requestId !== this.productRequestId) return this.products || [];
+      this.products = (items && items.length ? items : CATALOG).map((p, i) => ({
+        ...p,
+        id: String(p.id ?? i + 1),
+        colors: p.colors?.length ? p.colors : [{ name: t(this.cfg.lang, "defaultColor") }],
+        spec: p.spec && p.spec.lensW ? p.spec : toEngineSpec(p),
+      }));
+      this.productsLoaded = true;
+      this.variant = 0;
+      this.renderRail();
+      const initialIndex = this.firstIndex();
+      this.select(initialIndex, true);
+      const wanted = this.cfg.sku || this.cfg.product || deepLinkId();
+      const initialVariant = wanted ? this.products[initialIndex]?.colors?.findIndex((color) => String(color.sku || "") === String(wanted)) ?? -1 : -1;
+      if (initialVariant > 0) {
+        this.variant = initialVariant;
+        this.renderSwatches();
+        this.renderMeta();
       }
-    } else if (Array.isArray(src) && src.length) items = src;
-    this.products = (items && items.length ? items : CATALOG).map((p, i) => ({
-      ...p,
-      id: String(p.id ?? i + 1),
-      colors: p.colors?.length ? p.colors : [{ name: t(this.cfg.lang, "defaultColor") }],
-      spec: p.spec && p.spec.lensW ? p.spec : toEngineSpec(p),
-    }));
-    this.variant = 0;
-    this.renderRail();
-    this.select(this.firstIndex(), true);
+      const startButton = this.$?.("start");
+      if (startButton && !this.starting) {
+        startButton.disabled = false;
+        startButton.removeAttribute("aria-busy");
+      }
+
+      if (wanted && !this.products.some((p) => this.matchesProduct(p, wanted))) {
+        this.emit("error", { where: "product", sku: String(wanted), message: "product not found in catalog" });
+      }
+      return this.products;
+    })();
+    this.productsReady = promise;
+    return promise;
   }
 
-  /** محصول اول: sku پیکربندی → #f=/ ?f= صفحه → ایندکس عددی → ردیف صفر */
+  matchesProduct(product, id) {
+    const key = String(id ?? "");
+    return (
+      String(product.id) === key ||
+      String(product.sku || "") === key ||
+      product.name === key ||
+      (product.colors || []).some((color) => String(color.sku || "") === key)
+    );
+  }
+
+  /** محصول اول: شناسهٔ SKU/ID پیکربندی ← deep link ← ردیف اول */
   firstIndex() {
     const want = this.cfg.sku || this.cfg.product || deepLinkId();
     if (want) {
-      const key = String(want);
-      let i = this.products.findIndex((p) => p.id === key || String(p.sku || "") === key || p.name === key);
-      if (i < 0 && /^\d+$/.test(key)) i = Math.min(this.products.length - 1, Math.max(0, parseInt(key, 10) - (key.length <= 2 ? 1 : 0)));
-      if (i >= 0) return i;
+      const index = this.products.findIndex((product) => this.matchesProduct(product, want));
+      if (index >= 0) return index;
     }
     return 0;
   }
@@ -289,31 +329,45 @@ export class VirtualTryOn extends Native {
   /** تامبنیل‌ها از همان هندسهٔ سه‌بعدی رندر می‌شوند → فروشگاه لازم نیست عکس محصول آپلود کند */
   async makeThumbs() {
     try {
-      // در بیکاری مرورگر؛ اولین رندر/تعامل صفحه معطل ۲۸ تامبنیل سه‌بعدی نمی‌ماند
-      await new Promise((r) => (window.requestIdleCallback ? requestIdleCallback(r, { timeout: 1500 }) : setTimeout(r, 120)));
-      if (this.dead) return;
-      const urls = await renderThumbnails(this.products, { THREE, size: 200, quality: this.cfg.quality === "lite" ? "lite" : "high" });
-      this.cards.forEach((c, i) => {
-        if (!urls[i]) return;
-        const img = new Image();
-        img.alt = "";
-        img.decoding = "async";
-        img.onload = () => {
-          const svg = c.querySelector("svg");
-          svg && svg.replaceWith(img);
-        };
-        img.src = urls[i];
+      // رندر تامبنیل خارج از مسیر شروع دوربین و فقط برای چند فریم اول.
+      await new Promise((resolve) =>
+        window.requestIdleCallback ? window.requestIdleCallback(resolve, { timeout: 1800 }) : setTimeout(resolve, 350),
+      );
+      if (this.dead || document.hidden || !this.products?.length) return;
+      const count = Math.min(8, this.products.length);
+      const urls = await renderThumbnails(this.products.slice(0, count), {
+        THREE,
+        size: 128,
+        quality: this.cfg.quality === "lite" ? "lite" : "high",
       });
-    } catch (e) {
-      /* آیکن‌های SVG می‌مانند */
+      this.cards.slice(0, count).forEach((card, index) => {
+        if (!urls[index]) return;
+        const image = new Image();
+        image.alt = "";
+        image.decoding = "async";
+        image.onload = () => {
+          const svg = card.querySelector("svg");
+          svg && svg.replaceWith(image);
+        };
+        image.src = urls[index];
+      });
+    } catch (error) {
+      /* در دستگاه بدون WebGL آیکن‌های برداری می‌مانند. */
     }
   }
 
   select(i, silent) {
-    if (!this.products?.length) return;
+    if (!this.products?.length || !this.products[i]) return;
+    const previousId = this.product?.id;
     this.byIndex = i;
     this.variant = 0;
     const p = this.products[i];
+    if (String(previousId || "") !== String(p.id)) {
+      this.fitSummary = "";
+      this.fitRows = [];
+      this.samples = [];
+      this.$("fitRows") && (this.$("fitRows").innerHTML = "");
+    }
     this.spec = toEngineSpec(p);
     this.product = p;
     this.cards?.forEach((c, k) => {
@@ -455,6 +509,8 @@ export class VirtualTryOn extends Native {
       // دوربین (اجازهٔ کاربر) موازی با بارگذاری مدل: طولانی‌ترین کارها هم‌زمان
       this.busy(t(cfg.lang, "cameraAsk"));
       const camP = this.tracker.startCamera({ light: this.quality === "lite" });
+      this.stage?.dispose?.();
+      this.stage = null;
       this.stage = new Stage({
         canvas: this.el.gl,
         THREE: this.THREE,
@@ -464,8 +520,22 @@ export class VirtualTryOn extends Native {
       this.stage.onFrameError = (e) => this.hint(t(cfg.lang, "modelFailed") + " — " + (e?.message || ""), true);
       this.stage.setProduct({ ...this.product, ...(this.variants?.[this.variant] || {}) }, { quality: this.quality });
       await camP;
+      if (this.cfg.mode === "overlay" && this.hidden) {
+        this.tracker.stopCamera();
+        this.booted = false;
+        this.starting = false;
+        this.state = "idle";
+        return;
+      }
       this.busy(t(cfg.lang, "loading"));
       await initP;
+      if (this.cfg.mode === "overlay" && this.hidden) {
+        this.tracker.stopCamera();
+        this.booted = false;
+        this.starting = false;
+        this.state = "idle";
+        return;
+      }
       this.syncSize();
       this.onResize = this.onResize || (() => this.syncSize());
       window.addEventListener("resize", this.onResize);
@@ -554,12 +624,20 @@ export class VirtualTryOn extends Native {
   }
 
   /* ─────────────────────────── حلقهٔ رندر ──────────────────────── */
+  stopLoop() {
+    if (this.frameRequest !== undefined && this.frameRequest !== null) cancelAnimationFrame(this.frameRequest);
+    this.frameRequest = 0;
+  }
+
   loop() {
-    if (this.dead) return;
-    requestAnimationFrame(() => this.loop());
+    if (this.dead || this.state !== "live") {
+      this.frameRequest = 0;
+      return;
+    }
+    this.frameRequest = requestAnimationFrame(() => this.loop());
     const tr = this.tracker,
-      v = tr.video;
-    if (!v.videoWidth || this.state !== "live") return;
+      v = tr?.video;
+    if (!v?.videoWidth) return;
     const now = performance.now();
     this.frames = (this.frames || 0) + 1;
 
@@ -643,18 +721,23 @@ export class VirtualTryOn extends Native {
       if (this.samples.length > 90) this.samples.shift();
       const fresh = this.samples.filter((s) => performance.now() - s.t < 6000);
       if (fresh.length > 8) {
-        const rows = fitReport(this.product, { ...pose, ...avg(fresh, ["faceW", "faceH", "nose"]) }, this.spec);
-        const sum = rows.map((r) => r.status);
-        const txt = sum.every((s) => s === "good")
+        const measurements = avg(fresh, ["pd", "faceW", "faceH", "nose"]);
+        const rows = fitReport(
+          this.product,
+          { ...pose, pdMm: measurements.pd, faceWmm: measurements.faceW, faceHmm: measurements.faceH, noseWmm: measurements.nose },
+          this.spec,
+        );
+        const statuses = rows.map((row) => row.status);
+        const summary = statuses.every((status) => status === "good")
           ? t(this.cfg.lang, "fitGreat")
-          : sum.includes("warn")
+          : statuses.includes("warn") || statuses.includes("bad")
             ? t(this.cfg.lang, "fitCheck")
             : t(this.cfg.lang, "fitOff");
-        if (txt !== this.fitSummary) {
-          this.fitSummary = txt;
-          this.renderMeta();
-          this.emit("fit", { rows, pd: pose.pdMm, faceW: fresh.length && avg(fresh, ["faceW"]).faceW });
+        if (summary !== this.fitSummary) {
+          this.fitSummary = summary;
           this.fitRows = rows;
+          this.renderMeta();
+          this.emit("fit", { rows, ...measurements, summary, product: this.product });
         }
       }
     } else {
@@ -724,14 +807,22 @@ export class VirtualTryOn extends Native {
       this.select(Math.max(0, Math.min(this.products.length - 1, this.byIndex + d)));
       this.cards[this.byIndex].scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
     });
-    document.addEventListener("visibilitychange", () => {
-      if (document.hidden) this.state === "live" && (this.paused = true);
-      else if (this.paused && this.booted) {
-        this.paused = false;
-        this.state = "live";
+    this.onVisibilityChange = () => {
+      if (document.hidden && this.state === "live") {
+        this.wasLive = true;
+        this.state = "paused";
+        this.stopLoop();
+        this.tracker?.stopCamera();
+      } else if (!document.hidden && this.wasLive && this.booted && !this.hidden) {
+        this.wasLive = false;
+        this.resume();
       }
-    });
-    window.addEventListener("keydown", (e) => e.key === "Escape" && this.cfg.mode === "overlay" && this.close());
+    };
+    this.onGlobalKeydown = (event) => {
+      if (event.key === "Escape" && this.cfg.mode === "overlay" && !this.hidden) this.close();
+    };
+    document.addEventListener("visibilitychange", this.onVisibilityChange);
+    window.addEventListener("keydown", this.onGlobalKeydown);
     this.dir = this.getAttribute("dir") || "ltr";
   }
 
@@ -962,40 +1053,84 @@ export class VirtualTryOn extends Native {
   /* ─────────────────────────── API ──────────────────────────────── */
   open() {
     if (this.cfg.mode !== "overlay") return;
+    if (this.hidden) {
+      this.returnFocus = document.activeElement;
+      const style = document.documentElement.style;
+      this.savedOverflow = { value: style.getPropertyValue("overflow"), priority: style.getPropertyPriority("overflow") };
+    }
     this.hidden = false;
     document.documentElement.style.setProperty("overflow", "hidden", "important");
     this.el.gate.hidden = this.booted;
     if (!this.booted) {
       this.$("start").focus?.();
-      this.prewarm()?.catch(() => {}); // مشتری قصدش را نشان داده؛ مدل را از حالا بیاور
+      this.prewarm()?.catch(() => {}); // بارگذاری موتور در پس‌زمینه؛ دوربین فقط بعد از اجازهٔ کاربر
     } else if (this.state === "paused") this.resume();
   }
   async resume() {
     try {
+      if (!this.tracker) throw new Error("موتور دوربین آماده نیست؛ دکمهٔ شروع را دوباره بزنید.");
       if (!this.tracker.stream) await this.tracker.startCamera({ light: this.quality === "lite" });
       this.syncSize();
       this.state = "live";
+      this.wasLive = false;
+      this.el.gate.hidden = true;
       this.setStatus("live", t(this.cfg.lang, "live"));
-    } catch (e) {
+      this.loop();
+    } catch (error) {
+      this.state = "error";
+      this.booted = false;
+      this.stopLoop();
+      this.tracker?.stopCamera?.();
+      this.el.gate.hidden = false;
       this.setStatus("error", t(this.cfg.lang, "cameraBlocked"));
-      this.emit("error", { where: "resume", message: String(e?.message || e), name: e?.name });
+      this.showError(error);
+      this.emit("error", { where: "resume", message: String(error?.message || error), name: error?.name });
     }
   }
   close() {
     this.hidden = true;
-    document.documentElement.style.removeProperty("overflow");
-    if (this.booted && this.tracker) {
-      this.tracker.stopCamera(); // چراغ دوربین خاموش شود؛ با open() دوباره روشن می‌شود
-      this.state = "paused";
-    } else this.state = "idle";
+    this.wasLive = false;
+    const wasStarting = this.starting;
+    this.starting = false;
+    if (wasStarting) {
+      this.booted = false;
+      this.busy("");
+      const start = this.$("start");
+      if (start) {
+        start.disabled = false;
+        start.textContent = t(this.cfg.lang, "start");
+      }
+    }
+    this.state = this.booted ? "paused" : "idle";
+    this.stopLoop();
+    this.tracker?.stopCamera?.(); // چراغ دوربین خاموش شود؛ با open() دوباره روشن می‌شود
+    const style = document.documentElement.style;
+    if (this.savedOverflow) {
+      const { value, priority } = this.savedOverflow;
+      value ? style.setProperty("overflow", value, priority) : style.removeProperty("overflow");
+      this.savedOverflow = null;
+    }
+    if (this.returnFocus?.isConnected) this.returnFocus.focus?.({ preventScroll: true });
+    this.returnFocus = null;
   }
   setProducts(list) {
     this.cfg.products = list;
-    this.loadProducts();
+    return this.loadProducts();
   }
   selectProduct(id) {
-    const i = this.products?.findIndex((p) => String(p.id) === String(id));
-    if (i >= 0) this.select(i);
+    const key = String(id ?? "").trim();
+    if (!key) return false;
+    // نگه‌داشتن SKU تا وقتی products.json / API هنوز در حال بارگذاری است.
+    this.cfg.sku = key;
+    this.pendingProductId = key;
+    if (!this.productsLoaded) return true;
+    const index = this.products?.findIndex((product) => this.matchesProduct(product, key)) ?? -1;
+    if (index < 0) return false;
+    this.pendingProductId = null;
+    this.select(index);
+    const variantIndex = this.products[index].colors?.findIndex((color) => String(color.sku || "") === key) ?? -1;
+    if (variantIndex >= 0) this.setVariant(variantIndex);
+    return true;
   }
   emit(name, detail) {
     this.dispatchEvent(new CustomEvent("tryon:" + name, { detail, bubbles: true, composed: true }));
@@ -1011,9 +1146,21 @@ export class VirtualTryOn extends Native {
     this.listeners.set(name, a.filter((f) => f !== fn));
   }
   disconnectedCallback() {
+    if (this.destroyed) return;
+    this.destroyed = true;
     this.dead = true;
+    this.stopLoop();
     this.onResize && window.removeEventListener("resize", this.onResize);
+    this.onVisibilityChange && document.removeEventListener("visibilitychange", this.onVisibilityChange);
+    this.onGlobalKeydown && window.removeEventListener("keydown", this.onGlobalKeydown);
     this.mountListener && this.mountBtn?.removeEventListener("click", this.mountListener);
+    if (this.savedOverflow) {
+      const { value, priority } = this.savedOverflow;
+      value
+        ? document.documentElement.style.setProperty("overflow", value, priority)
+        : document.documentElement.style.removeProperty("overflow");
+      this.savedOverflow = null;
+    }
     this.tracker?.dispose();
     this.stage?.dispose();
   }

@@ -9,11 +9,12 @@
  */
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { CATALOG, toEngineSpec } from "../src/frame/catalog.js";
 import { buildFrame } from "../src/frame/geometry.js";
 import { exportGLB } from "../src/frame/glb.js";
 
-const root = path.resolve(import.meta.dirname, "..");
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const outDir = path.join(root, "assets", "frames");
 fs.mkdirSync(outDir, { recursive: true });
 const rows = [];

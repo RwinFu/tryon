@@ -6,10 +6,11 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import vm from "node:vm";
 import { JSDOM } from "jsdom";
 
-const root = path.resolve(import.meta.dirname, "..");
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const bundlePath = path.join(root, "dist/tryon.js");
 const esmPath = path.join(root, "dist/tryon.esm.js");
 
@@ -36,6 +37,8 @@ test("dist/tryon.js در مرورگر شبیه‌سازی‌شده بالا می
     { url: "https://shop.test/product/1", runScripts: "outside-only" },
   );
   const errors = [];
+  dom.window.requestIdleCallback = () => 0; // تامبنیل‌ها خارج از سناریوی DOM شبیه‌سازی‌شده‌اند.
+  Object.defineProperty(dom.window.HTMLCanvasElement.prototype, "getContext", { configurable: true, value: () => null });
   dom.window.addEventListener("error", (e) => errors.push(String(e.message || e.error)));
   dom.window.eval(src);
   const { window } = dom;
@@ -52,7 +55,7 @@ test("dist/tryon.js در مرورگر شبیه‌سازی‌شده بالا می
   assert.ok(el, "جاسازی خودکار داخل [data-tryon] انجام نشد");
   assert.ok(el.shadowRoot.querySelector("style"), "CSS داخل بیلد نیست");
   assert.equal(el.cfg.brand.accent, "#ff0066", "تنظیمات تگ script اعمال نشد");
-  // data-tryon-sku روی میزبان، لیست را به همان مدل + شبیه‌هایش محدود می‌کند
+  // SKU روی اسلات باید از کاتالوگ فروشنده مدل درست را در ابتدا انتخاب کند.
   assert.ok(el.products.length >= 1 && el.products.some((p) => p.id === "AR-104"), "اسلات با sku فیلتر نشد");
   assert.equal(el.product.id, "AR-104", "محصول اولیه از sku انتخاب نشد");
 
