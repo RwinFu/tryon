@@ -27,7 +27,7 @@ export function faceShapeMetrics(p) {
     symmetry: Math.min(eL, eR) / Math.max(eL, eR || 1),
     cheekPx: cheek,
     faceWpx: cheek,
-    noseW: d(127, 356),
+    noseW: d(188, 412), // کنار پل بینی؛ ۱۲۷/۳۵۶ شقیقه‌اند و پهنای صورت را برمی‌گردانند
   };
 }
 

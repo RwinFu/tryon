@@ -26,7 +26,7 @@ const ICONS = {
 };
 
 export const DEFAULT_CONFIG = {
-  brand: { name: "اپتیک آروین", tagline: "پرو مجازی هوشمند عینک", accent: "#d8b478", whatsapp: "", url: "" },
+  brand: { name: "اپتیک آروین", tagline: "پرو روی صورت", accent: "#9d2c1a", whatsapp: "", url: "" },
   lang: "fa",
   theme: "auto", // auto | light | dark
   mode: "overlay", // overlay | inline
@@ -107,12 +107,12 @@ export class VirtualTryOn extends Native {
     <div class="brand">${esc(c.brand.name || "")}<small>${esc(c.brand.tagline || "")}</small></div>
     <div class="topR">
       <div class="status" id="status" data-state="idle"><i></i><span>${L("statusIdle")}</span></div>
-      ${c.mode === "overlay" ? '<button class="xbtn" id="close" aria-label="' + L("close") + '">✕</button>' : ""}
+      ${c.mode === "overlay" ? '<button class="xbtn" id="close" aria-label="' + L("close") + '"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M3.2 3.2l9.6 9.6M12.8 3.2l-9.6 9.6" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>' : ""}
     </div>
   </header>
   <div class="hint" id="hint" role="status" aria-live="polite"></div>
   <nav class="dock" part="dock">
-    <button class="pull" id="openFit" aria-expanded="false">
+    <button class="pull" id="openFit" type="button" aria-expanded="false">
       <span><b id="pName">${L("selectFrame")}</b><span id="pFit">${L("fitPending")}</span></span>
       <span class="price" id="pPrice">—</span>
     </button>
@@ -135,7 +135,7 @@ export class VirtualTryOn extends Native {
   <section class="gate" id="gate">
     <div class="card2">
       <div class="mark">${ICONS.cateye}</div>
-      <h2 data-sub="VIRTUAL FIT STUDIO">${esc(c.brand.name || L("title"))}</h2>
+      <h2>${esc(c.brand.name || L("title"))}</h2>
       <p class="sub">${L("gateSub")}</p>
       <p class="gateProd" id="gateProduct" hidden></p>
       <div id="gateBody">
@@ -372,7 +372,7 @@ export class VirtualTryOn extends Native {
     this.product = p;
     this.cards?.forEach((c, k) => {
       c.setAttribute("aria-pressed", k === i ? "true" : "false");
-      c.classList.toggle("rec", !!this.recommended?.includes(String(p.id)));
+      c.classList.toggle("rec", !!this.recommended?.includes(String(this.products[k].id)));
     });
     if (this.cfg.deepLink && typeof location !== "undefined" && location.hash !== "#f=" + p.id) {
       try {
@@ -381,7 +381,7 @@ export class VirtualTryOn extends Native {
     }
     this.renderSwatches();
     this.renderMeta();
-    this.stage?.setProduct({ ...p, ...(this.variants?.[i ?? this.variant] || this.variants?.[this.variant] || {}) });
+    this.stage?.setProduct({ ...p, ...(this.variants?.[this.variant] || {}) });
     this.rebuildShadow();
     if (!silent) this.emit("product", { id: p.id, product: p });
   }
@@ -458,6 +458,11 @@ export class VirtualTryOn extends Native {
   }
 
   /* ─────────────────────────── اتصال موتور ──────────────────────── */
+  /** صفحهٔ عمودی (موبایل ایستاده) باید تصویر عمودی بگیرد تا صورت بریده نشود */
+  portraitCamera() {
+    return typeof window !== "undefined" && window.innerHeight > window.innerWidth * 1.05;
+  }
+
   pickQuality() {
     const cfg = this.cfg;
     return cfg.quality === "auto"
@@ -508,7 +513,8 @@ export class VirtualTryOn extends Native {
       this.quality = this.pickQuality();
       // دوربین (اجازهٔ کاربر) موازی با بارگذاری مدل: طولانی‌ترین کارها هم‌زمان
       this.busy(t(cfg.lang, "cameraAsk"));
-      const camP = this.tracker.startCamera({ light: this.quality === "lite" });
+      this.el.stage.classList.toggle("lite", this.quality === "lite");
+      const camP = this.tracker.startCamera({ light: this.quality === "lite", portrait: this.portraitCamera() });
       this.stage?.dispose?.();
       this.stage = null;
       this.stage = new Stage({
@@ -516,6 +522,7 @@ export class VirtualTryOn extends Native {
         THREE: this.THREE,
         quality: this.quality,
         video: this.tracker.video,
+        vertexDistance: cfg.tracking.vertexDistance,
       });
       this.stage.onFrameError = (e) => this.hint(t(cfg.lang, "modelFailed") + " — " + (e?.message || ""), true);
       this.stage.setProduct({ ...this.product, ...(this.variants?.[this.variant] || {}) }, { quality: this.quality });
@@ -668,7 +675,7 @@ export class VirtualTryOn extends Native {
       }
       this.stage.place(pose);
       this.stage.render();
-      if (this.cfg.features.contactShadow) {
+      if (this.cfg.features.contactShadow && this.quality !== "lite") {
         const c = this.ctx.sh;
         c.setTransform(1, 0, 0, 1, 0, 0);
         c.clearRect(0, 0, this.el.sh.width, this.el.sh.height);
@@ -945,13 +952,13 @@ export class VirtualTryOn extends Native {
       x.drawImage(src, 0, 0, W, H);
       x.restore();
     }
+    const name = this.product?.name || "";
     if (this.cfg.watermark) {
       x.font = `600 ${Math.round(H * 0.022)}px ${getComputedStyle(this).fontFamily || "sans-serif"}`;
       x.textAlign = "right";
       x.shadowColor = "rgba(0,0,0,.75)";
       x.shadowBlur = 10;
       x.fillStyle = "#fff";
-      const name = this.product?.name || "";
       x.fillText(`${this.cfg.brand.name || ""}${name ? " · " + name : ""}`, W - H * 0.03, H - H * 0.035);
     }
     const blob = await new Promise((r) => out.toBlob(r, "image/jpeg", 0.92));
@@ -985,12 +992,19 @@ export class VirtualTryOn extends Native {
         this.THREE = this.THREE || THREE;
         if (!this.tracker) {
           const base = this.cfg.baseURL || new URL(".", document.baseURI).href.replace(/\/$/, "");
-          this.tracker = new FaceTracker({ baseURL: base, ...this.cfg.tracking, log: () => {} });
+          this.tracker = new FaceTracker({ baseURL: base, assets: this.cfg.assets, ...this.cfg.tracking, log: () => {} });
           await this.tracker.init();
         }
         this.stage =
           this.stage ||
-          new Stage({ canvas: this.el.gl, THREE: this.THREE, quality: "high", video: img, env: true });
+          new Stage({
+            canvas: this.el.gl,
+            THREE: this.THREE,
+            quality: "high",
+            video: img,
+            env: true,
+            vertexDistance: this.cfg.tracking.vertexDistance,
+          });
         this.tracker.photoMode = true;
         const r = await this.tracker.processImage(img);
         if (!r) return this.hint(t(this.cfg.lang, "noFaceInPhoto"), true);

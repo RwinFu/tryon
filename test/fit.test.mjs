@@ -152,11 +152,12 @@ test("faceShapeMetrics: نسبت‌ها از لندمارک‌های ۴۷۸ نق
   put(251, 145, 6); // پیشانی
   put(33, 70, 100);
   put(263, 130, 100); // گوشهٔ چشم
-  put(127, 92, 150);
-  put(356, 108, 150); // بینی
+  put(188, 92, 150);
+  put(412, 108, 150); // کنار پل بینی، نه شقیقه
   const out = faceShapeMetrics(p);
   assert.ok(Math.abs(out.length - 200 / 120) < 1e-6, "نسبت طول");
   assert.ok(Math.abs(out.jaw - 76 / 120) < 1e-6, "نسبت فک");
   assert.ok(out.symmetry > 0.9, "قرینگی");
   assert.equal(out.faceWpx, 120);
+  assert.equal(out.noseW, 16, "پهنای بینی باید کنار پل باشد، نه فاصلهٔ شقیقه‌ها");
 });

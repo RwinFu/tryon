@@ -4,15 +4,15 @@ export default `/* ════════════════════�
    توکن‌ها از host قابل بازنویسی‌اند: --vt-accent, --vt-surface, …
    ══════════════════════════════════════════════════════════════════ */
 :host {
-  --vt-accent: #d8b478;
-  --vt-accent-2: #f2d9a8;
-  --vt-ink: #08090b;
-  --vt-surface: #0e1114;
-  --vt-surface-2: rgba(17, 21, 25, 0.92);
-  --vt-text: #f6f8f9;
-  --vt-muted: rgba(246, 248, 249, 0.56);
-  --vt-line: rgba(255, 255, 255, 0.13);
-  --vt-radius: 22px;
+  --vt-accent: #9d2c1a;
+  --vt-accent-2: #f0d2c8;
+  --vt-ink: #12110f;
+  --vt-surface: #12110f;
+  --vt-surface-2: rgba(18, 17, 15, 0.94);
+  --vt-text: #f6f3ee;
+  --vt-muted: rgba(246, 243, 238, 0.62);
+  --vt-line: rgba(246, 243, 238, 0.16);
+  --vt-radius: 10px;
   --vt-good: #2fa06c;
   --vt-warn: #e0a53d;
   --vt-bad: #e2705f;
@@ -44,16 +44,17 @@ button {
   touch-action: manipulation;
 }
 :focus-visible {
-  outline: 2px solid var(--vt-accent-2);
+  outline: 2px solid #f6f3ee;
   outline-offset: 2px;
-  border-radius: 6px;
+  border-radius: 2px;
 }
 
 /* ── قاب/صحنه ───────────────────────────────────────────────────── */
 .wrap {
   position: absolute;
   inset: 0;
-  display: block;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
   border-radius: inherit;
   isolation: isolate;
@@ -77,11 +78,12 @@ button {
   opacity: 1;
 }
 .stage {
-  position: absolute;
-  inset: 0;
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
   background: #05070a;
   overflow: hidden;
-  border-radius: inherit;
   isolation: isolate;
 }
 .stage canvas {
@@ -90,6 +92,8 @@ button {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  /* اگر تصویر از کادر بلندتر بود، چشم‌ها (نیمهٔ بالای کادر) بمانند نه سینه */
+  object-position: center 38%;
   transform: scaleX(var(--vt-mirror, -1));
 }
 .stage canvas.ui-space {
@@ -111,7 +115,7 @@ button {
 /* ── نوار بالا ──────────────────────────────────────────────────── */
 .top {
   position: absolute;
-  z-index: 6;
+  z-index: 22;
   inset-inline: 0;
   top: 0;
   padding: 14px 16px 34px;
@@ -127,22 +131,10 @@ button {
 }
 .brand {
   position: relative;
-  padding-inline-start: 13px;
   font-size: 15px;
-  font-weight: 800;
-  letter-spacing: -0.3px;
-  line-height: 1.15;
-  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.6);
-}
-.brand::before {
-  content: "";
-  position: absolute;
-  inset-inline-start: 0;
-  top: 2px;
-  width: 3px;
-  height: 100%;
-  border-radius: 9px;
-  background: linear-gradient(var(--vt-accent-2), rgba(120, 92, 44, 0.5));
+  font-weight: 700;
+  line-height: 1.2;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.65);
 }
 .brand small {
   display: block;
@@ -161,21 +153,19 @@ button {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  padding: 7px 11px;
-  border-radius: 99px;
-  font-size: 9.5px;
+  padding: 7px 10px;
+  border-radius: 2px;
+  font-size: 11px;
   font-weight: 700;
-  color: #f6e9cf;
-  background: rgba(8, 11, 14, 0.6);
-  border: 1px solid rgba(216, 180, 120, 0.34);
-  backdrop-filter: blur(14px);
+  color: #f6f3ee;
+  background: rgba(18, 17, 15, 0.72);
+  border: 1px solid rgba(246, 243, 238, 0.2);
 }
 .status i {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #5dd39e;
-  box-shadow: 0 0 0 3px rgba(93, 211, 158, 0.14);
+  background: #7dcea0;
 }
 .status[data-state="search"] i {
   background: var(--vt-warn);
@@ -192,17 +182,16 @@ button {
   }
 }
 .xbtn {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  border-radius: 2px;
   display: grid;
   place-items: center;
-  font-size: 16px;
-  color: #fff;
-  background: rgba(8, 11, 14, 0.6);
+  color: #f6f3ee;
+  background: rgba(18, 17, 15, 0.72);
   border: 1px solid var(--vt-line);
-  backdrop-filter: blur(14px);
 }
+.xbtn svg { display: block; }
 .xbtn:active {
   transform: scale(0.94);
 }
@@ -216,17 +205,16 @@ button {
   transform: translateX(-50%);
   max-width: min(92%, 460px);
   padding: 9px 15px;
-  border-radius: 99px;
-  font-size: 11.5px;
+  border-radius: 2px;
+  font-size: 12px;
   font-weight: 600;
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: #fdf1d8;
-  background: rgba(9, 11, 14, 0.9);
-  border: 1px solid rgba(216, 180, 120, 0.3);
-  backdrop-filter: blur(14px);
+  color: #f6f3ee;
+  background: rgba(18, 17, 15, 0.88);
+  border: 1px solid rgba(246, 243, 238, 0.2);
   opacity: 0;
   transition: opacity 0.35s;
   pointer-events: none;
@@ -237,20 +225,18 @@ button {
 
 /* ── داک پایین ──────────────────────────────────────────────────── */
 .dock {
-  position: absolute;
+  position: relative;
   z-index: 7;
-  inset-inline: 0;
-  bottom: 0;
+  flex: 0 0 auto;
+  width: 100%;
   padding: 8px 10px calc(10px + env(safe-area-inset-bottom));
   display: flex;
   flex-direction: column;
   gap: 7px;
-  background: linear-gradient(165deg, rgba(19, 22, 26, 0.94), rgba(6, 8, 10, 0.9));
+  background: #161412;
   border-top: 1px solid var(--vt-line);
-  backdrop-filter: blur(22px) saturate(1.2);
 }
 .mode-inline .dock {
-  position: relative;
   border-radius: 0 0 var(--vt-radius) var(--vt-radius);
 }
 .pull {
@@ -261,7 +247,7 @@ button {
   gap: 10px;
   padding: 8px 10px;
   border: 1px solid var(--vt-line);
-  border-radius: 16px;
+  border-radius: 2px;
   background: rgba(255, 255, 255, 0.03);
   text-align: start;
 }
@@ -279,13 +265,10 @@ button {
 }
 .price {
   direction: ltr;
-  font-size: 12.5px;
-  font-weight: 800;
-  padding: 6px 10px;
-  border-radius: 12px;
-  color: #16120b;
-  background: linear-gradient(145deg, var(--vt-accent-2), var(--vt-accent));
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+  font-size: 13px;
+  font-weight: 700;
+  padding: 0;
+  color: #f6f3ee;
   white-space: nowrap;
 }
 .price small {
@@ -312,9 +295,9 @@ button {
   flex: 0 0 auto;
   width: 92px;
   padding: 5px 6px 7px;
-  border-radius: 15px;
+  border-radius: 2px;
   border: 1px solid var(--vt-line);
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02));
+  background: #1c1a18;
   text-align: center;
   transition: border-color 0.2s, transform 0.2s, background 0.2s;
 }
@@ -338,23 +321,18 @@ button {
   text-overflow: ellipsis;
 }
 .card[aria-pressed="true"] {
-  border-color: rgba(255, 255, 255, 0.5);
-  background: linear-gradient(160deg, rgba(242, 217, 168, 0.24), rgba(216, 180, 120, 0.08));
-  transform: translateY(-2px);
+  border-color: #f6f3ee;
+  background: #262320;
 }
 .card.rec::after {
-  content: "★";
+  content: "";
   position: absolute;
-  top: -5px;
-  inset-inline-end: -4px;
-  width: 17px;
-  height: 17px;
-  font-size: 10px;
-  line-height: 17px;
+  top: 6px;
+  inset-inline-end: 6px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
-  color: #1b1608;
-  background: var(--vt-accent-2);
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
+  background: var(--vt-accent);
 }
 
 .swatches {
@@ -374,8 +352,7 @@ button {
 }
 .dot[aria-pressed="true"] {
   border-color: #fff;
-  transform: scale(1.08);
-  box-shadow: 0 0 0 3px rgba(216, 180, 120, 0.5), 0 4px 12px #000;
+  box-shadow: 0 0 0 2px var(--vt-accent);
 }
 .actions {
   display: grid;
@@ -406,14 +383,14 @@ button {
   transform: scale(0.965);
 }
 .btn.primary {
-  color: #17120b;
-  background: linear-gradient(145deg, #f0d59f, #c89d57);
-  border-color: rgba(255, 245, 222, 0.6);
+  color: #1c1916;
+  background: #f4efe6;
+  border-color: #f4efe6;
 }
 .btn.buy {
-  color: #fff;
-  background: linear-gradient(145deg, #1ba466, #117348);
-  border-color: rgba(91, 235, 165, 0.24);
+  color: #f7f4ee;
+  background: #1f4d3a;
+  border-color: #1f4d3a;
 }
 
 /* ── پنل «برگهٔ فیت» ─────────────────────────────────────────────── */
@@ -594,7 +571,7 @@ button {
   background: var(--vt-accent);
 }
 .switch input:checked + i::after {
-  transform: translateX(18px);
+  inset-inline-start: 21px;
   background: #17120b;
 }
 
@@ -606,7 +583,7 @@ button {
   display: grid;
   place-items: center;
   padding: 20px;
-  background: radial-gradient(circle at 50% 18%, #2b251c 0, #101318 38%, #060708 82%);
+  background: #12110f;
   overflow: auto;
 }
 .gate[hidden] {
@@ -616,34 +593,22 @@ button {
   width: min(94%, 400px);
   padding: 24px 22px 20px;
   text-align: center;
-  border-radius: 26px;
-  background: linear-gradient(155deg, rgba(26, 30, 35, 0.94), rgba(9, 11, 14, 0.92));
+  border-radius: 2px;
+  background: #1a1816;
   border: 1px solid var(--vt-line);
-  box-shadow: var(--vt-shadow);
 }
 .gate .mark {
-  width: 76px;
-  height: 54px;
+  width: 64px;
+  height: 40px;
   margin: 0 auto 14px;
   display: grid;
   place-items: center;
-  border-radius: 20px;
-  background: linear-gradient(145deg, #f4dfb5, #c89b51);
-  color: #13100b;
+  color: #f6f3ee;
 }
 .gate h2 {
-  font-size: 23px;
-  font-weight: 900;
-  letter-spacing: -0.6px;
-}
-.gate h2::after {
-  content: attr(data-sub);
-  display: block;
-  margin-top: 6px;
-  font-size: 7.5px;
+  font-size: 22px;
   font-weight: 700;
-  letter-spacing: 2px;
-  color: var(--vt-accent);
+  line-height: 1.35;
 }
 .gate .sub {
   margin: 12px auto 16px;
@@ -709,12 +674,11 @@ button {
 .go {
   width: 100%;
   height: 52px;
-  border-radius: 15px;
-  font-size: 14px;
-  font-weight: 900;
-  color: #17120b;
-  background: linear-gradient(145deg, #f4dfb5, #d4aa62);
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.34);
+  border-radius: 2px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #1c1916;
+  background: #f4efe6;
 }
 .go:active {
   transform: scale(0.985);
@@ -769,8 +733,7 @@ button {
   inset-inline: 12%;
   top: 18%;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(242, 217, 168, 0.85), transparent);
-  box-shadow: 0 0 12px rgba(216, 180, 120, 0.6);
+  background: linear-gradient(90deg, transparent, rgba(246, 243, 238, 0.7), transparent);
   opacity: 0;
   transition: opacity 0.4s;
   pointer-events: none;
@@ -794,7 +757,7 @@ button {
 .vt-toast {
   position: absolute;
   z-index: 30;
-  bottom: calc(100% + 12px);
+  bottom: 12px;
   inset-inline: 14px;
   padding: 11px 14px;
   border-radius: 14px;
@@ -816,11 +779,22 @@ button {
   --vt-shadow: 0 20px 60px rgba(15, 20, 26, 0.18);
 }
 :host([theme="light"]) .dock {
-  background: linear-gradient(165deg, rgba(255, 255, 255, 0.96), rgba(243, 245, 247, 0.98));
+  background: #f7f4ee;
+}
+:host([theme="light"]) .price,
+:host([theme="light"]) .pull b {
+  color: #1c1916;
+}
+:host([theme="light"]) .pull {
+  background: #fff;
 }
 :host([theme="light"]) .card {
-  background: linear-gradient(160deg, #fff, #f1f3f5);
-  border-color: rgba(0, 0, 0, 0.09);
+  background: #fff;
+  border-color: rgba(0, 0, 0, 0.12);
+}
+:host([theme="light"]) .card[aria-pressed="true"] {
+  border-color: #1c1916;
+  background: #f4efe6;
 }
 :host([theme="light"]) .card em {
   color: #33383d;
@@ -848,20 +822,42 @@ button {
 }
 :host([theme="light"]) .btn {
   color: #1b1e21;
-  background: rgba(0, 0, 0, 0.045);
-  border-color: rgba(0, 0, 0, 0.1);
+  background: #fff;
+  border-color: rgba(0, 0, 0, 0.14);
+}
+:host([theme="light"]) .btn.primary,
+:host([theme="light"]) .go {
+  color: #f7f4ee;
+  background: #1c1916;
+  border-color: #1c1916;
+}
+:host([theme="light"]) .btn.buy {
+  color: #f7f4ee;
+  background: #1f4d3a;
+  border-color: #1f4d3a;
+}
+:host([theme="light"]) :focus-visible {
+  outline-color: #1c1916;
 }
 :host([theme="light"]) .sheet {
   background: linear-gradient(180deg, #fff, #f6f7f9);
   color: #14171a;
 }
 :host([theme="light"]) .gate {
-  background: radial-gradient(circle at 50% 15%, #f3ece0 0, #ffffff 55%);
+  background: #f4f0e8;
+}
+:host([theme="light"]) .vt-toast {
+  color: #1c1916;
+  background: #f7f4ee;
+  border-color: #1c1916;
 }
 :host([theme="light"]) .gate .card2 {
   background: #fff;
   border-color: rgba(0, 0, 0, 0.08);
   color: #14171a;
+}
+:host([theme="light"]) .gate .mark {
+  color: #1c1916;
 }
 :host([theme="light"]) .gate .sub,
 :host([theme="light"]) .priv {
@@ -875,6 +871,19 @@ button {
 
 /* ── موبایل کوتاه / حالت سبک ─────────────────────────────────────── */
 @media (max-height: 700px) {
+  .top {
+    padding: 8px 12px 16px;
+  }
+  .brand small {
+    display: none;
+  }
+  .hint {
+    top: 48px;
+  }
+  .dock {
+    gap: 6px;
+    padding-top: 6px;
+  }
   .rail {
     padding-bottom: 2px;
   }
@@ -887,6 +896,14 @@ button {
   }
   .actions .btn {
     height: 42px;
+  }
+}
+@media (max-width: 520px) {
+  .actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .btn {
+    font-size: 11px;
   }
 }
 @media (max-width: 480px) {

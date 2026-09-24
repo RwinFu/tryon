@@ -420,6 +420,8 @@ canvas.addEventListener("wheel", (e) => {
   state.dist = Math.max(0.62, Math.min(2.4, state.dist + e.deltaY / 900));
 });
 addEventListener("keydown", (e) => {
+  const tag = e.target && e.target.tagName;
+  if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || e.target?.isContentEditable) return;
   if (e.key.toLowerCase() === "g") $("#btnGlb").click();
   if (e.key.toLowerCase() === "j") $("#btnJson").click();
   if (e.key === " ") {
