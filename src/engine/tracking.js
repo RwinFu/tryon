@@ -41,6 +41,8 @@ const P = {
   browR: 300,
   noseBridge: 6,
   noseTip: 4,
+  noseSideL: 188, // کنار پل بینی، جایی که پد می‌نشیند — نه شقیقه
+  noseSideR: 412,
   chin: 152,
   faceL: 234,
   faceR: 454,
@@ -55,11 +57,45 @@ const P = {
 };
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+/** قطر عنبیهٔ بزرگسال. مقیاس میلی‌متر از همین ثابت می‌آید، نه از عرضِ فرضیِ صورت. */
+export const IRIS_MM = 11.7;
 const median = (a) => {
   if (!a.length) return 0;
   const s = [...a].sort((x, y) => x - y);
   return s.length % 2 ? s[(s.length - 1) >> 1] : (s[s.length / 2 - 1] + s[s.length / 2]) / 2;
 };
+
+/**
+ * فاصلهٔ مردمک به میلی‌متر، از فاصلهٔ پیکسلیِ مردمک‌ها و قطر عنبیه.
+ * فرمول قبلی ((مردمک/عرض‌صورت)×۱۳۸×۰٫۴۷) همیشه به کفِ ۵۲ می‌خورد و عینک را ~۲۰٪ بزرگ می‌کرد.
+ * @returns {number|null}
+ */
+export function estimatePdMm(pupilPx, irisDiamPx) {
+  if (!(pupilPx > 4) || !(irisDiamPx > 1)) return null;
+  return clamp((pupilPx * IRIS_MM) / irisDiamPx, 50, 78);
+}
+
+function irisDiameterPx(lms, toPx) {
+  const pairs = [
+    [469, 471],
+    [470, 472],
+    [474, 476],
+    [475, 477],
+  ];
+  const ds = [];
+  for (const [a, b] of pairs) {
+    const d = pairPx(lms, a, b, toPx);
+    if (d > 2) ds.push(d);
+  }
+  return ds.length ? median(ds) : 0;
+}
+
+function pairPx(lms, a, b, toPx) {
+  if (!lms?.[a] || !lms?.[b]) return 0;
+  const pa = toPx(lms[a]);
+  const pb = toPx(lms[b]);
+  return Math.hypot(pb.x - pa.x, pb.y - pa.y);
+}
 
 /** فیلتر یک‌یورو: لرزش را می‌گیرد و تأخیر را کم نگه می‌دارد. */
 class OneEuro {
@@ -262,7 +298,7 @@ export class FaceTracker {
   }
 
   /** دوربین را باز می‌کند؛ ترتیب محدودیت‌ها از general به specific */
-  async startCamera({ facing = "user", light = false } = {}) {
+  async startCamera({ facing = "user", light = false, portrait = false } = {}) {
     if (!window.isSecureContext) {
       const e = new Error("این صفحه باید با HTTPS باز شود تا دوربین کار کند");
       e.name = "SecurityError";
@@ -273,7 +309,9 @@ export class FaceTracker {
       e.name = "NotFoundError";
       throw e;
     }
-    const want = light ? { w: 512, h: 384 } : { w: 800, h: 600 };
+    // در حالت عمودی، ارتفاع بیشتر از عرض باشد؛ وگرنه object-fit:cover صورت را می‌بُرد
+    const base = light ? { w: 640, h: 480 } : { w: 960, h: 720 };
+    const want = portrait ? { w: base.h, h: base.w } : base;
     const tries = [
       {
         video: {
@@ -407,17 +445,22 @@ export class FaceTracker {
       faceR = this.px(lms[P.faceR]);
     const faceW = Math.max(1, Math.hypot(faceR.x - faceL.x, faceR.y - faceL.y));
 
-    // ── PD خودکار از هندسهٔ متریک (نرمال‌سازی‌شده با عرض صورت) ──
+    // ── PD خودکار از قطر عنبیه (میلی‌مترِ شناخته‌شده)، نه از نسبتِ جادوییِ عرض صورت ──
     if (this.autoPd) {
-      const est = clamp((iris / faceW) * 138 * 0.47, 52, 74);
-      this.pdSamples.push(est);
-      if (this.pdSamples.length > 40) this.pdSamples.shift();
-      if (this.pdSamples.length >= 24 && !this.pdLocked) {
-        this.pdLocked = true;
-        this.pdMm = +median(this.pdSamples).toFixed(1);
-        this.log("pd-locked", String(this.pdMm));
-      } else if (this.pdLocked) {
-        this.pdMm = +(this.pdMm * 0.96 + median(this.pdSamples) * 0.04).toFixed(2);
+      const est = estimatePdMm(iris, irisDiameterPx(lms, (p) => this.px(p)));
+      if (est) {
+        this.pdSamples.push(est);
+        if (this.pdSamples.length > 40) this.pdSamples.shift();
+        const m = median(this.pdSamples);
+        if (this.pdSamples.length >= 24 && !this.pdLocked) {
+          this.pdLocked = true;
+          this.pdMm = +m.toFixed(1);
+          this.log("pd-locked", String(this.pdMm));
+        } else if (this.pdLocked) {
+          this.pdMm = +(this.pdMm * 0.96 + m * 0.04).toFixed(2);
+        } else if (this.pdSamples.length >= 6) {
+          this.pdMm = +(this.pdMm * 0.8 + m * 0.2).toFixed(2);
+        }
       }
     }
     const pdMm = this.pdMm;
@@ -489,7 +532,7 @@ export class FaceTracker {
       faceW,
       faceWmm: faceW / scale,
       faceHmm: Math.hypot(chin.x - this.px(lms[10]).x, chin.y - this.px(lms[10]).y) / scale,
-      noseWmm: Math.hypot(this.px(lms[356]).x - this.px(lms[127]).x, this.px(lms[356]).y - this.px(lms[127]).y) / scale,
+      noseWmm: pairPx(lms, P.noseSideL, P.noseSideR, (p) => this.px(p)) / scale,
       chinPx: chin,
       pdMm,
       autoPd: this.autoPd,

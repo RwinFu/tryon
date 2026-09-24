@@ -10,12 +10,12 @@ const ICON =
   );
 
 export const EMBED_CSS = `
-.tryon-btn{display:inline-flex;align-items:center;justify-content:center;gap:.55em;padding:.66em 1.15em;border-radius:999px;border:1px solid var(--tryon-accent,#d8b478);background:var(--tryon-accent,#d8b478);color:var(--tryon-ink,#17120b);font:inherit;font-weight:700;line-height:1;cursor:pointer;white-space:nowrap;text-decoration:none;transition:transform .15s,filter .2s,opacity .2s}
+.tryon-btn{display:inline-flex;align-items:center;justify-content:center;gap:.55em;padding:.66em 1.05em;border-radius:2px;border:1px solid var(--tryon-accent,#1c1916);background:var(--tryon-accent,#1c1916);color:var(--tryon-ink,#f7f4ee);font:inherit;font-weight:700;line-height:1.2;cursor:pointer;white-space:nowrap;text-decoration:none}
 .tryon-btn::before{content:"";flex:0 0 auto;width:1.25em;height:1.25em;background:currentColor;-webkit-mask:url("${ICON}") center/contain no-repeat;mask:url("${ICON}") center/contain no-repeat}
-.tryon-btn:hover{filter:brightness(1.07)}
-.tryon-btn:active{transform:scale(.97)}
-.tryon-btn:focus-visible{outline:2px solid var(--tryon-accent,#d8b478);outline-offset:2px}
-.tryon-btn.ghost{background:transparent;color:var(--tryon-accent,#d8b478)}
+.tryon-btn:hover{filter:brightness(1.08)}
+.tryon-btn:active{filter:brightness(.94)}
+.tryon-btn:focus-visible{outline:2px solid var(--tryon-accent,#1c1916);outline-offset:2px}
+.tryon-btn.ghost{background:transparent;color:var(--tryon-accent,#1c1916)}
 .tryon-btn.block{display:flex;width:100%}
 .tryon-btn.tryon-loading,.tryon-btn[aria-busy="true"]{opacity:.72;cursor:progress;pointer-events:none}
 .tryon-btn.tryon-loading::before,.tryon-btn[aria-busy="true"]::before{background:none;-webkit-mask:none;mask:none;border-radius:50%;border:2px solid currentColor;border-top-color:transparent;box-sizing:border-box;animation:tryon-spin .8s linear infinite}

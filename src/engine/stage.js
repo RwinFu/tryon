@@ -144,6 +144,7 @@ export class Stage {
       quality: quality || this.quality,
       envIntensity: envIntensity ?? 1,
       occluder: true,
+      vertexDistance: this.opts.vertexDistance,
     });
     this.frame = obj;
     this.group.add(obj.group);
@@ -246,6 +247,8 @@ export class Stage {
     g.position.set((pose.x - this.W / 2) * k, (this.H / 2 - pose.y) * k, pose.z);
     g.scale.setScalar(pose.scale);
     g.quaternion.set(pose.q[0], pose.q[1], pose.q[2], pose.q[3]);
+    // سرِ نامرئی باید هم‌عرضِ صورتِ همین فریم بماند؛ وگرنه یا عدسی را می‌پوشاند یا دسته در هوا می‌ماند
+    this.frame.fitHead?.(pose.faceWmm, this.opts.vertexDistance);
     g.visible = true;
   }
 
@@ -281,12 +284,15 @@ export class Stage {
       px = (pose.x - W / 2) * k,
       py = (H / 2 - pose.y) * k,
       pz = pose.z;
-    for (const stroke of this.shadowPath) {
+    // فقط حلقه و پل: دسته‌ها تا پشت سر می‌روند و سایه‌شان روی گونه لکه می‌اندازد
+    const strokes = this.shadowPath.filter((stroke) => frontStroke(stroke));
+    for (const stroke of strokes) {
       c.lineWidth = Math.max(1.5, stroke.sw * s * 1.5);
       c.beginPath();
       let started = false;
-      for (let i = 0; i < stroke.path.length; i += 2) {
+      for (let i = 0; i < stroke.path.length; i++) {
         const p = stroke.path[i];
+        if (!p) continue;
         const r = applyQ(q, [p.x * s, p.y * s, p.z * s]);
         const wp = [r[0] + px, r[1] + py, r[2] + pz];
         const depth = this.camZ - wp[2];

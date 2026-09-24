@@ -105,7 +105,7 @@ export const CATALOG = [
   },
   {
     id: "AR-106",
-    name: "ابروفلز (browline)",
+    name: "ابروفلز",
     shape: "browline",
     style: "brow",
     material: "acetate",
@@ -284,7 +284,7 @@ export const CATALOG = [
   },
   {
     id: "AR-205",
-    name: "بدون فریم (rimless)",
+    name: "بدون فریم",
     shape: "rectangle",
     style: "rimless",
     material: "metal",

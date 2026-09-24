@@ -299,12 +299,14 @@ export function buildFrame(rawSpec = {}) {
   }
 
   // ── ۳. قطعهٔ انتهایی، لولا، دسته ──────────────────────────────────────
+  let hingeX = outerX;
   for (const side of [1, -1]) {
     const raw = lensOutline(s, side, 200);
     // نقطهٔ اتصال: لبهٔ بیرونی، در یک‌سوم بالایی
     const anchor = anchorOuter(raw, side);
     const ax = anchor.x + side * lensCX;
     const hinge = { x: ax + side * (rimW * 0.42), y: anchor.y + halfH * 0.04, z: anchor.z };
+    hingeX = Math.max(hingeX, Math.abs(hinge.x));
 
     if (s.endpiece && s.style !== "rimless") {
       const ep = sweep(
@@ -445,6 +447,8 @@ export function buildFrame(rawSpec = {}) {
     lensCenters: [lensCX, -lensCX],
     // محلِ مرجع برای چسبیدن به بینی (ارتفاع مرکز لنز نسبت به پل)
     bridgeY: -halfH * s.bridgeDrop,
+    // نیم‌پهنای فریم تا بیرونِ لولا (mm) — مرز پهنای «سر نامرئی» که دسته‌ها را می‌بُرد
+    hingeX: +hingeX.toFixed(2),
     height: 0,
     depth: 0,
   };

@@ -27,7 +27,7 @@ const framePaths = {
 
 function icon(shape) {
   const paths = framePaths[shape] || framePaths.square;
-  return `<svg viewBox="0 0 180 82" role="img" aria-label="نمای فریم عینک" fill="rgba(216,180,120,.07)" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><g>${paths}<path d="M77 31q13-9 26 0" fill="none" stroke-width="3"/><path d="M11 30 3 24m166 6 8-6" fill="none" stroke-width="3"/><path d="M28 25h34m57 0h33" fill="none" stroke="rgba(255,255,255,.2)" stroke-width="2"/></g></svg>`;
+  return `<svg viewBox="0 0 180 82" role="img" aria-label="نمای فریم عینک" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><g>${paths}<path d="M77 31q13-9 26 0" fill="none" stroke-width="2.4"/><path d="M11 30 3 24m166 6 8-6" fill="none" stroke-width="2.4"/></g></svg>`;
 }
 
 function escapeHTML(value) {
@@ -45,7 +45,7 @@ function materialLabel(material) {
 
 function priceLabel(price) {
   const amount = Number(price);
-  return Number.isFinite(amount) && amount > 0 ? `${money.format(amount)} تومان` : "استعلام قیمت";
+  return Number.isFinite(amount) && amount > 0 ? `${money.format(amount)} تومان` : "";
 }
 
 function renderCards(items) {
@@ -73,8 +73,8 @@ function renderCards(items) {
         <h3>${escapedName}</h3>
         <div class="pcardMeta"><span class="size">${escapeHTML(size || "سایز ثبت نشده")}</span><span class="price">${priceLabel(product.price)}</span></div>
         <div class="productFoot">
-          <button class="tryon-btn" type="button" data-tryon-open data-tryon-sku="${escapeHTML(sku)}" aria-label="پرو مجازی ${escapedName}">پرو روی صورت</button>
           ${swatches ? `<span class="swatches" aria-label="${colors.length} رنگ موجود">${swatches}</span>` : ""}
+          <button class="tryon-btn" type="button" data-tryon-open data-tryon-sku="${escapeHTML(sku)}" aria-label="پرو مجازی ${escapedName}">پرو مجازی</button>
         </div>
       </article>`;
     })

@@ -3,158 +3,87 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#090b0d" />
-    <meta name="description" content="افزونهٔ پرو مجازی عینک برای فروشگاه‌ها؛ مشتری مدل واقعی هر فریم را روی صورت خودش می‌بیند، بدون آپلود عکس." />
-    <title>آروین | قبل از خرید، عینک را پرو کن</title>
+    <meta name="theme-color" content="#f4f0e8" />
+    <meta name="description" content="قفسهٔ اپتیک آروین؛ هر فریم را با دوربین گوشی، روی صورت خودت پرو کن. تصویر از دستگاه خارج نمی‌شود." />
+    <title>آروین | پرو عینک، قبل از خرید</title>
+    <link rel="stylesheet" href="./site/fonts.css" />
     <link rel="stylesheet" href="./site/shop.css" />
     <script
       src="./dist/tryon-loader.js"
       data-tryon-products="./products.json"
       data-tryon-brand="اپتیک آروین"
-      data-tryon-accent="#d8b478"
+      data-tryon-accent="#9d2c1a"
       data-tryon-lang="fa"
       data-tryon-preload="none"
       defer
     ></script>
   </head>
   <body>
-    <a class="skip-link" href="#main">رفتن به محتوای اصلی</a>
+    <a class="skip-link" href="#main">رفتن به قفسه</a>
     <header class="nav">
-      <a class="logo" href="./" aria-label="آروین، صفحهٔ اصلی">
-        <span class="logoGlyph" aria-hidden="true">◉—◉</span>
-        <span class="logoText"><b>آروین</b><small>اپتیک مدرن</small></span>
-      </a>
+      <a class="logo" href="./" aria-label="آروین، صفحهٔ اصلی">آروین</a>
       <button class="menuToggle" id="menuToggle" type="button" aria-expanded="false" aria-controls="primaryNav">
         <span class="menuIcon" aria-hidden="true"><i></i><i></i></span>
         <span>منو</span>
       </button>
       <nav class="menu" id="primaryNav" aria-label="ناوبری اصلی">
-        <a href="#collection">کاتالوگ عینک</a>
-        <a href="#fit">فیت هوشمند</a>
-        <a href="#install">افزونهٔ فروشگاهی</a>
-        <a href="./studio.html">استودیوی فریم</a>
+        <a href="#collection">قفسه</a>
+        <a href="#fit">اندازه</a>
+        <a href="#install">نصب روی سایت</a>
+        <a href="./studio.html">استودیو</a>
       </nav>
-      <div class="navR">
-        <button class="tryon-btn navCta" type="button" data-tryon-open data-tryon-sku="AR-101">پرو مجازی</button>
-      </div>
+      <button class="tryon-btn navCta" type="button" data-tryon-open data-tryon-sku="AR-101">پرو با دوربین</button>
     </header>
 
     <main id="main">
       <section class="hero" aria-labelledby="heroTitle">
         <div class="heroCopy">
-          <p class="eyebrow"><span class="eyebrowDot" aria-hidden="true"></span>پرو مجازی، مستقیم کنار هر عینک</p>
-          <h1 id="heroTitle">قبل از خرید،<br /><span>روی صورتت ببین.</span></h1>
+          <h1 id="heroTitle">عینک را قبل از سفارش، روی صورتت ببین.</h1>
           <p class="lede">
-            مشتری روی «پرو مجازی» می‌زند و همان فریمِ همان محصول را زنده روی صورتش می‌بیند؛ در موبایل، بدون نصب برنامه و بدون فرستادن عکس.
+            این قفسهٔ آروین است. دکمهٔ پرو کنار هر فریم، همان مدل را با دوربین گوشی روی صورتت می‌نشاند. لازم نیست هر عینک را جدا جدا از نو باز کنی؛ یک‌بار دوربین روشن شود، بقیه را همان‌جا ورق می‌زنی.
           </p>
           <div class="heroBtns">
-            <button class="gold big" type="button" data-tryon-open data-tryon-sku="AR-101">شروع پرو زنده <span aria-hidden="true">←</span></button>
-            <a class="line" href="#collection">دیدن ۲۸ فریم</a>
+            <button class="tryon-btn" type="button" data-tryon-open data-tryon-sku="AR-101">شروع با فریم مربعی</button>
+            <a class="quiet" href="#collection">رفتن به قفسه</a>
           </div>
-          <ul class="proof" aria-label="ویژگی‌های اصلی">
-            <li><b>۱ کلیک</b><span>از صفحهٔ محصول تا پرو روی صورت</span></li>
-            <li><b>۰ آپلود</b><span>پردازش تصویر روی دستگاه مشتری</span></li>
-            <li><b>۲۸ مدل</b><span>کاتالوگ آمادهٔ تست در همین دمو</span></li>
-          </ul>
+          <p class="fine">تصویر از گوشی خارج نمی‌شود. عددها تقریبی‌اند و جای معاینهٔ اپتومتریست را نمی‌گیرند.</p>
         </div>
-
-        <div class="heroStage" role="group" aria-label="پیش‌نمایش نمایشی پرو عینک">
-          <div class="stageTop"><span class="stageLabel"><i aria-hidden="true"></i> پیش‌نمایش پرو</span><span class="stageSku">AR-101 · مربعی کلاسیک</span></div>
-          <div class="portraitStage" aria-hidden="true">
-            <div class="portraitGlow"></div>
-            <svg class="faceDrawing" viewBox="0 0 480 460" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <linearGradient id="skin" x1="140" y1="100" x2="350" y2="415" gradientUnits="userSpaceOnUse">
-                  <stop stop-color="#e8c9a0" />
-                  <stop offset="1" stop-color="#9d7055" />
-                </linearGradient>
-                <linearGradient id="hair" x1="166" y1="36" x2="328" y2="215" gradientUnits="userSpaceOnUse">
-                  <stop stop-color="#252322" />
-                  <stop offset="1" stop-color="#0e1114" />
-                </linearGradient>
-                <linearGradient id="frame" x1="119" y1="204" x2="360" y2="250" gradientUnits="userSpaceOnUse">
-                  <stop stop-color="#f1d9ad" />
-                  <stop offset=".52" stop-color="#c89c5b" />
-                  <stop offset="1" stop-color="#f4dfba" />
-                </linearGradient>
-                <radialGradient id="lens" cx="0" cy="0" r="1" gradientTransform="matrix(0 74 -104 0 188 226)" gradientUnits="userSpaceOnUse">
-                  <stop stop-color="#d7e9ed" stop-opacity=".11" />
-                  <stop offset="1" stop-color="#c7aa77" stop-opacity=".02" />
-                </radialGradient>
-                <pattern id="gridLines" width="30" height="30" patternUnits="userSpaceOnUse">
-                  <path d="M30 0H0V30" stroke="#fff" stroke-opacity=".045" />
-                </pattern>
-              </defs>
-              <circle cx="240" cy="229" r="201" fill="url(#gridLines)" />
-              <ellipse cx="240" cy="252" rx="170" ry="188" fill="#d8b478" fill-opacity=".055" />
-              <path d="M160 117c-1-59 34-91 87-92 75-1 114 49 105 121l-10 63H155l5-92Z" fill="url(#hair)" />
-              <path d="M151 178c-19 13-24 40-13 59 7 12 18 16 30 13 7 71 27 115 72 140 30 17 67 13 95-11 31-27 44-69 44-130 15-1 26-10 28-26 3-20-10-35-27-39-2-65-40-104-104-104-70 0-118 37-125 98Z" fill="url(#skin)" stroke="#f0d8b8" stroke-opacity=".3" stroke-width="2" />
-              <path d="M164 177c14-27 42-43 79-43 45 0 73 16 95 44-8-54-42-84-101-84-37 0-66 13-84 39-10 15-14 31-13 48 7-2 15-4 24-4Z" fill="url(#hair)" />
-              <path d="M184 207c12-10 28-13 43-8M263 199c15-6 32-3 43 8" stroke="#49382d" stroke-width="6" stroke-linecap="round" />
-              <path d="M188 229c10-9 24-9 35 0M270 229c10-9 24-9 35 0" stroke="#282322" stroke-width="4" stroke-linecap="round" />
-              <circle cx="210" cy="229" r="4" fill="#191a1b" /><circle cx="292" cy="229" r="4" fill="#191a1b" />
-              <path d="M249 230c-2 27-11 47-7 57 3 7 10 10 19 7" stroke="#805b46" stroke-width="4" stroke-linecap="round" />
-              <path d="M219 321c17 11 38 12 57 1" stroke="#744a3c" stroke-width="4" stroke-linecap="round" />
-              <path d="M153 214c-2 19 0 33 7 43M354 214c2 19 0 33-7 43" stroke="url(#frame)" stroke-width="5" stroke-linecap="round" />
-              <path d="M130 211c13-9 34-13 59-11 22 2 37 12 40 28l-5 35c-3 18-18 28-45 28-31 0-48-11-52-31l-4-31c-1-8 1-14 7-18Z" fill="url(#lens)" stroke="url(#frame)" stroke-width="8" />
-              <path d="M252 228c4-15 20-25 42-28 24-3 47 2 60 11 6 4 8 10 7 18l-4 31c-4 20-21 31-52 31-27 0-42-10-45-28l-8-35Z" fill="url(#lens)" stroke="url(#frame)" stroke-width="8" />
-              <path d="M229 225c8-6 15-8 23-7 8 0 15 3 22 8" stroke="url(#frame)" stroke-width="8" stroke-linecap="round" />
-              <path d="M129 220c-12-2-23 1-31 6M360 220c12-2 23 1 31 6" stroke="url(#frame)" stroke-width="5" stroke-linecap="round" />
-              <path d="M173 216c12-5 28-6 43-2M278 214c14-4 29-3 42 2" stroke="#fff" stroke-opacity=".35" stroke-width="3" stroke-linecap="round" />
-              <path d="M204 376c15 10 37 16 62 16 27 0 49-7 67-20" stroke="#f1d9bd" stroke-opacity=".22" stroke-width="2" />
-            </svg>
-            <div class="scanBadge"><span class="scanDot"></span><span>تشخیص چهره روی دستگاه</span></div>
-            <span class="cornerMark markTL" aria-hidden="true"></span><span class="cornerMark markTR" aria-hidden="true"></span>
-            <span class="cornerMark markBL" aria-hidden="true"></span><span class="cornerMark markBR" aria-hidden="true"></span>
-          </div>
-          <div class="stageBottom">
-            <span><b>فریم AR-101</b><small>برای دیدن روی صورت خودت</small></span>
-            <button class="stageTry" type="button" data-tryon-open data-tryon-sku="AR-101">امتحان کن <span aria-hidden="true">←</span></button>
-          </div>
-        </div>
-      </section>
-
-      <section class="valueBar" aria-label="مزایای پرو مجازی">
-        <div><span class="valueIcon">01</span><b>کنار هر محصول</b><small>دکمه با SKU همان عینک باز می‌شود</small></div>
-        <div><span class="valueIcon">02</span><b>سازگار با موبایل</b><small>دوربین جلو و کنترل‌های لمسی</small></div>
-        <div><span class="valueIcon">03</span><b>بارگذاری تنبل</b><small>موتور فقط با اولین کلیک دانلود می‌شود</small></div>
-        <div><span class="valueIcon">04</span><b>حریم خصوصی</b><small>هیچ تصویری به سرور ارسال نمی‌شود</small></div>
+        <figure class="heroFig">
+          <img src="./site/hero.jpg" width="1200" height="896" alt="فریم مربعی مشکی، روی پیشخوان چوبی فروشگاه" />
+          <figcaption><b>AR-101</b><span>مربعی کلاسیک، استات مشکی</span></figcaption>
+        </figure>
       </section>
 
       <section class="collection" id="collection" aria-labelledby="collectionTitle">
         <div class="sectionHead">
-          <div>
-            <p class="eyebrow">کاتالوگ تعاملی</p>
-            <h2 id="collectionTitle">پیدا کن. پرو کن. انتخاب کن.</h2>
-          </div>
-          <p>در صفحهٔ واقعی فروشگاه هم همین دکمه دقیقاً کنار هر عینک قرار می‌گیرد.</p>
+          <h2 id="collectionTitle">قفسه</h2>
+          <p>سایز، همان عدد چاپ‌شده روی دسته است: عرض عدسی، پل، طول دسته.</p>
         </div>
         <div class="catalogTools">
           <label class="searchBox">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8" /><path d="m16 16 5 5" /></svg>
-            <input id="productSearch" type="search" autocomplete="off" placeholder="جست‌وجوی نام یا کد فریم" aria-label="جست‌وجوی نام یا کد فریم" />
+            <span class="searchLabel">جست‌وجو</span>
+            <input id="productSearch" type="search" autocomplete="off" placeholder="نام یا کد، مثل گربه‌ای یا AR-104" aria-label="جست‌وجوی نام یا کد فریم" />
           </label>
           <div class="filterRail" id="frameFilters" role="group" aria-label="فیلتر جنس فریم">
-            <button class="filter is-active" type="button" data-material="all" aria-pressed="true">همهٔ فریم‌ها</button>
+            <button class="filter is-active" type="button" data-material="all" aria-pressed="true">همه</button>
             <button class="filter" type="button" data-material="acetate" aria-pressed="false">استات</button>
             <button class="filter" type="button" data-material="metal" aria-pressed="false">فلزی</button>
             <button class="filter" type="button" data-material="titanium" aria-pressed="false">تیتانیوم</button>
           </div>
-          <span class="productCount" id="productCount" aria-live="polite">در حال خواندن کاتالوگ…</span>
+          <span class="productCount" id="productCount" aria-live="polite">در حال خواندن قفسه…</span>
         </div>
         <div class="grid" id="grid" aria-busy="true">
-          <div class="catalogMessage">کاتالوگ فریم‌ها در حال بارگذاری است…</div>
+          <div class="catalogMessage">قفسه در حال بارگذاری است…</div>
         </div>
       </section>
 
       <section class="fit" id="fit" aria-labelledby="fitTitle">
         <div class="fitCard">
-          <p class="eyebrow">اندازه‌گیری روی دستگاه مشتری</p>
-          <h2 id="fitTitle">فیت واقعی،<br />نه فیلتر تزئینی.</h2>
+          <h2 id="fitTitle">اندازهٔ صورت، کنار عدد فریم</h2>
           <p class="lede2">
-            بعد از شروع پرو زنده، فاصلهٔ مردمک و پهنای صورت اندازه‌گیری می‌شود و با سایز چاپی روی دستهٔ فریم مقایسه می‌شود. اعداد تقریبی‌اند و جای معاینهٔ اپتومتریست را نمی‌گیرند.
+            بعد از روشن شدن دوربین، فاصلهٔ مردمک و پهنای صورت خوانده می‌شود و با سایز همان فریم مقایسه می‌شود. اگر چیزی نخواند، هنوز پرو را می‌بینی؛ فقط برگهٔ اندازه خالی می‌ماند.
           </p>
-          <div class="specs" aria-label="اندازه‌های زندهٔ مشتری">
+          <div class="specs" aria-label="اندازه‌های زنده">
             <div><b id="mPd">—<span>mm</span></b><small>فاصلهٔ مردمک</small></div>
             <div><b id="mFace">—<span>mm</span></b><small>پهنای گونه</small></div>
             <div><b id="mBridge">—<span>mm</span></b><small>پل بینی</small></div>
@@ -162,63 +91,43 @@
           </div>
           <div class="fitNote" aria-live="polite">
             <span class="chip" id="fitStatus">آماده</span>
-            <p id="fitMessage">برای دیدن نتیجهٔ فیت، یک فریم را از کاتالوگ انتخاب و دوربین را فعال کن.</p>
+            <p id="fitMessage">یک فریم را پرو کن تا این‌جا پر شود.</p>
           </div>
-          <button class="gold" type="button" data-tryon-open data-tryon-sku="AR-101">اندازه‌گیری روی صورت من</button>
-          <p class="accuracyNote">دقت اندازه‌گیری تقریبی است؛ مشاوره و تجویز اپتومتریست را جایگزین نمی‌کند.</p>
-        </div>
-        <div class="fitArt" aria-hidden="true">
-          <div class="fitDiagram">
-            <span class="diagramLabel labelTop">فاصلهٔ مردمک</span>
-            <span class="diagramLabel labelSide">عرض فریم</span>
-            <svg viewBox="0 0 420 320" role="presentation">
-              <defs><linearGradient id="measureLine" x1="0" x2="1"><stop stop-color="#f2d9a8" /><stop offset="1" stop-color="#8b6b31" /></linearGradient></defs>
-              <path d="M210 29c76 0 115 43 115 111 0 77-45 143-115 143S95 217 95 140c0-68 39-111 115-111Z" fill="#d8b478" fill-opacity=".07" stroke="#fff" stroke-opacity=".2" stroke-width="2" />
-              <path d="M111 140h198M144 210h132" stroke="url(#measureLine)" stroke-width="2" stroke-dasharray="4 7" />
-              <path d="M112 129v83M308 129v83" stroke="url(#measureLine)" stroke-width="2" />
-              <path d="M136 118c19-8 39-8 57 0l6 4v38l-7 7c-18 8-38 8-56 0l-7-6v-36l7-7Zm92 0c19-8 39-8 57 0l7 7v36l-7 6c-18 8-38 8-56 0l-7-7v-38l6-4Z" fill="#d8b478" fill-opacity=".16" stroke="url(#measureLine)" stroke-width="3" />
-              <path d="M199 130h21m0 0h8" stroke="url(#measureLine)" stroke-width="3" stroke-linecap="round" />
-              <circle cx="176" cy="140" r="4" fill="#f5dda9" /><circle cx="244" cy="140" r="4" fill="#f5dda9" />
-            </svg>
-            <div class="diagramFoot"><span>۱</span><span>اندازه‌گیری محلی</span><span class="diagramRule"></span><span>۲</span><span>گزارش فیت</span></div>
-          </div>
+          <button class="tryon-btn" type="button" data-tryon-open data-tryon-sku="AR-101">اندازه‌گیری با دوربین</button>
+          <p class="accuracyNote">این ابزار معاینه نیست. برای نمره و ساخت عدسی، به اپتومتریست مراجعه کن.</p>
         </div>
       </section>
 
       <section class="install" id="install" aria-labelledby="installTitle">
-        <div class="installCopy">
-          <p class="eyebrow">افزونهٔ سبک برای فروشگاه شما</p>
-          <h2 id="installTitle">دکمه کنار عینک؛<br />پرو روی صورت مشتری.</h2>
+        <div>
+          <h2 id="installTitle">اگر این دکمه را روی سایت خودت می‌خواهی</h2>
           <p class="lede2">
-            یک لودر کوچک را به سایت اضافه کن و برای هر محصول یک دکمه با SKU همان مدل بگذار. کاتالوگ و موتور تشخیص چهره فقط وقتی لازم شوند بار می‌شوند؛ صفحهٔ محصول از اول سنگین نمی‌شود.
+            یک لودر کوچک، و کنار هر محصول یک دکمه با کد همان فریم. موتور تشخیص چهره فقط بعد از کلیک مشتری بار می‌شود.
           </p>
           <ul class="ticks">
-            <li>کار با Shopify، WooCommerce و هر سایت HTML</li>
-            <li>کاتالوگ از <code>products.json</code> یا آرایهٔ محصولات فروشگاه</li>
-            <li>انتخاب همان فریم از روی SKU محصول، نه یک مدل پیش‌فرض</li>
-            <li>دوربین فقط با اجازهٔ صریح مشتری فعال می‌شود</li>
+            <li>Shopify، WooCommerce، یا هر صفحهٔ HTML</li>
+            <li>کاتالوگ از <code>products.json</code></li>
+            <li>دوربین فقط با اجازهٔ صریح باز می‌شود</li>
           </ul>
-          <a class="textLink" href="./docs/INSTALL.html">دیدن راهنمای کامل نصب <span aria-hidden="true">←</span></a>
+          <a class="quiet" href="./docs/INSTALL.html">راهنمای نصب</a>
         </div>
-        <div class="codeCard">
-          <div class="codeHead"><span class="codeDots" aria-hidden="true"><i></i><i></i><i></i></span><span>نصب پایه · کمتر از یک دقیقه</span></div>
-          <pre><code>&lt;script src="/tryon/dist/tryon-loader.js"
+        <pre class="codeCard"><code>&lt;script src="/tryon/dist/tryon-loader.js"
   data-tryon-products="/tryon/products.json"
   defer&gt;&lt;/script&gt;
 
 &lt;button data-tryon-open
   data-tryon-sku="AR-101"&gt;
-  پرو مجازی این عینک
+  پرو این عینک
 &lt;/button&gt;</code></pre>
-          <div class="codeFoot"><span class="loaderMark">≈ ۲ KB</span><span>موتور اصلی بعد از کلیک دانلود می‌شود</span></div>
-        </div>
       </section>
     </main>
 
     <footer class="foot">
-      <div class="footBrand"><span class="logoGlyph" aria-hidden="true">◉—◉</span><b>آروین</b><small>نمونهٔ افزونهٔ پرو مجازی عینک</small></div>
-      <p>پردازش تصویر روی دستگاه انجام می‌شود. این ابزار جایگزین اندازه‌گیری تخصصی اپتومتریست نیست.</p>
-      <div class="footLinks"><a href="./docs/INSTALL.html">راهنمای نصب</a><a href="./studio.html">استودیوی فریم</a><a href="./README.md">مستندات پروژه</a></div>
+      <p><b>آروین</b> نمونهٔ فروشگاه است، نه یک مطب. پردازش تصویر روی دستگاه انجام می‌شود.</p>
+      <div class="footLinks">
+        <a href="./docs/INSTALL.html">راهنمای نصب</a>
+        <a href="./studio.html">استودیوی فریم</a>
+      </div>
     </footer>
 
     <script src="./site/shop.js" defer></script>

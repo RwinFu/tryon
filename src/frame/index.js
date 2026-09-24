@@ -7,6 +7,7 @@
 import { buildFrame } from "./geometry.js";
 import { toThreeGeometry } from "./sweep.js";
 import { buildMaterials } from "./materials.js";
+import { applyHeadOccluder, createHeadOccluder, headOccluderParams } from "../engine/occluder.js";
 
 const geoCache = new Map();
 
@@ -96,19 +97,14 @@ export function createFrameObject(THREE, product, opts = {}) {
     group.add(mesh);
   }
 
-  // مشِ پنهانِ سر: عمق می‌نویسد تا دسته‌ها پشت مو/سر بروند و بریده شوند
+  // «سر نامرئی»: فقط عمق می‌نویسد تا بخشی از دسته‌ها که پشت گونه/شقیقه است پنهان شود.
+  // جلویش همیشه پشت صفحهٔ چشم است، پس هرگز روی عدسی و حلقهٔ فریم نمی‌افتد.
   let occluder = null;
   if (opts.occluder !== false) {
-    occluder = new THREE.Mesh(
-      new THREE.SphereGeometry(1, 24, 18),
-      new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: true, side: THREE.FrontSide }),
+    occluder = createHeadOccluder(
+      THREE,
+      headOccluderParams({ frameHalfWidth: meta.hingeX || meta.size[0] / 2, faceWmm: opts.faceWmm, vertexDistance: opts.vertexDistance }),
     );
-    occluder.renderOrder = -100;
-    const w = meta.size[0] * 0.62,
-      h = meta.size[1] * 2.05;
-    occluder.scale.set(w, h, h * 0.86);
-    occluder.position.set(0, -h * 0.14, -h * 0.5);
-    occluder.name = "occluder";
     group.add(occluder);
   }
 
@@ -150,9 +146,20 @@ export function createFrameObject(THREE, product, opts = {}) {
       group.userData.mats = next;
       return next;
     },
+    /** «سر نامرئی» را با پهنای صورتِ اندازه‌گیری‌شده (mm) هم‌اندازه می‌کند */
+    fitHead(faceWmm, vertexDistance) {
+      if (!occluder) return null;
+      const p = headOccluderParams({ frameHalfWidth: meta.hingeX || meta.size[0] / 2, faceWmm, vertexDistance });
+      applyHeadOccluder(occluder, p);
+      return p;
+    },
     dispose() {
       for (const k of Object.keys(mats)) mats[k].dispose?.();
-      // هندسه در کش است؛ فقط وقتی آزاد می‌شود که حافظه پر باشد
+      // هندسهٔ فریم در کش است (برای تعویض آنی)؛ فقط سرِ نامرئی مالِ همین نمونه است
+      if (occluder) {
+        occluder.geometry.dispose();
+        occluder.material.dispose();
+      }
     },
   };
 }
