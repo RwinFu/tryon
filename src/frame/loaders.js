@@ -13,28 +13,45 @@ export async function loadGLB(url, THREE, { totalWidth = 138, rotateDeg = [0, 0,
   const gltf = await new Promise((resolve, reject) => new GLTFLoader().load(url, resolve, undefined, reject));
   const root = gltf.scene || gltf.scenes[0];
   if (!root) throw new Error("GLB بدون مش: " + url);
-  const box = new THREE.Box3().setFromObject(root);
+  return normalizeGLB(root, THREE, { totalWidth, rotateDeg, offset, scale, url });
+}
+
+/** Keep the mm conversion on a CHILD: Stage owns the outer pose scale. */
+export function normalizeGLB(root, THREE, { totalWidth = 138, rotateDeg = [0, 0, 0], offset = [0, 0, 0], scale = 1, url = "" } = {}) {
+  const oriented = new THREE.Group();
+  oriented.add(root);
+  oriented.rotation.set(...rotateDeg.map(degrees => degrees * Math.PI / 180));
+  oriented.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(oriented);
   const size = box.getSize(new THREE.Vector3());
   const center = box.getCenter(new THREE.Vector3());
-  const spanX = Math.max(0.0001, size.x);
-  const mmPerUnit = totalWidth / spanX;
+  if (!Number.isFinite(size.x) || size.x <= 0) throw new Error("GLB has no usable geometry");
+  const mmPerUnit = totalWidth / size.x;
+  const units = new THREE.Group();
+  // Nose/lens front plane, not the centre of the long temples behind the head.
+  oriented.position.set(-center.x, -center.y, -box.max.z);
+  units.add(oriented);
+  units.scale.setScalar(mmPerUnit * scale);
   const holder = new THREE.Group();
-  root.position.sub(center);
-  root.updateMatrixWorld(true);
-  holder.add(root);
-  holder.scale.setScalar(mmPerUnit * scale);
-  holder.rotation.set((rotateDeg[0] * Math.PI) / 180, (rotateDeg[1] * Math.PI) / 180, (rotateDeg[2] * Math.PI) / 180);
-  holder.position.set(offset[0] * 1, offset[1] * 1, offset[2] * 1);
+  holder.add(units);
   const meta = {
-    source: "glb",
-    url,
-    totalWidth,
-    mmPerUnit,
-    size: [size.x * mmPerUnit, size.y * mmPerUnit, size.z * mmPerUnit],
+    source: "glb", url, totalWidth, mmPerUnit,
+    size: [size.x * mmPerUnit * scale, size.y * mmPerUnit * scale, size.z * mmPerUnit * scale],
     tris: countTris(root),
   };
-  // متریال‌ها: اگر فروشنده رنگ نفرستاده، همان را نگه می‌داریم؛ اگر فریم رنگی دارد، اعمال می‌کنیم
+  // Offset is also an inner transform so applying a face pose cannot erase it.
+  units.position.set(...offset);
   return { group: holder, meta, root, materials: collectMaterials(root) };
+}
+
+export function disposeGLB(bundle) {
+  const geometries = new Set(), materials = new Set(), textures = new Set();
+  bundle.group.traverse(o => {
+    if (o.geometry) geometries.add(o.geometry);
+    for (const m of [].concat(o.material || [])) materials.add(m);
+  });
+  for (const m of materials) for (const v of Object.values(m)) if (v?.isTexture) textures.add(v);
+  for (const set of [geometries, materials, textures]) for (const item of set) item.dispose();
 }
 
 function countTris(root) {
@@ -61,8 +78,8 @@ export function tintGLB(bundle, { color, metalColor, opacity = 1 }) {
   for (const m of bundle.materials) {
     const isLens = /lens|glass|tint/i.test(m.name || "");
     if (isLens) {
-      m.transparent = true;
-      m.opacity = Math.min(m.opacity, 0.4);
+      // Preserve the vendor's optical/mirror material; recoloring the frame
+      // must not turn every lens into the same 40%-opaque plastic.
       m.depthWrite = false;
       continue;
     }

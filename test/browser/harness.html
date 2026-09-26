@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><title>Try-on rendering test</title>
+<style>body { margin:0; background:#eee } #mount { width:900px; height:760px }</style>
+<script type="importmap">{"imports":{"three":"/node_modules/three/build/three.module.js","three/":"/node_modules/three/"}}</script>
+<div id="mount"></div>
+<script type="module">
+import * as THREE from 'three';
+import { Stage } from '/src/engine/stage.js';
+import { FaceTracker } from '/src/engine/tracking.js';
+import { init } from '/src/plugin.js';
+window.testModules = { THREE, Stage, FaceTracker, init };
+</script></html>

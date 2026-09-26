@@ -121,3 +121,10 @@ test("شکل‌های واقعیِ کاتالوگ با حدس‌گر درست د
   const circle = lensOutline({ shape: "round", lensW: 46, lensH: 46 }, 1, 120);
   assert.ok(["round", "roundmetal", "oval", "panto"].includes(guessShape(circle)), guessShape(circle));
 });
+
+test("bridgeSplit scans integer columns when the search window has fractional bounds", () => {
+  const w = 100, h = 20, mask = new Uint8Array(w * h).fill(1);
+  for (let y = 0; y < h; y++) mask[y * w + 45] = 0;
+  const box = { x0: 20, x1: 79, y0: 0, y1: 19, w: 60, h: 20, cx: 49.5, cy: 9.5 };
+  assert.equal(bridgeSplit(mask, w, h, box), 45);
+});

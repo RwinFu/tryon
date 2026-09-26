@@ -100,7 +100,7 @@ button {
   transform: none;
 }
 #cv {
-  filter: brightness(1.03) saturate(1.02);
+  /* Camera colors must match the sRGB transmission background exactly. */
 }
 #gl,
 #oc,
@@ -928,5 +928,11 @@ button {
     animation-duration: 0.001s !important;
     transition-duration: 0.001s !important;
   }
+}
+
+/* Show the entire uploaded photo; all AR layers use the identical mapping. */
+.stage.photo-mode canvas {
+  object-fit: contain;
+  object-position: center;
 }
 `;

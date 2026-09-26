@@ -273,51 +273,44 @@ export function buildLensMaterial(THREE, spec = "clear", quality = "high", envIn
   const o = typeof spec === "string" ? { type: spec } : spec || {};
   const type = o.type || "clear";
   const hi = quality === "high";
-  const tint = new THREE.Color(o.color || (type === "clear" ? "#eaf1f4" : "#3a3a3e"));
+  const clear = type === "clear" || type === "blue";
+  const density = Math.max(0, Math.min(1, o.tint ?? (clear ? 0.025 : type === "photo" ? 0.7 : 0.45)));
+  const tint = new THREE.Color(o.color || (clear ? "#ffffff" : type === "photo" ? "#60646a" : "#8b9096"));
+  const mirror = type === "mirror";
   const m = new THREE.MeshPhysicalMaterial({
     color: tint,
-    metalness: type === "mirror" ? 0.92 : 0,
-    roughness: type === "mirror" ? 0.09 : 0.035,
-    clearcoat: 1,
-    clearcoatRoughness: 0.02,
-    envMapIntensity: (type === "mirror" ? 2.2 : 1.35) * envIntensity,
-    side: THREE.DoubleSide,
+    metalness: mirror ? 0.92 : 0,
+    roughness: mirror ? 0.09 : 0.005,
+    // The captured face is already display-referred: do not apply ACES again.
+    toneMapped: mirror,
+    // Glass already has a Fresnel interface; a full clearcoat doubles glare.
+    clearcoat: mirror ? 0.25 : 0,
+    envMapIntensity: (mirror ? 1.2 : 0.45) * envIntensity,
+    specularIntensity: clear ? 0.45 : 0.75,
+    side: THREE.FrontSide,
     transparent: true,
     depthWrite: false,
+    ior: o.ior || 1.5,
   });
-  const density = o.tint ?? (type === "clear" ? 0.06 : type === "mirror" ? 0.72 : 0.45);
-  if (hi && type !== "mirror") {
-    m.transmission = Math.max(0.35, 1 - density * 0.75);
-    m.thickness = 1.8;
-    m.ior = o.ior || 1.53;
+  if (hi && !mirror) {
+    m.transmission = 1;
+    m.thickness = 0.65;
     m.attenuationColor = tint;
-    m.attenuationDistance = 3 + (1 - density) * 22;
-    m.opacity = 0.92;
-    m.metalness = 0;
+    m.attenuationDistance = clear ? 100 : Math.max(0.5, 6 * (1 - density));
+    m.opacity = 1;
+    if (!clear) m.color.lerp(new THREE.Color("#ffffff"), 1 - density);
   } else {
-    m.opacity = type === "clear" ? 0.16 : 0.3 + density * 0.5;
-    m.roughness = type === "clear" ? 0.03 : 0.08;
+    m.opacity = mirror ? 0.88 : clear ? 0.055 : 0.2 + density * 0.65;
   }
   if (type === "gradient") {
-    const g = lensGradient(THREE, "rgba(255,255,255,1)", `rgba(20,20,24,${0.42 + density * 0.4})`);
-    if (g) {
-      m.alphaMap = g;
-      m.transparent = true;
-    }
+    // Color gradient (not alphaMap): dark at the top, light at the bottom.
+    m.map = lensGradient(THREE, "#777b83", "#ffffff");
   }
   if (type === "blue") {
-    m.iridescence = 0.35;
+    m.iridescence = 0.08;
     m.iridescenceIOR = 1.3;
-    m.color = new THREE.Color("#e8eff6");
-    if (m.transmission) m.transmission = 0.86;
-    else m.opacity = 0.18;
   }
-  if (type === "photo") {
-    m.color = new THREE.Color("#101216");
-    if (m.transmission) m.transmission = 0.15;
-    else m.opacity = 0.8;
-    m.roughness = 0.05;
-  }
+
   return m;
 }
 

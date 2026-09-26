@@ -83,7 +83,7 @@ export function bridgeSplit(mask, w, h, box) {
     bestV = Infinity;
   const lo = Math.max(box.x0 + 3, box.cx - box.w * 0.14),
     hi = Math.min(box.x1 - 3, box.cx + box.w * 0.14);
-  for (let x = lo; x <= hi; x++) {
+  for (let x = Math.ceil(lo); x <= Math.floor(hi); x++) {
     const v = col[x] + Math.abs(x - box.cx) * 0.08;
     if (v < bestV) {
       bestV = v;

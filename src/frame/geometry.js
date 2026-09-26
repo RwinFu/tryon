@@ -474,7 +474,7 @@ export function buildFrame(rawSpec = {}) {
   meta.tris = Object.values(roles).reduce((a, r) => a + r.index.length / 3, 0);
   meta.silhouette = parts
     .filter((p) => p.path && p.path.length > 3 && p.role !== "lens" && p.role !== "pad" && p.role !== "accent")
-    .map((p) => ({ path: p.path, sw: p.sw || 3, role: p.role }));
+    .map((p) => ({ name: p.name, path: p.path, sw: p.sw || 3, role: p.role }));
   return { roles, bbox, meta, parts, spec: s };
 }
 
@@ -492,41 +492,39 @@ function unionBox(a, b) {
 
 /** عدسی: سطح کاسه‌ای از خط داخلی + کمی برآمدگی */
 function lensSurface(path, R, s) {
-  const N = path.length;
-  const position = [],
-    normal = [],
-    uv = [],
-    index = [];
-  let cx = 0,
-    cy = 0,
-    cz = 0;
-  for (const p of path) {
-    cx += p.x;
-    cy += p.y;
-    cz += p.z;
-  }
-  cx /= N;
-  cy /= N;
-  cz /= N;
-  const nz = (x, y, z) => {
-    const l = Math.hypot(x, y, z) || 1;
-    return [x / l, y / l, z / l];
+  // Concentric rings, not a single triangle fan: smooth spherical glass with
+  // normals matching its actual surface and CCW front faces (toward the camera).
+  const N = path.length, rings = 10;
+  const position = [], normal = [], uv = [], index = [];
+  const cx = (Math.min(...path.map(p => p.x)) + Math.max(...path.map(p => p.x))) / 2;
+  const cy = (Math.min(...path.map(p => p.y)) + Math.max(...path.map(p => p.y))) / 2;
+  const add = (x, y) => {
+    const dx = x - cx, dy = y - cy;
+    const nz = Math.sqrt(Math.max(1, R * R - dx * dx - dy * dy));
+    position.push(x, y, 0.35 - (R - nz));
+    const length = Math.hypot(dx, dy, nz);
+    normal.push(dx / length, dy / length, nz / length);
+    uv.push(dx / s.lensW + 0.5, dy / s.lensH + 0.5);
   };
-  position.push(cx, cy, cz + 1.35);
-  normal.push(0, 0, 1);
-  uv.push(0.5, 0.5);
-  for (let i = 0; i < N; i++) {
-    const p = path[i];
-    // برآمدگی کروی + ضخامت لبه
-    const r2 = (p.x - cx) ** 2 + (p.y - cy) ** 2;
-    const Reff = Math.max(70, R * 2.2);
-    const z = p.z + 1.35 - r2 / (2 * Reff);
-    position.push(p.x, p.y, z);
-    normal.push(...nz((p.x - cx) / Reff, (p.y - cy) / Reff, 1));
-    uv.push((p.x - cx) / s.lensW + 0.5, (p.y - cy) / s.lensH + 0.5);
+  add(cx, cy);
+  for (let ring = 1; ring <= rings; ring++) {
+    for (const p of path) add(cx + (p.x - cx) * ring / rings, cy + (p.y - cy) * ring / rings);
   }
-  for (let i = 0; i < N; i++) index.push(0, 1 + ((i + 1) % N), 1 + i);
-  return { position, normal, uv, index, vertexCount: N + 1 };
+  const area = path.reduce((sum, p, i) => {
+    const n = path[(i + 1) % N];
+    return sum + p.x * n.y - n.x * p.y;
+  }, 0);
+  const tri = (a, b, c) => area > 0 ? index.push(a, b, c) : index.push(a, c, b);
+  for (let i = 0; i < N; i++) {
+    const j = (i + 1) % N;
+    tri(0, 1 + i, 1 + j);
+    for (let ring = 1; ring < rings; ring++) {
+      const a = 1 + (ring - 1) * N, b = a + N;
+      tri(a + i, b + i, b + j);
+      tri(a + i, b + j, a + j);
+    }
+  }
+  return { position, normal, uv, index, vertexCount: position.length / 3 };
 }
 
 /** طولانی‌ترین بازهٔ پیوسته از نقاطِ یک منحنی بسته که شرط را دارند (نیم‌فریم/ابرو). */
