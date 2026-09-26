@@ -542,6 +542,13 @@ export function toEngineSpec(product) {
     "topWide",
     "hexBlend",
     "lensTiltDeg",
+    "lensPath",
+    "lensPathL",
+    "lensPathR",
+    "hinge",
+    "endpiece",
+    "earBendAt",
+    "lensInset",
   ])
     if (product[k] !== undefined) spec[k] = product[k];
   return spec;

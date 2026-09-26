@@ -195,7 +195,7 @@ export class FaceTracker {
     this.video.muted = true;
     this.W = 0;
     this.H = 0;
-    this.f = { x: new OneEuro(), y: new OneEuro(), z: new OneEuro(), s: new OneEuro(0.7, 0.004), c: new OneEuro(0.18, 0.0006) };
+    this.f = { x: new OneEuro(), y: new OneEuro(), z: new OneEuro(), s: new OneEuro(1.5, 0.12), c: new OneEuro(0.18, 0.0006) };
     this.q = null;
     this.samples = [];
     this.pdSamples = [];
@@ -334,6 +334,9 @@ export class FaceTracker {
         await this.waitForMetadata();
         await withTimeout(this.video.play(), 10000, "camera playback");
         if (!this.video.videoWidth) throw new Error("تصویر دوربین آماده نشد");
+        this.photoMode = false;
+        this.imageResult = null;
+        this.resetTracking();
         this.state = "live";
         return this.stream;
       } catch (e) {
@@ -376,6 +379,7 @@ export class FaceTracker {
     this.stream?.getTracks?.().forEach((t) => t.stop());
     this.stream = null;
     this.video.srcObject = null;
+    this.lastVideoTime = -1;
     if (this.state === "live") this.state = "ready";
   }
 
@@ -385,6 +389,21 @@ export class FaceTracker {
     this.segmenter?.close?.();
     this.landmarker = null;
     this.segmenter = null;
+  }
+
+  /** A new image/person must never inherit another face's filters or auto-PD. */
+  resetTracking() {
+    this.pose = null;
+    this.q = null;
+    this.lastTs = 0;
+    this.lastVideoTime = -1;
+    this.missStreak = 0;
+    this.pdSamples = [];
+    if (this.autoPd) {
+      this.pdMm = this.o.pd || 63;
+      this.pdLocked = false;
+    }
+    this.f = { x: new OneEuro(), y: new OneEuro(), z: new OneEuro(), s: new OneEuro(1.5, 0.12), c: new OneEuro(0.18, 0.0006) };
   }
 
   /** ابعاد بوم/پیکسل‌ها از خودِ ویدیو می‌آید (بدون کشیدنِ دوباره) */
@@ -412,12 +431,13 @@ export class FaceTracker {
       res = this.landmarker.detectForVideo(v, ts);
     } catch (e) {
       this.log("detect-error", e.message);
+      if (++this.missStreak > 6) this.pose = null;
       return this.pose || null;
     }
     if (!res?.faceLandmarks?.length) {
       this.missStreak++;
       if (this.missStreak > 6) this.pose = null;
-      return null;
+      return this.pose || null;
     }
     this.missStreak = 0;
     this.pose = this.solve(res, ts);
@@ -431,7 +451,6 @@ export class FaceTracker {
   /** حلpose: موقعیت/چرخش/مقیاس در «فضای پیکسلیِ z=0» (هم‌راستا با ویدیو) */
   solve(res, ts) {
     const lms = res.faceLandmarks[0];
-    const world = res.faceBlendshapes ? null : null;
     const W = this.W,
       H = this.H;
     const eyeL = this.px(lms[P.irisL] ? lms[P.irisL] : mid(lms[P.eyeOuterL], lms[159], lms[145]));
@@ -445,14 +464,22 @@ export class FaceTracker {
       faceR = this.px(lms[P.faceR]);
     const faceW = Math.max(1, Math.hypot(faceR.x - faceL.x, faceR.y - faceL.y));
 
+    const q = quatFrom(res, lms, { midEye, nose, tip, faceW, H, W }, (v) => this.px(v));
+    const front = applyQ(q, [0, 0, 1]);
+    const eyeAxis = applyQ(q, [1, 0, 0]);
+    const projectedEyeAxis = Math.max(0.45, Math.hypot(eyeAxis[0], eyeAxis[1]));
+    const frontal = front[2] > 0.94;
+    const eyesOpen = pairPx(lms, 159, 145, (p) => this.px(p)) > iris * 0.035 &&
+      pairPx(lms, 386, 374, (p) => this.px(p)) > iris * 0.035;
+
     // ── PD خودکار از قطر عنبیه (میلی‌مترِ شناخته‌شده)، نه از نسبتِ جادوییِ عرض صورت ──
-    if (this.autoPd) {
+    if (this.autoPd && frontal && eyesOpen) {
       const est = estimatePdMm(iris, irisDiameterPx(lms, (p) => this.px(p)));
-      if (est) {
+      if (est && est > 50 && est < 78) {
         this.pdSamples.push(est);
         if (this.pdSamples.length > 40) this.pdSamples.shift();
         const m = median(this.pdSamples);
-        if (this.pdSamples.length >= 24 && !this.pdLocked) {
+        if ((this.photoMode || this.pdSamples.length >= 24) && !this.pdLocked) {
           this.pdLocked = true;
           this.pdMm = +m.toFixed(1);
           this.log("pd-locked", String(this.pdMm));
@@ -465,25 +492,24 @@ export class FaceTracker {
     }
     const pdMm = this.pdMm;
 
-    // ── چرخش از ماتریس ترنسفورم، با fallback هندسی ──
-    const q = quatFrom(res, lms, { midEye, nose, tip, faceW, H, W }, (v) => this.px(v));
-
-    const front = applyQ(q, [0, 0, 1]);
-    // فاصلهٔ تقریبی دوربین تا صورت (پیکسل) — از اندازهٔ مردمک و فاصلهٔ کانونی فرضی
+    // Undo foreshortening before converting pixels to mm. Otherwise yaw shrinks
+    // the model once here and a second time when the quaternion is applied.
     const focalPx = this.focalScale * Math.max(W, H);
-    // در «فضای پیکسلیِ صفحهٔ چشم» فاصلهٔ دوربین دقیقاً برابر فاصلهٔ کانونی (پیکسل) است
-    const Lpx = focalPx;
-    const vgPx = (this.vg * iris) / pdMm; // فریم، vg میلی‌متر جلوتر از صفحهٔ چشم
-    const scale = iris / pdMm; // پیکسل بر میلی‌متر در صفحهٔ چشم (عمق را پرسپکتیو اصلاح می‌کند)
-
-    // ── نقطهٔ لنگر: میانهٔ مردمک‌ها + اصلاح پل بینی ──
+    const scale = iris / (pdMm * projectedEyeAxis);
+    const vgPx = this.vg * scale;
+    // Eye corners follow the skull, not gaze. Keep the anchor fixed when pupils move.
+    const socketL = mid(lms[33], lms[133]);
+    const socketR = mid(lms[362], lms[263]);
+    const anchor = this.px(mid(socketL, socketR));
     const bridgeY = Math.hypot(nose.x - midEye.x, nose.y - midEye.y);
+    const z0 = vgPx * front[2];
+    const perspective = focalPx / (focalPx - z0);
     const raw = {
-      x: midEye.x,
-      y: midEye.y - 0.06 * bridgeY,
-      z: vgPx,
+      x: W / 2 + (anchor.x - W / 2 + front[0] * vgPx) * perspective,
+      y: H / 2 + (anchor.y - H / 2 - front[1] * vgPx) * perspective,
+      z: z0,
       scale,
-      camZ: Lpx,
+      camZ: focalPx,
       q,
       front,
     };
@@ -493,7 +519,7 @@ export class FaceTracker {
     const jump = this.pose ? Math.hypot(raw.x - this.pose.x, raw.y - this.pose.y) / Math.max(1, scale) : 0;
     const relock = jump > 46;
     if (relock) {
-      this.f.c = new OneEuro(0.18, 0.0006);
+      for (const filter of Object.values(this.f)) filter.xPrev = null;
     }
     const k = relock ? 0 : 1;
     const x = k ? this.f.x.filter(raw.x, t) : raw.x;
@@ -516,8 +542,9 @@ export class FaceTracker {
     } else this.q = q.slice();
     this.lastTs = t;
 
-    const yaw = Math.abs(Math.atan2(2 * (this.q[0] * this.q[1] + this.q[3] * this.q[2]), 1 - 2 * (this.q[1] ** 2 + this.q[2] ** 2)));
-    const pitch = Math.asin(clamp(2 * (this.q[1] * this.q[2] - this.q[3] * this.q[0]), -0.95, 0.95));
+    const smoothFront = applyQ(this.q, [0, 0, 1]);
+    const yaw = Math.abs(Math.atan2(smoothFront[0], smoothFront[2]));
+    const pitch = Math.asin(clamp(-smoothFront[1], -1, 1));
 
     const pose = {
       x,
@@ -530,9 +557,9 @@ export class FaceTracker {
       focalPx,
       iris,
       faceW,
-      faceWmm: faceW / scale,
+      faceWmm: faceW / (scale * projectedEyeAxis),
       faceHmm: Math.hypot(chin.x - this.px(lms[10]).x, chin.y - this.px(lms[10]).y) / scale,
-      noseWmm: pairPx(lms, P.noseSideL, P.noseSideR, (p) => this.px(p)) / scale,
+      noseWmm: pairPx(lms, P.noseSideL, P.noseSideR, (p) => this.px(p)) / (scale * projectedEyeAxis),
       chinPx: chin,
       pdMm,
       autoPd: this.autoPd,
@@ -576,16 +603,23 @@ export class FaceTracker {
     cv.height = Math.round((img.naturalHeight || img.height) * k);
     const ctx = cv.getContext("2d");
     ctx.drawImage(img, 0, 0, cv.width, cv.height);
-    this.W = cv.width;
-    this.H = cv.height;
     try {
+      await this.landmarker.setOptions({ runningMode: "IMAGE" });
       const res = this.landmarker.detect(cv);
       if (!res?.faceLandmarks?.length) return null;
+      this.resetTracking();
+      this.W = cv.width;
+      this.H = cv.height;
+      this.photoMode = true;
+      this.imageResult = res;
       this.pose = this.solve(res, performance.now());
       return { pose: this.pose, canvas: cv };
     } catch (e) {
       this.log("image-error", e.message);
       return null;
+    } finally {
+      await this.landmarker.setOptions({ runningMode: "VIDEO" });
+      this.lastVideoTime = -1;
     }
   }
 
@@ -646,8 +680,14 @@ function quatFrom(res, lms, g, toPx) {
 
 /** استخراج کواترنیون از ماتریس ۴×۴ (ستونی، هم‌خوان three) */
 function quatFromMat4(m) {
-  const t = new DOMMatrixReadOnly([m[0], m[1], m[2], 0, m[4], m[5], m[6], 0, m[8], m[9], m[10], 0, 0, 0, 0, 1]);
-  void t;
+  // Remove per-axis scale from MediaPipe's similarity transform first.
+  if (!Array.from(m).every(Number.isFinite)) return null;
+  m = Array.from(m);
+  for (const col of [0, 4, 8]) {
+    const len = Math.hypot(m[col], m[col + 1], m[col + 2]);
+    if (len < 1e-6) return null;
+    for (let i = 0; i < 3; i++) m[col + i] /= len;
+  }
   const m00 = m[0], m01 = m[4], m02 = m[8];
   const m10 = m[1], m11 = m[5], m12 = m[9];
   const m20 = m[2], m21 = m[6], m22 = m[10];
@@ -672,7 +712,7 @@ function quatFromMat4(m) {
 
 /** چرخش تقریبی از خط چشم + مکان بینی (وقتی ماتریس در دسترس نیست) */
 function quatGeometric(lms, g, toPx) {
-  const roll = -Math.atan2(lms[263].y - lms[33].y, lms[263].x - lms[33].x);
+  const roll = -Math.atan2(toPx(lms[263]).y - toPx(lms[33]).y, toPx(lms[263]).x - toPx(lms[33]).x);
   const faceW = Math.max(1, Math.abs(toPx(lms[454]).x - toPx(lms[234]).x));
   const yawN = clamp(((toPx(lms[4]).x - g.midEye.x) / faceW) * 1.9, -0.6, 0.6);
   const pitchN = clamp(1.25 * ((toPx(lms[4]).y - g.midEye.y) / Math.max(1, g.faceW)) - 0.22, -0.45, 0.45);

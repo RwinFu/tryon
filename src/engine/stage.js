@@ -10,6 +10,7 @@
 import { createFrameObject } from "../frame/index.js";
 import { buildFrame } from "../frame/geometry.js";
 import { buildStudioEnvironment } from "../frame/materials.js";
+import { createHeadOccluder, applyHeadOccluder, headOccluderParams } from "./occluder.js";
 import { applyQ } from "./tracking.js";
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -90,19 +91,18 @@ export class Stage {
   /** فریم فعلی کاتالوگ را می‌سازد (رویه‌ای) یا GLB فروشنده را بارگذاری می‌کند */
   setProduct(product, { quality, envIntensity } = {}) {
     if (product.glb) {
-      this.loadExternal(product, { quality, envIntensity });
-      return null;
+      return this.loadExternal(product, { quality, envIntensity });
     }
     return this.buildProcedural(product, { quality, envIntensity });
   }
 
   async loadExternal(product, { quality, envIntensity } = {}) {
     const THREE = this.THREE;
-    const token = (this._token = (this._token || 0) + 1);
     this.disposeFrame();
+    const token = this._token;
     this.pending = product.glb;
     try {
-      const { loadGLB, tintGLB } = await import("../frame/loaders.js");
+      const { loadGLB, tintGLB, disposeGLB } = await import("../frame/loaders.js");
       const total = product.widthMM || product.spec?.totalWidth || 138;
       const bundle = await loadGLB(product.glb, THREE, {
         totalWidth: total,
@@ -112,7 +112,7 @@ export class Stage {
       });
       if (product.color || product.metalColor)
         tintGLB(bundle, { color: product.color, metalColor: product.metalColor });
-      if (token !== this._token) return;
+      if (token !== this._token) { disposeGLB(bundle); return; }
       bundle.group.traverse((o) => {
         if (o.isMesh) {
           o.renderOrder = 1;
@@ -120,7 +120,15 @@ export class Stage {
         }
       });
       this.group.add(bundle.group);
-      this.frame = { group: bundle.group, meta: bundle.meta, dispose: () => {}, setVariant: () => {} };
+      const headOptions = { frameHalfWidth: bundle.meta.size[0] / 2, vertexDistance: this.opts.vertexDistance };
+      const head = createHeadOccluder(THREE, headOccluderParams(headOptions));
+      bundle.group.add(head);
+      this.frame = {
+        group: bundle.group, meta: bundle.meta,
+        dispose: () => disposeGLB(bundle),
+        setVariant: next => tintGLB(bundle, next),
+        fitHead: (faceWmm, vertexDistance) => applyHeadOccluder(head, headOccluderParams({ ...headOptions, faceWmm, vertexDistance })),
+      };
       this.frameMeta = bundle.meta;
       this.shadowPath = [];
       this.product = product;
@@ -129,6 +137,7 @@ export class Stage {
       void quality;
       void envIntensity;
     } catch (e) {
+      if (token !== this._token) return;
       this.pending = null;
       this.onFrameError?.(e);
       this.buildProcedural(product, { quality, envIntensity });
@@ -163,6 +172,8 @@ export class Stage {
   }
 
   disposeFrame() {
+    this._token = (this._token || 0) + 1;
+    this.pending = null;
     if (!this.frame) return;
     this.group.remove(this.frame.group);
     this.frame.dispose();
@@ -220,7 +231,7 @@ export class Stage {
     if (!n) return;
     const m = this.match;
     const meanLum = clamp(lum / n, 0.05, 0.95);
-    const targetExp = clamp((0.5 / meanLum) ** 0.55, 0.72, 1.6);
+    const targetExp = clamp((meanLum / 0.5) ** 0.35, 0.75, 1.2);
     m.exp = m.exp * 0.82 + targetExp * 0.18;
     m.tint = [
       m.tint[0] * 0.85 + clamp(r / n / (g / n || 1), 0.8, 1.25) * 0.15,
@@ -234,6 +245,33 @@ export class Stage {
     this.key.intensity = 0.65 + 0.75 * (1 - meanLum) + m.exp * 0.2;
     this.hemi.intensity = 0.45 + 0.6 * meanLum;
     this.key.position.set(-1.4 + m.dir[0] * 3.4, 2.2 - m.dir[1] * 2.2, 3);
+  }
+
+  /** Feed the same unmirrored camera pixels to the transmission render pass.
+   * DOM video behind a transparent WebGL canvas is NOT visible to glass shaders.
+   * Include the contact shadow here so the opaque background doesn't erase it.
+   */
+  updateBackground(source, shadow) {
+    const THREE = this.THREE;
+    if (!this._cameraCanvas) this._cameraCanvas = document.createElement("canvas");
+    const cv = this._cameraCanvas;
+    if (cv.width !== this.W || cv.height !== this.H) {
+      this.cameraTexture?.dispose();
+      this.cameraTexture = null;
+      cv.width = this.W;
+      cv.height = this.H;
+    }
+    const ctx = cv.getContext("2d");
+    ctx.drawImage(source, 0, 0, this.W, this.H);
+    if (shadow) ctx.drawImage(shadow, 0, 0, this.W, this.H);
+    if (!this.cameraTexture) {
+      this.cameraTexture = new THREE.CanvasTexture(cv);
+      this.cameraTexture.colorSpace = THREE.SRGBColorSpace;
+      this.cameraTexture.generateMipmaps = false;
+      this.cameraTexture.minFilter = THREE.LinearFilter;
+    }
+    this.cameraTexture.needsUpdate = true;
+    this.scene.background = this.cameraTexture;
   }
 
   /** جای‌گذاری فریم از روی pose */
@@ -261,7 +299,7 @@ export class Stage {
   }
 
   /** سایهٔ تماسی: خطوطِ فریم را روی صورت می‌اندازد (CPU، بدون readback) */
-  drawContactShadow(ctx, pose, { opacity = 0.34, blur = 6, offset = [3, 7] } = {}) {
+  drawContactShadow(ctx, pose, { opacity = 0.18, blur = 4, offset = [1, 3] } = {}) {
     if (!this.shadowPath || !pose || ctx.__noShadow) return false;
     const THREE = this.THREE;
     const W = this.W,
@@ -285,7 +323,7 @@ export class Stage {
       py = (H / 2 - pose.y) * k,
       pz = pose.z;
     // فقط حلقه و پل: دسته‌ها تا پشت سر می‌روند و سایه‌شان روی گونه لکه می‌اندازد
-    const strokes = this.shadowPath.filter((stroke) => frontStroke(stroke));
+    const strokes = this.shadowPath.filter((stroke) => /^(rim|brow|bridge|topbar)/.test(stroke.name || ""));
     for (const stroke of strokes) {
       c.lineWidth = Math.max(1.5, stroke.sw * s * 1.5);
       c.beginPath();
@@ -344,6 +382,7 @@ export class Stage {
 
   dispose() {
     this.disposeFrame();
+    this.cameraTexture?.dispose();
     this.env?.dispose?.();
     this.renderer.dispose();
   }

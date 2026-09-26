@@ -146,6 +146,7 @@ export class VirtualTryOn extends Native {
         </div>
         <div id="gateBusy"></div>
         <button class="go" id="start">${L("start")}</button>
+        ${c.features.photo ? `<button class="btn" id="photoStart">${L("photoTry")}</button>` : ""}
         <p class="priv">${L("privacy")}</p>
       </div>
     </div>
@@ -383,6 +384,7 @@ export class VirtualTryOn extends Native {
     this.renderMeta();
     this.stage?.setProduct({ ...p, ...(this.variants?.[this.variant] || {}) });
     this.rebuildShadow();
+    this.renderPhoto();
     if (!silent) this.emit("product", { id: p.id, product: p });
   }
 
@@ -392,6 +394,7 @@ export class VirtualTryOn extends Native {
     [...this.el.sw.children].forEach((b, k) => b.setAttribute("aria-pressed", k === v ? "true" : "false"));
     const p = { ...this.product, ...this.variants[v] };
     this.stage?.setProduct(p);
+    this.renderPhoto();
     this.renderMeta();
     this.emit("variant", { id: this.product.id, variant: this.variants[v], product: p });
   }
@@ -477,7 +480,8 @@ export class VirtualTryOn extends Native {
    * بار می‌شود تا وقتی مشتری «شروع» را زد فقط اجازهٔ دوربین بماند. دوربین اینجا باز نمی‌شود (نیاز به کلیک کاربر).
    */
   prewarm() {
-    if (this.booted || this.prewarmP) return this.prewarmP;
+    if (this.prewarmP) return this.prewarmP;
+    if (this.tracker?.landmarker) return Promise.resolve(this.tracker);
     const cfg = this.cfg;
     this.THREE = THREE;
     const base = cfg.baseURL || new URL(".", document.baseURI).href.replace(/\/$/, "");
@@ -501,6 +505,7 @@ export class VirtualTryOn extends Native {
   }
 
   async boot() {
+    if (this.tracker?.photoMode) return this.resumeCamera();
     if (this.booted) return;
     this.booted = true;
     this.starting = true;
@@ -569,6 +574,7 @@ export class VirtualTryOn extends Native {
   }
 
   syncSize() {
+    if (this.tracker?.photoMode) return;
     const v = this.tracker?.video;
     if (!v?.videoWidth) return;
     const W = v.videoWidth,
@@ -637,7 +643,7 @@ export class VirtualTryOn extends Native {
   }
 
   loop() {
-    if (this.dead || this.state !== "live") {
+    if (this.dead || this.state !== "live" || this.tracker?.photoMode) {
       this.frameRequest = 0;
       return;
     }
@@ -656,8 +662,11 @@ export class VirtualTryOn extends Native {
       if (fps < 21 && this.quality === "high") {
         this.quality = "lite";
         this.el.stage.classList.add("lite");
-        this.stage.buildEnv();
+        this.stage.quality = "lite";
+        this.stage.setProduct({ ...this.product, ...(this.variants?.[this.variant] || {}) }, { quality: "lite" });
+        this.tracker.segmenter?.close?.();
         this.tracker.segmenter = null;
+        this.ctx.oc.clearRect(0, 0, this.el.oc.width, this.el.oc.height);
         this.cfg.features.hairLayer = false;
         this.hint(t(this.cfg.lang, "liteOn"), true);
       }
@@ -665,6 +674,7 @@ export class VirtualTryOn extends Native {
     if (now - (this.lastDraw || 0) < 1000 / (this.quality === "lite" ? 24 : 30)) return;
     this.lastDraw = now;
 
+    this.syncSize();
     this.ctx.cv.drawImage(v, 0, 0, this.el.cv.width, this.el.cv.height);
     const pose = tr.process(now, now - (this.lastInfer || 0) > 240);
     if (pose) {
@@ -674,13 +684,15 @@ export class VirtualTryOn extends Native {
         this.stage.matchLight(this.el.cv);
       }
       this.stage.place(pose);
-      this.stage.render();
+      this.ctx.sh.clearRect(0, 0, this.el.sh.width, this.el.sh.height);
       if (this.cfg.features.contactShadow && this.quality !== "lite") {
         const c = this.ctx.sh;
         c.setTransform(1, 0, 0, 1, 0, 0);
         c.clearRect(0, 0, this.el.sh.width, this.el.sh.height);
-        this.stage.drawContactShadow(c, pose, { opacity: this.quality === "lite" ? 0.26 : 0.34, blur: this.quality === "lite" ? 4 : 6.5 });
+        this.stage.drawContactShadow(c, pose);
       }
+      this.stage.updateBackground(this.el.cv, this.el.sh);
+      this.stage.render();
       this.collect(pose);
       this.maybeHint(pose);
     } else {
@@ -727,7 +739,7 @@ export class VirtualTryOn extends Native {
       });
       if (this.samples.length > 90) this.samples.shift();
       const fresh = this.samples.filter((s) => performance.now() - s.t < 6000);
-      if (fresh.length > 8) {
+      if (fresh.length > 8 || this.tracker?.photoMode) {
         const measurements = avg(fresh, ["pd", "faceW", "faceH", "nose"]);
         const rows = fitReport(
           this.product,
@@ -740,9 +752,9 @@ export class VirtualTryOn extends Native {
           : statuses.includes("warn") || statuses.includes("bad")
             ? t(this.cfg.lang, "fitCheck")
             : t(this.cfg.lang, "fitOff");
+        this.fitRows = rows;
         if (summary !== this.fitSummary) {
           this.fitSummary = summary;
-          this.fitRows = rows;
           this.renderMeta();
           this.emit("fit", { rows, ...measurements, summary, product: this.product });
         }
@@ -799,6 +811,7 @@ export class VirtualTryOn extends Native {
     // inline: با اولین نشانهٔ قصد (هاور/لمس/فوکوس روی کارت شروع) مدل در پس‌زمینه بار می‌شود
     const intent = () => this.prewarm()?.catch(() => {});
     for (const ev of ["pointerenter", "touchstart", "focusin"]) this.el.gate.addEventListener(ev, intent, { once: true, passive: true });
+    this.$("photoStart")?.addEventListener("click", () => this.pickPhoto());
     this.$("close")?.addEventListener("click", () => this.close());
     this.$("openFit").addEventListener("click", () => this.openSheet());
     this.$("sheetClose").addEventListener("click", () => this.openSheet(false));
@@ -838,6 +851,7 @@ export class VirtualTryOn extends Native {
     if (name === "snap") return this.snapshot();
     if (name === "cart") return this.addToCart();
     if (name === "scan") return this.runFaceScan();
+    if (name === "camera") return this.resumeCamera();
     if (name === "photo") return this.pickPhoto();
     if (name === "fit") return this.openSheet();
     void L;
@@ -888,6 +902,7 @@ export class VirtualTryOn extends Native {
         }
         this.cfg.tracking.pd = v;
         pd.querySelector("#pdVal").textContent = v.toFixed(1) + " mm";
+        this.refreshPhotoFit();
         sync();
       });
       auto.addEventListener("change", () => {
@@ -898,6 +913,7 @@ export class VirtualTryOn extends Native {
             this.tracker.pdLocked = false;
           }
         }
+        this.refreshPhotoFit();
         sync();
       });
       this.pdSync = sync;
@@ -936,7 +952,7 @@ export class VirtualTryOn extends Native {
   /* ─────────────────────────── عکس و خرید ───────────────────────── */
   async snapshot() {
     const v = this.tracker?.video;
-    if (!v?.videoWidth) return this.hint(t(this.cfg.lang, "needCamera"), true);
+    if (!this.pose || (!this.tracker?.photoMode && !v?.videoWidth)) return this.hint(t(this.cfg.lang, "needCamera"), true);
     const W = this.el.cv.width,
       H = this.el.cv.height;
     const out = document.createElement("canvas");
@@ -947,8 +963,10 @@ export class VirtualTryOn extends Native {
     x.fillRect(0, 0, W, H);
     for (const src of [this.el.cv, this.el.sh, this.el.gl, this.el.oc]) {
       x.save();
-      x.translate(W, 0);
-      x.scale(-1, 1);
+      if (!this.tracker?.photoMode) {
+        x.translate(W, 0);
+        x.scale(-1, 1);
+      }
       x.drawImage(src, 0, 0, W, H);
       x.restore();
     }
@@ -980,54 +998,115 @@ export class VirtualTryOn extends Native {
   }
 
   async pickPhoto() {
+    if (this.starting || this.loadingPhoto) return;
     const inp = document.createElement("input");
     inp.type = "file";
     inp.accept = "image/*";
     inp.onchange = async () => {
-      const f = inp.files?.[0];
-      if (!f) return;
+      const file = inp.files?.[0];
+      if (!file) return;
+      const url = URL.createObjectURL(file);
       const img = new Image();
-      img.onload = async () => {
-        const url = img.src;
-        this.THREE = this.THREE || THREE;
-        if (!this.tracker) {
-          const base = this.cfg.baseURL || new URL(".", document.baseURI).href.replace(/\/$/, "");
-          this.tracker = new FaceTracker({ baseURL: base, assets: this.cfg.assets, ...this.cfg.tracking, log: () => {} });
-          await this.tracker.init();
-        }
-        this.stage =
-          this.stage ||
-          new Stage({
-            canvas: this.el.gl,
-            THREE: this.THREE,
-            quality: "high",
-            video: img,
-            env: true,
-            vertexDistance: this.cfg.tracking.vertexDistance,
-          });
-        this.tracker.photoMode = true;
-        const r = await this.tracker.processImage(img);
-        if (!r) return this.hint(t(this.cfg.lang, "noFaceInPhoto"), true);
-        this.el.cv.width = r.canvas.width;
-        this.el.cv.height = r.canvas.height;
-        for (const c of [this.el.gl, this.el.oc, this.el.sh, this.el.mesh]) {
-          c.width = r.canvas.width;
-          c.height = r.canvas.height;
-        }
-        this.ctx.cv.drawImage(img, 0, 0);
-        this.stage.buildEnv();
-        this.stage.setProduct({ ...this.product, ...(this.variants?.[this.variant] || {}) }, { quality: "high" });
-        this.stage.resize(r.canvas.width, r.canvas.height);
-        this.stage.place(r.pose);
-        this.stage.render();
-        this.pose = r.pose;
-        this.el.gate.hidden = true;
-        this.hint(t(this.cfg.lang, "photoOk"), true);
-        void url;
-      };
-      img.src = URL.createObjectURL(f);
+      try {
+        img.src = url;
+        await img.decode();
+        await this.loadPhoto(img);
+      } catch (error) {
+        this.hint(t(this.cfg.lang, "genericError"), true);
+        this.emit("error", { where: "photo", message: String(error.message || error) });
+      } finally {
+        URL.revokeObjectURL(url);
+      }
     };
     inp.click();
+  }
+
+  async loadPhoto(img) {
+    if (this.loadingPhoto || this.starting) return false;
+    this.loadingPhoto = true;
+    const wasLive = this.state === "live";
+    this.stopLoop(); // no detectForVideo while MediaPipe temporarily uses IMAGE
+    this.busy(t(this.cfg.lang, "loading"));
+    try {
+      await (this.prewarmP || this.prewarm());
+      const r = await this.tracker.processImage(img);
+      if (!r) {
+        this.hint(t(this.cfg.lang, "noFaceInPhoto"), true);
+        return false;
+      }
+      if (this.dead) return false;
+      this.tracker.stopCamera();
+      this.THREE = this.THREE || THREE;
+      this.stage ||= new Stage({
+        canvas: this.el.gl, THREE: this.THREE, quality: this.quality || "high",
+        vertexDistance: this.cfg.tracking.vertexDistance,
+      });
+      for (const c of [this.el.cv, this.el.gl, this.el.oc, this.el.sh, this.el.mesh]) {
+        c.width = r.canvas.width;
+        c.height = r.canvas.height;
+        if (c !== this.el.gl) c.getContext("2d").clearRect(0, 0, c.width, c.height);
+      }
+      // Use the SAME resized image on which landmarks were detected, not the
+      // original image drawn at 1:1 (which used to crop large uploads).
+      this.ctx.cv.drawImage(r.canvas, 0, 0);
+      this.el.stage.style.setProperty("--vt-mirror", "1");
+      this.el.stage.classList.add("photo-mode");
+      this.pose = r.pose;
+      this.state = "photo";
+      this.booted = true;
+      this.stage.resize(r.canvas.width, r.canvas.height);
+      this.stage.buildEnv();
+      this.stage.onFrame = () => this.renderPhoto();
+      this.stage.onFrameError = e => this.hint(t(this.cfg.lang, "modelFailed") + " — " + e.message, true);
+      this.stage.setProduct({ ...this.product, ...(this.variants?.[this.variant] || {}) });
+      this.renderPhoto();
+      this.el.gate.hidden = true;
+      this.setStatus("live", t(this.cfg.lang, "photoOk"));
+      this.hint(t(this.cfg.lang, "photoOk"), true);
+      this.showCameraReturn(true);
+      return true;
+    } finally {
+      this.loadingPhoto = false;
+      this.busy("");
+      if (wasLive && !this.tracker?.photoMode && !this.dead && !this.hidden) this.loop();
+    }
+  }
+
+  refreshPhotoFit() {
+    const tr = this.tracker;
+    if (!tr?.photoMode || !tr.imageResult) return;
+    tr.resetTracking();
+    this.pose = tr.solve(tr.imageResult, performance.now());
+    this.renderPhoto();
+  }
+
+  renderPhoto() {
+    if (!this.tracker?.photoMode || !this.pose || !this.stage) return;
+    this.stage.place(this.pose);
+    this.ctx.sh.clearRect(0, 0, this.el.sh.width, this.el.sh.height);
+    if (this.cfg.features.contactShadow && this.quality !== "lite") this.stage.drawContactShadow(this.ctx.sh, this.pose);
+    if (this.cfg.features.lightMatch) this.stage.matchLight(this.el.cv);
+    this.stage.updateBackground(this.el.cv, this.el.sh);
+    this.stage.render();
+    this.samples = [];
+    this.collect(this.pose);
+    if (this.el.sheet.classList.contains("open")) this.renderFitSheet();
+  }
+
+  showCameraReturn(show) {
+    let button = this.el.actions.querySelector('[data-a="camera"]');
+    if (show && !button) {
+      button = document.createElement("button");
+      button.className = "btn secondary";
+      button.dataset.a = "camera";
+      button.textContent = t(this.cfg.lang, "backToCamera");
+      this.el.actions.appendChild(button);
+    }
+    if (button) button.hidden = !show;
+  }
+
+  async resumeCamera() {
+    await this.resume(true);
   }
 
   addToCart() {
@@ -1080,10 +1159,21 @@ export class VirtualTryOn extends Native {
       this.prewarm()?.catch(() => {}); // بارگذاری موتور در پس‌زمینه؛ دوربین فقط بعد از اجازهٔ کاربر
     } else if (this.state === "paused") this.resume();
   }
-  async resume() {
+  async resume(camera = false) {
+    if (this.tracker?.photoMode && !camera) {
+      this.state = "photo";
+      this.el.gate.hidden = true;
+      this.renderPhoto();
+      return;
+    }
     try {
       if (!this.tracker) throw new Error("موتور دوربین آماده نیست؛ دکمهٔ شروع را دوباره بزنید.");
       if (!this.tracker.stream) await this.tracker.startCamera({ light: this.quality === "lite" });
+      this.tracker.photoMode = false;
+      this.el.stage.style.removeProperty("--vt-mirror");
+      this.el.stage.classList.remove("photo-mode");
+      this.showCameraReturn(false);
+      this.stage.opts.video = this.tracker.video;
       this.syncSize();
       this.state = "live";
       this.wasLive = false;

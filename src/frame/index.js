@@ -4,7 +4,7 @@
  * کش می‌کند: هندسه برای هر «شکل+سایز» یک بار ساخته می‌شود؛ عوض‌کردنِ رنگ
  * فقط متریال را عوض می‌کند (بدون بازسازی مش) → تعویض رنگ آنی است.
  */
-import { buildFrame } from "./geometry.js";
+import { buildFrame, normalizeSpec } from "./geometry.js";
 import { toThreeGeometry } from "./sweep.js";
 import { buildMaterials } from "./materials.js";
 import { applyHeadOccluder, createHeadOccluder, headOccluderParams } from "../engine/occluder.js";
@@ -12,32 +12,16 @@ import { applyHeadOccluder, createHeadOccluder, headOccluderParams } from "../en
 const geoCache = new Map();
 
 export function frameKey(spec) {
-  const k = [
-    spec.shape || "square",
-    spec.style || "full",
-    spec.lensW || 0,
-    spec.lensH || 0,
-    spec.dbn || 0,
-    spec.rimW || 0,
-    spec.rimT || 0,
-    spec.bevel || 0,
-    spec.templeLen || 0,
-    spec.templeW || 0,
-    spec.templeT || 0,
-    spec.pantoDeg || 0,
-    spec.wrapDeg || 0,
-    spec.baseCurve || 0,
-    spec.doubleBridge ? 1 : 0,
-    spec.highBridge ? 1 : 0,
-    spec.nosePads ? 1 : 0,
-    spec.material === "metal" || spec.material === "titanium" || spec.material === "steel" ? "m" : "a",
-    spec.size ? String(spec.size).replace(/[^0-9.]/g, "") : "",
-    spec.catAmp || 0,
-    spec.teardrop || 0,
-    spec.exp || 0,
-    spec.depth || 0,
-  ].join("|");
-  return k;
+  // Include traced contours and ALL geometry controls. The old key reused a
+  // previous photo's mesh when its printed dimensions happened to match.
+  const normalized = normalizeSpec(spec);
+  for (const key of ["finish", "color", "lens", "metalTint", "metalColor", "accentColor", "translucent"])
+    delete normalized[key];
+  return JSON.stringify(normalized, (key, value) =>
+    value && typeof value === "object" && !Array.isArray(value)
+      ? Object.fromEntries(Object.keys(value).sort().map((k) => [k, value[k]]))
+      : value);
+
 }
 
 /** هندسهٔ کش‌شده (بدون متریال) */
@@ -70,7 +54,7 @@ export function createFrameObject(THREE, product, opts = {}) {
   const { roles, meta } = frameGeometry(THREE, spec, opts);
   const group = new THREE.Group();
   group.name = "frame";
-  const mats = buildMaterials(THREE, {
+  let mats = buildMaterials(THREE, {
     finish: product.finish || spec.finish,
     color: product.color || spec.color,
     lens: product.lens || spec.lens || "clear",
@@ -88,7 +72,7 @@ export function createFrameObject(THREE, product, opts = {}) {
     const mat = mats[role] || mats.frame;
     const mesh = new THREE.Mesh(
       geo,
-      quality === "lite" && role === "lens" ? liteLens(THREE, mats.lens) : mat,
+      mat,
     );
     mesh.name = role;
     mesh.renderOrder = order[role] ?? 1;
@@ -139,10 +123,11 @@ export function createFrameObject(THREE, product, opts = {}) {
       for (const m of group.children) {
         if (!m.isMesh || m.name === "occluder") continue;
         const role = m.name;
-        const mat = quality === "lite" && role === "lens" ? liteLens(THREE, next.lens) : next[role] || next.frame;
+        const mat = next[role] || next.frame;
         m.material = mat;
       }
-      for (const k of Object.keys(mats)) mats[k].dispose?.();
+      for (const m of new Set(Object.values(mats))) m.dispose?.();
+      mats = next;
       group.userData.mats = next;
       return next;
     },
@@ -154,7 +139,7 @@ export function createFrameObject(THREE, product, opts = {}) {
       return p;
     },
     dispose() {
-      for (const k of Object.keys(mats)) mats[k].dispose?.();
+      for (const m of new Set(Object.values(mats))) m.dispose?.();
       // هندسهٔ فریم در کش است (برای تعویض آنی)؛ فقط سرِ نامرئی مالِ همین نمونه است
       if (occluder) {
         occluder.geometry.dispose();
@@ -162,22 +147,6 @@ export function createFrameObject(THREE, product, opts = {}) {
       }
     },
   };
-}
-
-function liteLens(THREE, src) {
-  const m = new THREE.MeshPhysicalMaterial({
-    color: src.color.clone(),
-    transparent: true,
-    opacity: src.opacity > 0.5 ? 0.26 : 0.16,
-    roughness: 0.05,
-    metalness: src.metalness > 0.5 ? 0.85 : 0,
-    clearcoat: 1,
-    clearcoatRoughness: 0.03,
-    envMapIntensity: 1.2,
-    side: THREE.DoubleSide,
-    depthWrite: false,
-  });
-  return m;
 }
 
 export function clearFrameCache() {

@@ -40,7 +40,8 @@
     "bake": "node tools/bake.mjs",
     "test": "node --test \"test/*.test.mjs\"",
     "size": "node tools/size-report.mjs",
-    "preview": "node tools/preview.mjs"
+    "preview": "node tools/preview.mjs",
+    "test:browser": "playwright test"
   },
   "dependencies": {
     "three": "0.169.0"
@@ -48,12 +49,13 @@
   "devDependencies": {
     "@gltf-transform/core": "^4.4.1",
     "@gltf-transform/extensions": "^4.4.1",
-    "esbuild": "^0.24.0",
+    "@playwright/test": "^1.58.2",
+    "esbuild": "^0.25.12",
     "jsdom": "^25.0.1",
     "prettier": "^3.3.3",
-    "sharp": "^0.33.5"
+    "sharp": "^0.35.4"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=20.9.0"
   }
 }

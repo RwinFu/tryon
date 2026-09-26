@@ -281,6 +281,26 @@ function currentProduct() {
   return out;
 }
 
+let tryOnPreview;
+$("#btnTryOn").onclick = async () => {
+  try {
+    const { init } = await import("../plugin.js");
+    const product = currentProduct();
+    if (tryOnPreview) {
+      await tryOnPreview.setProducts([product]);
+    } else {
+      tryOnPreview = init({
+        mode: "overlay", lang: "fa", products: [product], deepLink: false,
+        baseURL: new URL(".", location.href).href.replace(/\/$/, ""),
+        brand: { name: "پرو فریم ساخته‌شده از عکس" },
+      });
+    }
+    tryOnPreview.open();
+  } catch (error) {
+    toast("پرو باز نشد: " + error.message);
+  }
+};
+
 $("#btnJson").onclick = () => download("frame.json", JSON.stringify(currentProduct(), null, 2), "application/json");
 $("#btnCatalog").onclick = async () => {
   const p = currentProduct();
@@ -297,6 +317,7 @@ $("#btnGlb").onclick = () => {
   a.href = URL.createObjectURL(blob);
   a.download = (state.name || "frame").replace(/\s+/g, "-") + ".glb";
   a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
   toast("GLB آماده شد · " + (bytes.length / 1024).toFixed(0) + "KB");
 };
 $("#btnPng").onclick = () => {
@@ -341,7 +362,8 @@ $("#photo").onchange = async (e) => {
   if (!f) return;
   const img = new Image();
   img.onload = async () => {
-    const max = 520;
+    URL.revokeObjectURL(img.src);
+    const max = 1024;
     const k = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
     const cv = document.createElement("canvas");
     cv.width = Math.round(img.naturalWidth * k);
@@ -388,6 +410,10 @@ $("#photo").onchange = async (e) => {
     c2.getContext("2d").drawImage(img, 0, 0, c2.width, c2.height);
     $("#refImg").src = c2.toDataURL();
     $("#refWrap").hidden = false;
+  };
+  img.onerror = () => {
+    URL.revokeObjectURL(img.src);
+    toast("تصویر خوانده نشد؛ یک عکس معتبر انتخاب کن.");
   };
   img.src = URL.createObjectURL(f);
 };
