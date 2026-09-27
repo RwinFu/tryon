@@ -216,42 +216,57 @@ test("real MediaPipe photo → color/model change → no-face recovery → snaps
   expect(errors).toEqual([]);
 });
 
-test("studio photo contours survive direct try-on and product replacement", async ({
-  page,
-}) => {
+test("studio: photo of a real frame → measurements, preview, try-on, flatten", async ({ page }) => {
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/studio.html");
-  const data = await page.evaluate(() => {
+  await page.waitForSelector("#view");
+  // همان فیکسچرِ واقعیِ تست‌های Node: عکسِ گوشی با میزِ چوبی و نور محیط
+  const data = await page.evaluate(async () => {
+    const { phonePhoto } = await import("/test/fixtures/frame-photo.mjs");
+    const img = phonePhoto({ tilt: 3 });
     const cv = document.createElement("canvas");
-    cv.width = 600;
-    cv.height = 240;
-    const x = cv.getContext("2d");
-    x.fillStyle = "white";
-    x.fillRect(0, 0, 600, 240);
-    x.strokeStyle = "#222";
-    x.lineWidth = 14;
-    for (const cx of [170, 430]) {
-      x.beginPath();
-      x.ellipse(cx, 120, 98, 65, 0, 0, Math.PI * 2);
-      x.stroke();
-    }
-    x.beginPath();
-    x.moveTo(267, 105);
-    x.quadraticCurveTo(300, 85, 333, 105);
-    x.stroke();
+    cv.width = img.width;
+    cv.height = img.height;
+    cv.getContext("2d").putImageData(img, 0, 0);
     return cv.toDataURL().split(",")[1];
   });
   await page
     .locator("#photo")
-    .setInputFiles({
-      name: "frame.png",
-      mimeType: "image/png",
-      buffer: Buffer.from(data, "base64"),
-    });
-  await expect(page.locator("#photoOut")).toContainText(
-    "خط لنز از عکس گرفته شد",
-  );
+    .setInputFiles({ name: "phone.png", mimeType: "image/png", buffer: Buffer.from(data, "base64") });
+  const out = page.locator("#photoOut");
+  // تحلیلِ عکس در SwiftShader کند است؛ صبرِ کافی بده
+  await expect(out).toContainText("کیفیت ردیابی", { timeout: 45000 });
+  // پیش‌نمایشِ ترسیم باید روی عکس کشیده شده باشد
+  await expect(page.locator("#photoPreview")).toBeVisible();
+  const preview = await page.locator("#photoPreview").evaluate((c) => {
+    const x = c.getContext("2d");
+    const d = x.getImageData(0, 0, c.width, c.height).data;
+    let teal = 0;
+    for (let i = 0; i < d.length; i += 4)
+      if (d[i + 1] > 150 && d[i + 2] > 130 && d[i] < 120) teal++;
+    return { w: c.width, h: c.height, teal };
+  });
+  expect(preview.w).toBeGreaterThan(200);
+  expect(preview.teal).toBeGreaterThan(400); // خط ترسیم‌شدهٔ عدسی‌ها
+  // اندازه‌ها باید در محدودهٔ فیکسچر باشند (عرض عدسی ۲۱۰px برابر ۵۲mm)
+  const mm = (label) =>
+    out.evaluate((root, lbl) => {
+      const row = [...root.querySelectorAll("tr")].find(
+        (tr) => tr.firstElementChild?.textContent.trim() === lbl,
+      );
+      const v = row?.lastElementChild?.textContent || "";
+      return parseFloat(v.replace(/[۰-۹]/g, (d) => "۰۱۲۳۴۵۶۷۸۹".indexOf(d)));
+    }, label);
+  expect(await mm("عرض عدسی")).toBeGreaterThan(50);
+  expect(await mm("عرض عدسی")).toBeLessThan(54);
+  expect(await mm("فاصلهٔ پل (DBL)")).toBeGreaterThan(8);
+  expect(await mm("فاصلهٔ پل (DBL)")).toBeLessThan(14);
+  expect(await mm("زاویهٔ تراز")).toBeGreaterThan(2);
+  expect(await mm("زاویهٔ تراز")).toBeLessThan(4.5);
+  expect(await mm("ضخامت فریم")).toBeGreaterThan(3);
+  expect(await mm("ضخامت فریم")).toBeLessThan(6);
+  // پروِ مستقیم با همان خطوطِ دنبالی‌شده
   await page.locator("#btnTryOn").click();
   await expect(page.locator("virtual-tryon")).toBeVisible();
   const contours = await page
@@ -259,12 +274,173 @@ test("studio photo contours survive direct try-on and product replacement", asyn
     .evaluate((el) => ({
       left: el.product.spec.lensPathL?.length,
       right: el.product.spec.lensPathR?.length,
+      shape: el.product.spec.shape,
     }));
   expect(contours.left).toBeGreaterThan(20);
   expect(contours.right).toBeGreaterThan(20);
   await page.locator("virtual-tryon #close").click();
   await page.locator("#btnTryOn").click();
   await expect(page.locator("virtual-tryon")).toBeVisible();
+  // تبدیل به پارامتر: مسیر دنبالی حذف و اسلایدرها ساخته می‌شوند
+  await page.locator("virtual-tryon #close").click();
+  await page.locator("#flatten").click();
+  await expect(out).toContainText("به پارامترهای قالب تبدیل شد");
+  expect(await page.locator("#controls input[type=range]").count()).toBeGreaterThan(8);
+  expect(errors).toEqual([]);
+});
+
+test("professional face scan: real session, report, 3D mesh, and GLB export", async ({ page }) => {
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  const result = await page.evaluate(async () => {
+    const { FaceScan, headMeshFromLandmarks, suggestSize, LM } = await import("/src/engine/face-scan.js");
+    const W = 960,
+      H = 720;
+    const pxPerMm = 0.0044;
+    // سرِ ساختگی با نسبت‌های انسانی (PD=۶۳mm)
+    const pts = new Array(478).fill(0).map(() => null);
+    const put = (i, x, y, z = 0) => (pts[i] = { x: 0.5 + x * pxPerMm, y: 0.46 + y * pxPerMm, z: z * pxPerMm });
+    put(LM.irisL, -31.5, 0, -14);
+    put(LM.irisR, 31.5, 0, -14);
+    put(LM.eyeOuterL, -39.5, 1);
+    put(LM.eyeInnerL, -16, 1);
+    put(LM.eyeOuterR, 39.5, 1);
+    put(LM.eyeInnerR, 16, 1);
+    for (const [up, lo, sgn] of [[159, 145, -1], [386, 374, 1]]) {
+      put(up, sgn * 31.5, -5.5);
+      put(lo, sgn * 31.5, 5.5);
+    }
+    put(LM.templeL, -63, -22);
+    put(LM.templeR, 63, -22);
+    put(LM.cheekL, -66, 14);
+    put(LM.cheekR, 66, 14);
+    put(LM.jawL, -58, 70);
+    put(LM.jawR, 58, 70);
+    put(LM.chin, 0, 93, -18);
+    put(LM.top, 0, -93, 6);
+    put(LM.noseBridgeTop, 0, 6, -20);
+    put(LM.noseBridgeL, -9, 8, -16);
+    put(LM.noseBridgeR, 9, 8, -16);
+    put(LM.bridgeLoL, -10, 20, -22);
+    put(LM.bridgeLoR, 10, 20, -22);
+    put(LM.noseTip, 0, 32, -34);
+    put(LM.noseAlarL, -8.5, 30, -24);
+    put(LM.noseAlarR, 8.5, 30, -24);
+    put(LM.mouthL, -24, 62, -14);
+    put(LM.mouthR, 24, 62, -14);
+    put(LM.lipUpper, 0, 58, -18);
+    put(LM.lipLower, 0, 68, -18);
+    const ga = Math.PI * (3 - Math.sqrt(5));
+    for (let i = 0; i < 478; i++) {
+      if (pts[i]) continue;
+      const yy = 1 - (i / 477) * 2;
+      const rr = Math.sqrt(Math.max(0, 1 - yy * yy));
+      const th = ga * i;
+      put(i, Math.cos(th) * rr * 88, yy * 96, 20 - Math.sin(th) * rr * 88);
+    }
+    const scan = new FaceScan({ need: 30 });
+    scan.start(0);
+    const ctx = { W, H, irisDiaPx: 11.7 * pxPerMm * W, fps: 30 };
+    const stages = [];
+    let out = null;
+    for (let i = 0; i < 200 && !scan.done; i++) {
+      out = scan.push(pts, { ...ctx, t: i * 33 });
+      if (stages[stages.length - 1] !== out.stage) stages.push(out.stage);
+    }
+    const head = headMeshFromLandmarks(pts, { W, irisDiaPx: ctx.irisDiaPx });
+    return {
+      stages,
+      report: out.report,
+      size: suggestSize(out.report, ["48", "50", "52", "54"]),
+      mesh: { triangles: head.mesh.triangles, vertices: head.mesh.vertices },
+    };
+  });
+  expect(result.stages).toEqual(["position", "still", "measure", "done"]);
+  expect(result.report.pd).toBeGreaterThan(61);
+  expect(result.report.pd).toBeLessThan(65);
+  expect(result.report.bridge).toBeGreaterThan(15);
+  expect(result.report.bridge).toBeLessThan(21);
+  expect(result.report.confidence.pd).toBeGreaterThan(70);
+  expect(result.report.quality).toBeGreaterThan(70);
+  expect(result.size.size).toBe("54");
+  expect(result.mesh.triangles).toBeGreaterThan(300);
+  // رندرِ مش و ساختِ GLB داخل مرورگر
+  const ui = await page.evaluate(async () => {
+    const { packGLB } = await import("/src/frame/glb.js");
+    return { pack: typeof packGLB };
+  });
+  expect(ui.pack).toBe("function");
+  expect(errors).toEqual([]);
+});
+
+test("professional scan UI: real MediaPipe landmarks → stages, table, 3D preview, GLB", async ({
+  page,
+}) => {
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.evaluate(async () => {
+    const { init } = testModules;
+    window.api = init({
+      mount: document.querySelector("#mount"),
+      mode: "inline",
+      baseURL: location.origin,
+      quality: "high",
+      deepLink: false,
+      features: { hairLayer: false, faceScan: true },
+      products: [
+        { id: "square", name: "Square", shape: "square", size: "52-18-145", lens: "clear" },
+        { id: "round", name: "Round", shape: "round", size: "48-19-140", lens: "clear" },
+      ],
+    });
+    const image = new Image();
+    image.src = "/test/fixtures/astronaut.jpg";
+    await image.decode();
+    const cv = document.createElement("canvas");
+    cv.width = 900;
+    cv.height = 760;
+    cv.getContext("2d").drawImage(image, 0, 0, cv.width, cv.height);
+    await api.el.loadPhoto(cv);
+  });
+  const scanned = await page.evaluate(async () => {
+    const el = api.el;
+    el.runFaceScan();
+    const stages = [];
+    // مثل حلقهٔ رندرِ واقعی: هر فریم ~۱۶ میلی‌ثانیه (مرحلهٔ «بی‌حرکتی» به زمانِ واقعی نیاز دارد)
+    for (let i = 0; i < 260 && !el.faceScan.done; i++) {
+      el.collect(el.pose);
+      const st = el.faceScan.stage;
+      if (stages[stages.length - 1] !== st) stages.push(st);
+      await new Promise((r) => setTimeout(r, 16));
+    }
+    return { stages, report: el.faceScan.report, done: el.faceScan.done };
+  });
+  expect(scanned.done).toBe(true);
+  expect(scanned.stages).toEqual(["position", "still", "measure", "done"]);
+  expect(scanned.report.frames).toBeGreaterThan(10);
+  // اعدادِ اپتومتری باید در محدودهٔ انسانی باشند
+  expect(scanned.report.pd).toBeGreaterThan(50);
+  expect(scanned.report.pd).toBeLessThan(78);
+  expect(scanned.report.bridge).toBeGreaterThan(8);
+  expect(scanned.report.bridge).toBeLessThan(30);
+  expect(scanned.report.temple).toBeGreaterThan(90);
+  expect(scanned.report.temple).toBeLessThan(180);
+  const card = page.locator("virtual-tryon #shapeBox");
+  await expect(card).toContainText("فاصلهٔ دو مردمک");
+  await expect(card).toContainText("عرض پل بینی");
+  await expect(card).toContainText("اندازهٔ پیشنهادی");
+  // پیش‌نمایشِ سه‌بعدی باید واقعاً پیکسل رنگ کند
+  const painted = await card.locator("canvas#scanMesh").evaluate((c) => {
+    const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data;
+    let n = 0;
+    for (let i = 0; i < d.length; i += 4) if (d[i + 3] > 8) n++;
+    return n;
+  });
+  expect(painted).toBeGreaterThan(2000);
+  // دکمهٔ خروجیِ GLB باید فایل بسازد
+  const dl = page.waitForEvent("download", { timeout: 20000 });
+  await card.locator("#scanGlb").click();
+  const file = await dl;
+  expect(file.suggestedFilename()).toMatch(/face-scan-\d+(\.\d+)?mm\.glb/);
   expect(errors).toEqual([]);
 });
 

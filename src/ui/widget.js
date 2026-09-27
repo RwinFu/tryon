@@ -7,7 +7,9 @@
  */
 import { Stage } from "../engine/stage.js";
 import { FaceTracker } from "../engine/tracking.js";
-import { FaceMeshScan, SHAPE_COPY, ShapeScanner, fitReport, recommend } from "../engine/fit.js";
+import { FaceMeshScan, SHAPE_COPY, classifyShape, fitReport, recommend } from "../engine/fit.js";
+import { FaceScan, headMeshFromLandmarks, suggestSize } from "../engine/face-scan.js";
+import { packGLB, GLB_MIME } from "../frame/glb.js";
 import { CATALOG, toEngineSpec } from "../frame/catalog.js";
 import { renderThumbnails } from "../engine/thumbs.js";
 import { t } from "../ui/i18n.js";
@@ -177,7 +179,9 @@ export class VirtualTryOn extends Native {
       mesh: this.el.mesh.getContext("2d"),
     };
     this.scan = new FaceMeshScan(this.el.mesh);
-    this.scanner = new ShapeScanner();
+    // اسکن حرفه‌ای: چند ده فریمِ باکیفیت ⇒ PD/پل/عرض در میلی‌متر + مشِ سه‌بعدی
+    this.faceScan = new FaceScan({ need: 45, shapeClassify: (m) => classifyShape(m) });
+    this.scanner = this.faceScan; // نام قدیمیِ نقطهٔ ورودِ اسکن
 
     this.classList.add(c.mode === "inline" ? "mode-inline" : "mode-overlay");
     if (c.brand.accent) {
@@ -760,25 +764,192 @@ export class VirtualTryOn extends Native {
         }
       }
     } else {
-      const px = {};
-      for (const i of [10, 152, 234, 454, 172, 397, 21, 251, 33, 263, 127, 356]) px[i] = pose.landmarkPx?.(i) || pose.landmarks[i];
-      // لندمارک نرمالایز → پیکسل
-      const P = {};
-      for (const k in px) P[k] = { x: px[k].x ?? px[k].x, y: px[k].y ?? px[k].y };
-      const res = this.scanner.push(P);
+      const res = this.faceScan.push(pose.landmarks, {
+        W: this.tracker?.W || this.el.cv.width,
+        H: this.tracker?.H || this.el.cv.height,
+        irisDiaPx: pose.irisDiaPx,
+        fps: this.scanFps || 30,
+        t: performance.now(),
+      });
       this.scanProgress = res?.progress || 0;
-      if (res?.done) {
+      this.scanQuality = res?.quality;
+      this.renderScanProgress(res);
+      if (res?.report) {
         this.scan.stop();
-        this.faceShape = res;
-        this.renderShapeResult(res);
-        this.emit("faceshape", res);
+        this.faceShape = res.report;
+        this.renderScanResult(res.report, pose);
+        this.emit("faceshape", res.report);
+        this.emit("facescan", res.report);
       }
     }
   }
 
-  renderShapeResult(res) {
-    const info = SHAPE_COPY[res.shape];
+  /** نوارِ پیشرفتِ سه‌مرحله‌ای + دلیلِ رد شدنِ فریم (فارسی) */
+  renderScanProgress(res) {
     const box = this.$("shapeBox");
+    if (!box || res?.stage === "done") return;
+    const L = (k, f) => t(this.cfg.lang, k, f);
+    const stage = res?.stage || "position";
+    // هر فریم DOM را دوباره نمی‌سازیم؛ فقط وقتی مرحله یا درصد عوض شود
+    const pct = Math.round((res?.progress || 0) * 100);
+    if (this._scanUiKey === stage + ":" + pct && box.dataset.scanUi) return;
+    this._scanUiKey = stage + ":" + pct;
+    const steps = [
+      ["position", L("scanStepPosition")],
+      ["still", L("scanStepStill")],
+      ["measure", L("scanStepMeasure")],
+    ];
+    const idx = steps.findIndex((s2) => s2[0] === stage);
+    const q = res?.quality;
+    const hint = q && !q.ok ? L("scanHint_" + (q.reasons[0] || "noface")) : "";
+    if (!box.dataset.scanUi) {
+      box.dataset.scanUi = "1";
+      box.innerHTML = `<div class="field scanSteps" id="scanSteps"></div>
+        <div class="field"><label><span id="scanLabel"></span><b id="scanPct">0%</b></label>
+        <div class="bar"><i id="scanBar"></i></div><p class="lead" id="scanHint" style="margin:6px 0 0"></p></div>`;
+    }
+    const stepsBox = box.querySelector("#scanSteps");
+    if (stepsBox)
+      stepsBox.innerHTML = steps
+        .map(([k, label], i) => `<span class="step ${i < idx ? "ok" : i === idx ? "now" : ""}">${esc(label)}</span>`)
+        .join('<i class="sep"></i>');
+    const p = box.querySelector("#scanPct");
+    if (p) p.textContent = pct + "%";
+    const bar = box.querySelector("#scanBar");
+    if (bar) bar.style.width = pct + "%";
+    const lab = box.querySelector("#scanLabel");
+    if (lab) lab.textContent = steps[Math.max(0, idx)][1];
+    const hi = box.querySelector("#scanHint");
+    if (hi) hi.textContent = hint || L("scanKeepStill");
+    if (hint) this.hint(hint);
+  }
+
+  /** نمایشِ سه‌بعدیِ مشِ اسکن (نمایش سیمی با سایه‌زنی، بدون رندرر دوم) */
+  drawScanMesh(canvas, mesh, yawDeg = 24) {
+    if (!canvas || !mesh?.triangles) return;
+    const dpr = Math.min(2, self.devicePixelRatio || 1);
+    const w = canvas.clientWidth || 240,
+      h = canvas.clientHeight || 200;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    const x = canvas.getContext("2d");
+    x.scale(dpr, dpr);
+    const a = (yawDeg * Math.PI) / 180;
+    const ca = Math.cos(a),
+      sa = Math.sin(a);
+    const P = mesh.positions;
+    // چرخش حول محور عمودی + کمی بالا
+    const rx = (i) => P[i * 3] * ca + P[i * 3 + 2] * sa;
+    const rz = (i) => -P[i * 3] * sa + P[i * 3 + 2] * ca;
+    const ry = (i) => P[i * 3 + 1];
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity, minZ = Infinity, maxZ = -Infinity;
+    for (let i = 0; i < P.length / 3; i++) {
+      minX = Math.min(minX, rx(i)); maxX = Math.max(maxX, rx(i));
+      minY = Math.min(minY, ry(i)); maxY = Math.max(maxY, ry(i));
+      minZ = Math.min(minZ, rz(i)); maxZ = Math.max(maxZ, rz(i));
+    }
+    const s = Math.min((w - 24) / Math.max(1, maxX - minX), (h - 24) / Math.max(1, maxY - minY));
+    const ox = w / 2 - ((minX + maxX) / 2) * s,
+      oy = h / 2 + ((minY + maxY) / 2) * s;
+    const px = (i) => ox + rx(i) * s;
+    const py = (i) => oy - ry(i) * s;
+    const I = mesh.indices;
+    const order = [];
+    for (let t = 0; t < I.length; t += 3)
+      order.push([rz(I[t]) + rz(I[t + 1]) + rz(I[t + 2]), t]);
+    order.sort((p1, p2) => p1[0] - p2[0]);
+    const depth = maxZ - minZ || 1;
+    for (const [, t] of order) {
+      const A = I[t], B = I[t + 1], C = I[t + 2];
+      const zAvg = (rz(A) + rz(B) + rz(C)) / 3;
+      const k = 0.35 + 0.65 * (1 - (zAvg - minZ) / depth);
+      x.beginPath();
+      x.moveTo(px(A), py(A));
+      x.lineTo(px(B), py(B));
+      x.lineTo(px(C), py(C));
+      x.closePath();
+      x.fillStyle = `rgba(${Math.round(196 * k)},${Math.round(168 * k)},${Math.round(146 * k)},0.92)`;
+      x.fill();
+      x.strokeStyle = "rgba(20,26,32,0.5)";
+      x.lineWidth = 0.4;
+      x.stroke();
+    }
+  }
+
+  /** گزارشِ نهایی: اندازه‌های حرفه‌ای + اندازهٔ پیشنهادی + مشِ سه‌بعدی */
+  renderScanResult(report, pose) {
+    const box = this.$("shapeBox");
+    if (!box || !report) return;
+    const L = (k) => t(this.cfg.lang, k);
+    delete box.dataset.scanUi;
+    const fa = (v, d = 1) => Number(v).toFixed(d).replace(/\d/g, (x) => "۰۱۲۳۴۵۶۷۸۹"[x]);
+    const mm = (v) => `${fa(v)} mm`;
+    const size = suggestSize(report, this.products?.map((p) => String(p.size || "").split("-")[0]).filter(Boolean));
+    const rows = [
+      ["scanPdTotal", mm(report.pd)],
+      ["scanPdMono", `${fa(report.pdMono.l)} / ${fa(report.pdMono.r)}`],
+      ["scanBridge", mm(report.bridge)],
+      ["scanTemple", mm(report.temple)],
+      ["scanCheek", mm(report.cheek)],
+      ["scanFrames", `${fa(report.frames, 0)} · ${fa(report.quality, 0)}٪`],
+    ];
+    box.innerHTML = `<div class="field">
+        <label><span>${esc(L("scanTitle"))}</span><b>${fa(report.confidence.pd, 0)}٪</b></label>
+        <table class="scanTable">${rows
+          .map(([k, v]) => `<tr><td>${esc(L(k))}</td><td>${v}</td></tr>`)
+          .join("")}</table>
+        ${size ? `<p class="lead" style="margin:8px 0 0">${esc(L("scanSize"))} <b>${size.size}ـ${Math.round(size.dbn)}ـ۱۴۵</b> · ${esc(L("scanLens"))} ${fa(size.lensW)}</p>` : ""}
+      </div>
+      <div class="field scanPreview"><canvas id="scanMesh" style="width:100%;height:190px"></canvas>
+        <div class="rowbtns">
+          <button class="btn small" id="scanGlb">${esc(L("scanDownload"))}</button>
+          <button class="btn small" id="scanRetry">${esc(L("scanAgain"))}</button>
+        </div>
+      </div>
+      <div id="shapeAdvice"></div>`;
+    const adviceBox = box.querySelector("#shapeAdvice");
+    this.renderShapeResult({ ...report, shape: report.shape, confidence: report.confidence.pd }, adviceBox);
+    const canvas = box.querySelector("#scanMesh");
+    try {
+      const head = headMeshFromLandmarks(pose.landmarks, {
+        W: this.tracker?.W || this.el.cv.width,
+        irisDiaPx: pose.irisDiaPx,
+      });
+      this.scanMesh = head.mesh;
+      this.scanHead = head;
+      this.drawScanMesh(canvas, head.mesh, 22);
+    } catch {
+      canvas?.remove();
+    }
+    box.querySelector("#scanRetry")?.addEventListener("click", () => this.runFaceScan());
+    box.querySelector("#scanGlb")?.addEventListener("click", () => {
+      if (!this.scanMesh) return this.hint(L("scanNoMesh"), true);
+      const built = {
+        spec: { finish: "matte-sand" },
+        roles: {
+          head: {
+            name: "head",
+            position: this.scanMesh.positions,
+            normal: this.scanMesh.normals,
+            uv: new Float32Array((this.scanMesh.positions.length / 3) * 2),
+            index: this.scanMesh.indices,
+            vertexCount: this.scanMesh.vertices,
+          },
+        },
+      };
+      const bytes = packGLB(built, { name: "face-scan", color: "#c4a892" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([bytes], { type: GLB_MIME }));
+      a.download = `face-scan-${report.pd}mm.glb`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+    });
+    this.hint(L("shapeDone") + " · " + fa(report.pd) + " mm", true);
+  }
+
+  renderShapeResult(res, target) {
+    const info = SHAPE_COPY[res.shape];
+    const box = target || this.$("shapeBox");
     if (!box || !info) return;
     const list = recommend(this.products, res.shape, {}).slice(0, 4);
     this.recommended = list.map((p) => String(p.id));
@@ -923,30 +1094,42 @@ export class VirtualTryOn extends Native {
 
   runFaceScan() {
     if (!this.pose) return this.hint(t(this.cfg.lang, "needCamera"), true);
-    this.scanner.start();
-    this.scan.start(3200);
+    this.faceScan.start(performance.now());
+    this.scanner = this.faceScan;
+    this.scan.start(4200);
     this.el.stage.classList.add("scanning");
     this.openSheet(true);
     const box = this.$("shapeBox");
-    if (box) box.innerHTML = `<div class="field"><label>${esc(t(this.cfg.lang, "scanning"))}<b id="scanPct">0%</b></label></div>`;
+    if (box) {
+      delete box.dataset.scanUi;
+      box.innerHTML = "";
+    }
+    this._scanUiKey = "";
+    let last = 0;
     const tick = setInterval(() => {
-      const p = box?.querySelector("#scanPct");
-      if (p) p.textContent = Math.round((this.scanProgress || 0) * 100) + "%";
-      if (!this.scanner.active) {
+      const now = performance.now();
+      const q = this.scanQuality;
+      if (q && now - last > 900) {
+        last = now;
+        this.maybeHint(this.pose);
+      }
+      if (!this.faceScan.active) {
         clearInterval(tick);
+        clearTimeout(to);
         this.el.stage.classList.remove("scanning");
       }
-    }, 120);
-    setTimeout(() => {
+    }, 140);
+    const to = setTimeout(() => {
       clearInterval(tick);
-      if (this.scanner.active) {
-        this.scanner.active = false;
-        this.scan.stop();
-        this.el.stage.classList.remove("scanning");
-        if (box && !this.faceShape)
-          box.innerHTML = `<div class="err">${esc(t(this.cfg.lang, "scanFail"))}</div>`;
+      this.faceScan.cancel();
+      this.scan.stop();
+      this.el.stage.classList.remove("scanning");
+      const b = this.$("shapeBox");
+      if (b && !this.faceScan.report) {
+        delete b.dataset.scanUi;
+        b.innerHTML = `<div class="err">${esc(t(this.cfg.lang, "scanFail"))}</div>`;
       }
-    }, 9000);
+    }, 14000);
   }
 
   /* ─────────────────────────── عکس و خرید ───────────────────────── */

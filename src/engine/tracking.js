@@ -469,12 +469,13 @@ export class FaceTracker {
     const eyeAxis = applyQ(q, [1, 0, 0]);
     const projectedEyeAxis = Math.max(0.45, Math.hypot(eyeAxis[0], eyeAxis[1]));
     const frontal = front[2] > 0.94;
+    const irisDia = irisDiameterPx(lms, (p) => this.px(p));
     const eyesOpen = pairPx(lms, 159, 145, (p) => this.px(p)) > iris * 0.035 &&
       pairPx(lms, 386, 374, (p) => this.px(p)) > iris * 0.035;
 
     // ── PD خودکار از قطر عنبیه (میلی‌مترِ شناخته‌شده)، نه از نسبتِ جادوییِ عرض صورت ──
     if (this.autoPd && frontal && eyesOpen) {
-      const est = estimatePdMm(iris, irisDiameterPx(lms, (p) => this.px(p)));
+      const est = estimatePdMm(iris, irisDia);
       if (est && est > 50 && est < 78) {
         this.pdSamples.push(est);
         if (this.pdSamples.length > 40) this.pdSamples.shift();
@@ -556,6 +557,7 @@ export class FaceTracker {
       camZ,
       focalPx,
       iris,
+      irisDiaPx: irisDia,
       faceW,
       faceWmm: faceW / (scale * projectedEyeAxis),
       faceHmm: Math.hypot(chin.x - this.px(lms[10]).x, chin.y - this.px(lms[10]).y) / scale,

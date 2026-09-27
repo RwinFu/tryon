@@ -305,6 +305,63 @@
       #photoOut .okrow b {
         color: var(--accent);
       }
+      .photo .toggles {
+        gap: 14px;
+      }
+      .sw.mini span {
+        font-size: 10.5px;
+        color: var(--muted);
+      }
+      #photoPreview {
+        width: 100%;
+        border-radius: 10px;
+        border: 1px solid var(--line);
+        background: #0a0d10;
+        display: block;
+      }
+      #photoOut table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 8px 0 2px;
+        font-size: 10.5px;
+      }
+      #photoOut td {
+        padding: 3px 4px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+        color: rgba(238, 242, 244, 0.82);
+      }
+      #photoOut td:last-child {
+        color: var(--accent);
+        font-weight: 700;
+        direction: ltr;
+        text-align: end;
+        font-variant-numeric: tabular-nums;
+      }
+      #photoOut .swatchrow {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 8px;
+        font-size: 10.5px;
+        color: var(--muted);
+      }
+      #photoOut .swatchrow i {
+        width: 22px;
+        height: 22px;
+        border-radius: 6px;
+        border: 1px solid var(--line);
+        display: inline-block;
+      }
+      #photoOut .warnrow {
+        margin-top: 8px;
+        font-size: 10.5px;
+        line-height: 1.8;
+        color: #ffd7a8;
+        background: rgba(120, 70, 20, 0.22);
+        border: 1px solid rgba(226, 160, 80, 0.34);
+        padding: 8px 10px;
+        border-radius: 10px;
+      }
       #photoOut .err {
         font-size: 10.5px;
         line-height: 1.7;
@@ -460,13 +517,26 @@
       </header>
 
       <div class="scroller">
-        <h4>عکس محصول → سه‌بعدی</h4>
+        <h4>عکس گوشی → مدل سه‌بعدی دقیق</h4>
         <div class="photo">
-          <p>عکس تمام‌جبههٔ فریم (ترجیحاً PNG با پس‌زمینهٔ شفاف). اگر عدد چاپی روی دسته را می‌دانی وارد کن تا اندازه دقیق شود.</p>
+          <p>
+            عکسِ <b>تمام‌جبهه</b> با گوشی: فریم صاف و کامل در کادر، فاصلهٔ یک‌متری، نورِ یکنواخت. پس‌زمینه می‌تواند
+            میز، کاغذ یا دیوار باشد؛ برنامه خودش جداسازی می‌کند. اگر PNG شفاف دارید، دقت از همه بیشتر است.
+          </p>
           <div class="inline">
-            <input type="file" id="photo" accept="image/*" />
-            <label>عرض عدسی <input type="number" id="sizeHint" value="52" min="34" max="72" step="1" /> mm</label>
+            <input type="file" id="photo" accept="image/*" capture="environment" />
+            <label>عرض عدسی <input type="number" id="sizeHint" value="52" min="34" max="72" step="0.5" /> mm</label>
+            <label>پل (اختیاری) <input type="number" id="dbnHint" value="" min="10" max="26" step="0.5" placeholder="۱۸" /></label>
           </div>
+          <div class="inline toggles">
+            <label class="sw mini"><span>عکس آینه‌ای است</span><input type="checkbox" id="photoMirror" /><i></i></label>
+            <label class="sw mini"><span>تراز خودکار</span><input type="checkbox" id="photoDeskew" checked /><i></i></label>
+          </div>
+          <div class="inline">
+            <input type="file" id="photo2" accept="image/*" capture="environment" />
+            <label>عکس دوم: نمای جانبی (طول دسته)</label>
+          </div>
+          <canvas id="photoPreview" hidden></canvas>
           <div id="photoOut"></div>
         </div>
 

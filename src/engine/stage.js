@@ -31,10 +31,14 @@ export class Stage {
       powerPreference: "high-performance",
       preserveDrawingBuffer: true,
     });
-    this.renderer.setPixelRatio(1);
+    // رندر در پیکسلِ واقعیِ صفحه: روی گوشی‌های ۲x/۳x لبهٔ نازکِ فریم محو می‌شد
+    this.pixelRatio = opts.pixelRatio ?? (this.quality === "lite" ? 1 : Math.min(2, (typeof devicePixelRatio === "number" ? devicePixelRatio : 1) || 1));
+    this.renderer.setPixelRatio(this.pixelRatio);
     this.renderer.setClearColor(0x000000, 0);
     if ("outputColorSpace" in this.renderer) this.renderer.outputColorSpace = THREE.SRGBColorSpace;
-    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    // Neutral (Khronos PBR Neutral) به‌جای ACES: تصویرِ دوربین tone-map نشده و
+    // ACES رنگِ واقعیِ فریم را می‌شوید/بی‌رنگ می‌کند ⇒ فریم دیگر شبیه ویترین نمی‌ماند.
+    this.renderer.toneMapping = "neutral" in THREE ? THREE.NeutralToneMapping : THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1;
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(30, 1, 1, 20000);
@@ -57,10 +61,17 @@ export class Stage {
     this.match = { exp: 1, tint: [1, 1, 1], dir: [-0.3, 0.6] };
   }
 
-  buildEnv() {
-    if (this.opts.env === false || this.quality === "lite" || this.envBuilt) return;
+  buildEnv(force) {
+    if (this.opts.env === false || this.quality === "lite") return;
+    if (this.envBuilt && !force) return;
     try {
-      this.env = buildStudioEnvironment(this.THREE, this.renderer, { warmth: 0.15 });
+      const next = buildStudioEnvironment(this.THREE, this.renderer, {
+        warmth: 0.15,
+        tint: this.envTint,
+        gain: this.envGain ?? 1,
+      });
+      this.env?.dispose?.();
+      this.env = next;
       this.scene.environment = this.env;
       this.envBuilt = true;
     } catch (e) {
@@ -245,6 +256,23 @@ export class Stage {
     this.key.intensity = 0.65 + 0.75 * (1 - meanLum) + m.exp * 0.2;
     this.hemi.intensity = 0.45 + 0.6 * meanLum;
     this.key.position.set(-1.4 + m.dir[0] * 3.4, 2.2 - m.dir[1] * 2.2, 3);
+
+    // بازتابِ محیط هم باید از اتاقِ مشتری بیاید: روشناییِ نسبی + ته‌رنگِ غالب.
+    const targetEnv = clamp(0.55 + meanLum * 0.9, 0.5, 1.45);
+    m.envI = (m.envI ?? targetEnv) * 0.8 + targetEnv * 0.2;
+    this.scene.environmentIntensity = m.envI;
+    if (this.envBuilt) {
+      const tintNow = [m.tint[0], 1, m.tint[2]].map((v) => clamp(0.62 + v * 0.42, 0.6, 1.4));
+      const drift = tintNow.reduce((a, v, i) => a + Math.abs(v - (this.envTint?.[i] ?? v)), 0);
+      const levelDrift = Math.abs((this.envGain ?? 1) - targetEnv);
+      const now = typeof performance !== "undefined" ? performance.now() : 0;
+      if ((drift > 0.18 || levelDrift > 0.24) && now - (this.envAt || 0) > 4000) {
+        this.envTint = tintNow;
+        this.envGain = targetEnv;
+        this.envAt = now;
+        this.buildEnv(true);
+      }
+    }
   }
 
   /** Feed the same unmirrored camera pixels to the transmission render pass.
