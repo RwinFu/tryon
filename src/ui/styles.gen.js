@@ -935,4 +935,88 @@ button {
   object-fit: contain;
   object-position: center;
 }
+
+/* ── اسکن حرفه‌ای صورت: مراحل، جدولِ اندازه‌ها، پیش‌نمایش سه‌بعدی ── */
+.field.scanSteps {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 12px;
+  margin: 12px 0 0;
+}
+.field.scanSteps .step {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--vt-muted);
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--vt-line);
+  white-space: nowrap;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+.field.scanSteps .step.ok {
+  color: #9fe6c4;
+  border-color: rgba(120, 220, 170, 0.4);
+}
+.field.scanSteps .step.now {
+  color: #0b0f13;
+  background: var(--vt-accent);
+  border-color: var(--vt-accent);
+}
+.field.scanSteps .sep {
+  flex: 1;
+  height: 1px;
+  background: var(--vt-line);
+}
+.field .bar {
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+.field .bar > i {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--vt-accent), #f0e2c2);
+  transition: width 0.18s linear;
+}
+table.scanTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11.5px;
+  margin-top: 8px;
+}
+table.scanTable td {
+  padding: 6px 2px;
+  border-bottom: 1px solid var(--vt-line);
+  color: var(--vt-muted);
+}
+table.scanTable td:last-child {
+  text-align: end;
+  color: #fff;
+  font-weight: 800;
+  direction: ltr;
+  font-variant-numeric: tabular-nums;
+}
+.field.scanPreview canvas {
+  display: block;
+  border-radius: 12px;
+  background: radial-gradient(120% 90% at 50% 12%, #1b232b 0%, #0a0e12 74%);
+  border: 1px solid var(--vt-line);
+}
+.field.scanPreview .rowbtns {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* دکمهٔ کوچک (نتیجهٔ اسکن، کارت‌های توصیه) */
+.btn.small {
+  height: 34px;
+  padding: 0 13px;
+  font-size: 11px;
+  border-radius: 11px;
+}
 `;

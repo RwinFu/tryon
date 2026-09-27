@@ -8,8 +8,8 @@ import { createFrameObject, clearFrameCache } from "../frame/index.js";
 import { SHAPE_PRESETS, SHAPE_KEYS, lensOutline, resample, smoothPts } from "../frame/shapes.js";
 import { CATALOG, toEngineSpec } from "../frame/catalog.js";
 import { exportGLB } from "../frame/glb.js";
-import { frameFromImage, guessShape } from "../frame/photogram.js";
-import { buildStudioEnvironment } from "../frame/materials.js";
+import { appearanceOf, frameFromImage, guessShape, templeFromSidePhoto, traceOverlay } from "../frame/photogram.js";
+import { buildStudioEnvironment, finishForLook } from "../frame/materials.js";
 
 const $ = (s) => document.querySelector(s);
 /* ابزارهای کوچک — بالای فایل، چون کدِ سطحِ ماژول (هنگام لود) از آن‌ها استفاده می‌کند
@@ -44,11 +44,13 @@ const state = {
 const canvas = $("#view");
 const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, preserveDrawingBuffer: true });
 renderer.setPixelRatio(Math.min(2, devicePixelRatio || 1));
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
+// Neutral: رنگِ واقعیِ فریم در استودیو همان رنگِ ویترین بماند (ACES رنگ را می‌شوید)
+renderer.toneMapping = "neutral" in THREE ? THREE.NeutralToneMapping : THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.08;
 if ("outputColorSpace" in renderer) renderer.outputColorSpace = THREE.SRGBColorSpace;
 const scene = new THREE.Scene();
 scene.environment = buildStudioEnvironment(THREE, renderer, { warmth: 0.12 });
+scene.environmentIntensity = 1.1;
 const camera = new THREE.PerspectiveCamera(24, 1, 1, 6000);
 scene.add(new THREE.HemisphereLight(0xffffff, 0x2d323a, 0.5));
 const key = new THREE.DirectionalLight(0xffffff, 1.05);
@@ -356,67 +358,227 @@ $("#btnBatch").onclick = async () => {
   toast(`${items.length} فریم به products.json نوشته شد — برای GLB ها: npm run bake`);
 };
 
-/* ── عکس → هندسه ──────────────────────────────────────────────────── */
+/* ── عکس گوشی → هندسه ─────────────────────────────────────────────── */
+const PHOTO_MAX = 1280;
+const PersianDigits = (v) => String(v).replace(/\d/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[d]);
+const clampNum = (v, a, b) => Math.max(a, Math.min(b, Number(v) || a));
+
+/** تصویر را به بومِ کوچک و قابل‌خواندن تبدیل می‌کند */
+async function toImageData(file, max = PHOTO_MAX) {
+  const img = new Image();
+  await new Promise((ok, no) => {
+    img.onload = ok;
+    img.onerror = () => no(new Error("خواندن تصویر ناموفق بود"));
+    img.src = URL.createObjectURL(file);
+  });
+  const k = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+  const cv = document.createElement("canvas");
+  cv.width = Math.max(8, Math.round(img.naturalWidth * k));
+  cv.height = Math.max(8, Math.round(img.naturalHeight * k));
+  const ctx = cv.getContext("2d", { willReadFrequently: true });
+  ctx.drawImage(img, 0, 0, cv.width, cv.height);
+  return { data: ctx.getImageData(0, 0, cv.width, cv.height), cv, img };
+}
+
+/** اندازه‌های بیرونی را برای نمایش جمع می‌کند */
+function sizeRow(label, value, unit = "mm") {
+  return `<tr><td>${label}</td><td>${PersianDigits(value)}${unit ? " " + unit : ""}</td></tr>`;
+}
+
+/** پیش‌نمایش: عکسِ پردازش‌شده + خطِ ترسیم‌شدهٔ دو عدسی + خطِ پل */
+function drawPreview(r) {
+  const out = $("#photoPreview");
+  const ov = traceOverlay(r);
+  if (!ov) {
+    out.hidden = true;
+    return;
+  }
+  const { imageData } = ov;
+  const k = Math.min(1, 720 / Math.max(imageData.width, imageData.height));
+  out.width = Math.max(8, Math.round(imageData.width * k));
+  out.height = Math.max(8, Math.round(imageData.height * k));
+  out.hidden = false;
+  const ctx = out.getContext("2d");
+  const full = document.createElement("canvas");
+  full.width = imageData.width;
+  full.height = imageData.height;
+  // برخی مرورگرها/بسته‌بندی، شیء ImageData را از ریگم دیگر می‌دهند؛ دوباره می‌سازیم
+  full.getContext("2d").putImageData(
+    new ImageData(new Uint8ClampedArray(imageData.data), imageData.width, imageData.height),
+    0,
+    0,
+  );
+  ctx.drawImage(full, 0, 0, out.width, out.height);
+  ctx.save();
+  ctx.scale(k, k);
+  ctx.lineWidth = 1.8;
+  ctx.strokeStyle = "#41e0c8";
+  for (const path of [ov.right, ov.left].filter(Boolean))
+    if (path.length > 1) {
+      ctx.beginPath();
+      ctx.moveTo(path[0].x, path[0].y);
+      for (let i = 1; i < path.length; i++) ctx.lineTo(path[i].x, path[i].y);
+      ctx.closePath();
+      ctx.stroke();
+    }
+  ctx.setLineDash([6, 5]);
+  ctx.strokeStyle = "#ffb347";
+  ctx.beginPath();
+  ctx.moveTo(ov.split, ov.box.y0);
+  ctx.lineTo(ov.split, ov.box.y1);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+  ctx.fillStyle = "rgba(8,12,14,0.72)";
+  ctx.fillRect(6, 4, 168, 18);
+  ctx.fillStyle = "#41e0c8";
+  ctx.font = "600 11px system-ui";
+  ctx.fillText("خط ترسیم‌شدهٔ عدسی‌ها", 12, 17);
+}
+
+function photoWarnings(r) {
+  const list = [];
+  if (r.source === "rows") list.push("خط عدسی از سطرها تخمین زده شد؛ عکس را کمی نزدیک‌تر و بدون سایه بگیرید.");
+  if (r.source === "silhouette")
+    list.push("عدسی تیره/آینه‌ای است و داخل آن دیده نمی‌شود؛ اندازهٔ عدسی از روی لبهٔ بیرونی حدس زده شده و ممکن است ۲-۳ میلی‌متر خطا داشته باشد.");
+  if (Math.abs(r.deskewDeg || 0) > 6)
+    list.push(`عکس ${Math.abs(r.deskewDeg).toFixed(0)} درجه کج است؛ پس از تراز خودکار باز هم پهنای عدسی کمی بیشتر می‌شود.`);
+  if ((r.symmetry ?? 1) < 0.97) list.push("عدسی چپ و راست هم‌اندازه نیستند (عکس سه‌رخ یا پرسپکتیو)؛ عدد پل را دستی وارد کنید.");
+  if (r.match < 70) list.push("کیفیت ردیابی پایین است؛ پس‌زمینهٔ یکدست یا عکس PNG شفاف نتیجه را خیلی بهتر می‌کند.");
+  list.push("همهٔ اندازه‌ها با «عرض عدسی» واردشده مقیاس شده‌اند؛ عدد واقعی روی فریم را بده تا مدل دقیق‌تر شود.");
+  return list.length ? `<div class="warnrow">${list.map((t) => "• " + t).join("<br>")}</div>` : "";
+}
+
+async function applyPhotoResult(r) {
+  const shape = guessShape(r.lensPath);
+  const look = appearanceOf(r) || {};
+  state.traced = { lensPath: r.lensPath, lensPathL: r.lensPathL, lensPathR: r.lensPathR };
+  Object.assign(state.spec, {
+    shape,
+    lensW: +clampNum(r.lensW, 34, 70).toFixed(1),
+    lensH: +clampNum(r.lensH, 20, 64).toFixed(1),
+    dbn: +clampNum(r.dbn, 9, 26).toFixed(1),
+    rimW: +clampNum(r.rimW, 1.2, 9).toFixed(1),
+    material: look.material || "acetate",
+    lens: look.lens || "clear",
+  });
+  if (r.templeLen) state.spec.templeLen = r.templeLen;
+  if (look.color) {
+    // رنگِ برداشته‌شده از عکس می‌ماند؛ فقط خانوادهٔ متریال/پرداخت هم‌خوان می‌شود
+    state.color = look.color;
+    state.finish = finishForLook(look);
+    if (look.material === "metal" || look.material === "titanium" || look.material === "steel")
+      state.metalColor = look.color;
+  }
+  // نمای سه‌رخِ روبه‌رو تا فریمِ تازه‌ساخته همان‌طور که در عکس است دیده شود
+  state.yaw = -0.34;
+  state.pitch = 0.1;
+  state.dist = 1.1;
+  state.turn = false;
+  if ($("#toggleTurn")) $("#toggleTurn").checked = false;
+  buildControls();
+  rebuild();
+  return { shape, look };
+}
+
+let r_current_mmpp = 0;
+
+/** عکس دوم: نمای جانبی برای اندازه‌گیری طول دسته */
+$("#photo2").onchange = async (e) => {
+  const f = e.target.files?.[0];
+  if (!f) return;
+  try {
+    const { data, cv } = await toImageData(f, 900);
+    const refPx = (parseFloat($("#sizeHint").value) || 52) / (r_current_mmpp || 0.2476);
+    const side = templeFromSidePhoto(data, {
+      armPx: refPx,
+      templeLen: state.spec.templeLen,
+      lensW: state.spec.lensW,
+    });
+    if (!side.ok) {
+      toast("طول دسته از این عکس درنیامد؛ عکس دوم را از کنار و روی زمینهٔ ساده بگیرید.");
+      return;
+    }
+    state.spec.templeLen = +clampNum(side.templeLen, 90, 180);
+    buildControls();
+    rebuild();
+    toast(`طول دسته از عکس جانبی: ${PersianDigits(state.spec.templeLen)} میلی‌متر (اطمینان ${PersianDigits(side.confidence)}٪)`);
+  } catch (err) {
+    toast("عکس دوم خوانده نشد.");
+  }
+};
+
 $("#photo").onchange = async (e) => {
   const f = e.target.files?.[0];
   if (!f) return;
-  const img = new Image();
-  img.onload = async () => {
-    URL.revokeObjectURL(img.src);
-    const max = 1024;
-    const k = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
-    const cv = document.createElement("canvas");
-    cv.width = Math.round(img.naturalWidth * k);
-    cv.height = Math.round(img.naturalHeight * k);
-    const ctx = cv.getContext("2d", { willReadFrequently: true });
-    ctx.drawImage(img, 0, 0, cv.width, cv.height);
-    const data = ctx.getImageData(0, 0, cv.width, cv.height);
-    const hint = parseFloat($("#sizeHint").value) || 52;
-    const r = frameFromImage(data, { lensW: hint });
-    const box = $("#photoOut");
-    if (!r.ok) {
-      box.innerHTML = `<div class="err"><b>خط عدسی از این عکس درنیامد</b> <small>(${esc(r.reason)})</small>
-        <ul style="margin:6px 14px 0 0;padding:0;line-height:1.9">
-          <li>عکس <b>تمام‌رخ از روبه‌رو</b> باشد (نه سه‌رخ یا تاشده)</li>
-          <li>پس‌زمینهٔ <b>شفاف (PNG)</b> یا سفیدِ یکدست؛ بدون سایه و انعکاس</li>
-          <li>فریم حداقل ۶۰٪ عرض عکس را بگیرد؛ عدسی‌ها روشن‌تر از فریم</li>
-          <li>اگر عدسی آینه‌ای/تیره است، عدد چاپی روی دسته را وارد کن و از «قالب‌های آماده» نزدیک‌ترین فرم را بردار</li>
-        </ul></div>`;
-      return;
-    }
-    const shape = guessShape(r.lensPath);
-    state.traced = { lensPath: r.lensPath, lensPathL: r.lensPathL, lensPathR: r.lensPathR };
-    Object.assign(state.spec, {
-      shape,
-      lensW: +Math.min(70, r.lensW).toFixed(1),
-      lensH: +Math.min(64, r.lensH).toFixed(1),
-      dbn: r.dbn,
-      rimW: r.rimW,
-      templeLen: r.templeLen,
-    });
-    box.innerHTML = `<div class="okrow"><b>${shape}</b><span>خط لنز از عکس گرفته شد — عرض ${r.lensW}mm · پل ${r.dbn}mm · ضخامت فریم ${r.rimW}mm · کیفیت ردیابی ${r.match}%</span></div>
-      <div class="rowbtns"><button class="btn small" id="flatten">تبدیل به پارامتر (حذف مسیر دنبالی)</button></div>`;
-    $("#flatten").onclick = () => {
-      state.traced = null;
-      buildControls();
-      rebuild();
-      box.innerHTML += `<div class="okrow"><span>به پارامترهای قالب تبدیل شد؛ حالا با اسلایدرها تنظیمش کن.</span></div>`;
-    };
+  const out = $("#photoOut");
+  out.innerHTML = `<div class="okrow"><span>در حال تحلیل عکس…</span></div>`;
+  let got;
+  try {
+    got = await toImageData(f);
+  } catch {
+    toast("تصویر خوانده نشد؛ یک عکس معتبر انتخاب کن.");
+    return;
+  }
+  const { data, img } = got;
+  const hint = parseFloat($("#sizeHint").value) || 52;
+  const dbnHint = parseFloat($("#dbnHint").value) || undefined;
+  const r = frameFromImage(data, {
+    lensW: hint,
+    dbn: dbnHint,
+    mirror: $("#photoMirror").checked,
+    deskew: $("#photoDeskew").checked,
+  });
+  r_current_mmpp = r.notes?.mmPerPx || 0;
+  if (!r.ok) {
+    out.innerHTML = `<div class="err"><b>خط عدسی از این عکس درنیامد</b> <small>(${esc(r.reason)})</small>
+      <ul style="margin:6px 14px 0 0;padding:0;line-height:1.9">
+        <li>عکس <b>تمام‌رخ از روبه‌رو</b> باشد (نه سه‌رخ یا تاشده)</li>
+        <li>فریم تمام و بدون دست/سایهٔ شدید داخل کادر باشد</li>
+        <li>نور یکنواخت؛ پس‌زمینهٔ سفید یا میز ساده بهترین است</li>
+        <li>عکس PNG با پس‌زمینهٔ شفاف بیشترین دقت را می‌دهد</li>
+      </ul></div>`;
+    return;
+  }
+  const { shape, look } = await applyPhotoResult(r);
+  const rows = [
+    sizeRow("عرض عدسی", r.lensW),
+    sizeRow("ارتفاع عدسی", r.lensH),
+    sizeRow("فاصلهٔ پل (DBL)", r.dbn),
+    sizeRow("ضخامت فریم", r.rimW),
+    sizeRow("عرض کل", r.totalWidth),
+    sizeRow("طول دسته", r.templeLen),
+    sizeRow("زاویهٔ تراز", r.deskewDeg, "°"),
+    `<tr><td>تقارن دو عدسی</td><td>${PersianDigits(Math.round((r.symmetry || 1) * 100))}٪</td></tr>`,
+    `<tr><td>کیفیت ردیابی</td><td>${PersianDigits(r.match)}٪</td></tr>`,
+  ].join("");
+  const srcLabel =
+    r.source === "holes"
+      ? "خط عدسی از داخل عکس"
+      : r.source === "silhouette"
+        ? "عدسی تیره — از لبهٔ بیرونی"
+        : "تخمین سطری";
+  const lookRow = look.color
+    ? `<div class="swatchrow"><i style="background:${look.color}"></i><span>${esc(look.material)} / ${esc(look.finish)} · عدسی ${esc(look.lens)} (اطمینان ${PersianDigits(look.confidence)}٪)</span></div>`
+    : "";
+  out.innerHTML = `<div class="okrow"><b>${esc(shape)}</b><span>${srcLabel}</span></div>
+    <table>${rows}</table>${lookRow}${photoWarnings(r)}
+    <div class="rowbtns"><button class="btn small" id="flatten">تبدیل به پارامتر (حذف مسیر دنبالی)</button></div>`;
+  $("#flatten").onclick = () => {
+    state.traced = null;
     buildControls();
     rebuild();
-    const c2 = document.createElement("canvas");
-    c2.width = 160;
-    c2.height = Math.round((160 * img.naturalHeight) / img.naturalWidth);
-    c2.getContext("2d").drawImage(img, 0, 0, c2.width, c2.height);
-    $("#refImg").src = c2.toDataURL();
-    $("#refWrap").hidden = false;
+    out.innerHTML += `<div class="okrow"><span>به پارامترهای قالب تبدیل شد؛ حالا با اسلایدرها تنظیمش کن.</span></div>`;
   };
-  img.onerror = () => {
-    URL.revokeObjectURL(img.src);
-    toast("تصویر خوانده نشد؛ یک عکس معتبر انتخاب کن.");
-  };
-  img.src = URL.createObjectURL(f);
+  drawPreview(r);
+  const c2 = document.createElement("canvas");
+  c2.width = 160;
+  c2.height = Math.round((160 * img.naturalHeight) / img.naturalWidth);
+  c2.getContext("2d").drawImage(img, 0, 0, c2.width, c2.height);
+  $("#refImg").src = c2.toDataURL();
+  $("#refWrap").hidden = false;
 };
+
 $("#toggleTurn").onchange = (e) => (state.turn = e.target.checked);
 $("#toggleGround").onchange = (e) => (ground.visible = e.target.checked);
 $("#bg").oninput = (e) => {

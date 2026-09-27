@@ -128,3 +128,88 @@ test("bridgeSplit scans integer columns when the search window has fractional bo
   const box = { x0: 20, x1: 79, y0: 0, y1: 19, w: 60, h: 20, cx: 49.5, cy: 9.5 };
   assert.equal(bridgeSplit(mask, w, h, box), 45);
 });
+
+/* ── عکس واقعیِ گوشی (میز چوبی، نور محیط، سایه) ───────────────────── */
+import { appearanceOf, closeMask, foregroundMask, templeFromSidePhoto, traceOverlay } from "../src/frame/photogram.js";
+import { phonePhoto, sidePhoto } from "./fixtures/frame-photo.mjs";
+
+/** اندازه‌های واقعیِ فیکسچر: عرض عدسی ۲۱۰ پیکسل برابر ۵۲ میلی‌متر */
+const MM = 52 / 210;
+
+test("عکس گوشیِ تمام‌رخ: خط عدسی از داخل عکس و اندازه‌های واقعی", () => {
+  const img = phonePhoto({ tilt: 0 });
+  const seg = foregroundMask(img.width, img.height, img.data);
+  assert.equal(seg.mode, "otsu", "جداسازی باید اوتسو باشد نه پرکردنِ کنارِ کادر");
+  assert.equal(seg.holes, 2, "باید دو حفرهٔ عدسی پیدا شود");
+  const r = frameFromImage(img, { lensW: 52 });
+  assert.equal(r.ok, true, "رد شد: " + r.reason);
+  assert.equal(r.source, "holes");
+  assert.ok(Math.abs(r.deskewDeg) < 0.4, "عکس صاف است: " + r.deskewDeg);
+  assert.ok(Math.abs(r.lensW - 52) < 1.2, "عرض عدسی: " + r.lensW);
+  assert.ok(Math.abs(r.lensH - 130 * MM) < 2, "ارتفاع عدسی: " + r.lensH);
+  assert.ok(Math.abs(r.dbn - 44 * MM) < 1.2, "پل: " + r.dbn);
+  assert.ok(Math.abs(r.rimW - 18 * MM) < 1.2, "ضخامت رینگ: " + r.rimW);
+  assert.ok(r.match >= 85, "کیفیت ردیابی: " + r.match);
+  const look = appearanceOf(r);
+  assert.equal(look.lens, "clear", "عدسی شفاف باید تشخیص داده شود");
+  assert.equal(look.material, "acetate");
+  // رنگِ واقعیِ فریم: #2e221c
+  const [cr, cg, cb] = [1, 3, 5].map((i) => parseInt(look.color.slice(i, i + 2), 16));
+  assert.ok(Math.abs(cr - 46) < 26 && Math.abs(cg - 34) < 26 && Math.abs(cb - 28) < 26, "رنگ: " + look.color);
+  const ov = traceOverlay(r);
+  assert.ok(ov && ov.right.length > 40 && ov.left.length > 40, "پیش‌نمایشِ ترسیم باید دو خط داشته باشد");
+});
+
+test("عکس کجِ گوشی: زاویهٔ تراز و اندازه‌ها پس از چرخش", () => {
+  for (const tilt of [4, -7]) {
+    const r = frameFromImage(phonePhoto({ tilt }), { lensW: 52 });
+    assert.equal(r.ok, true, "رد شد: " + r.reason);
+    assert.ok(Math.abs(r.deskewDeg - tilt) < 0.6, "زاویهٔ تراز " + tilt + " ⇒ " + r.deskewDeg);
+    assert.ok(Math.abs(r.lensW - 52) < 1.6, "عرض عدسی در تیلت " + tilt + ": " + r.lensW);
+    assert.ok(Math.abs(r.dbn - 44 * MM) < 1.6, "پل در تیلت " + tilt + ": " + r.dbn);
+  }
+});
+
+test("میزِ خاکستری هم مثل چوب کار می‌کند", () => {
+  const r = frameFromImage(phonePhoto({ tilt: 3, desk: "grey" }), { lensW: 52 });
+  assert.equal(r.ok, true, "رد شد: " + r.reason);
+  assert.equal(r.source, "holes");
+  assert.ok(Math.abs(r.lensW - 52) < 1.6, "عرض عدسی: " + r.lensW);
+  assert.ok(r.match >= 80, "کیفیت: " + r.match);
+});
+
+test("عدسی تیره: از لبهٔ بیرونی و با هشدارِ کیفیت پایین", () => {
+  const r = frameFromImage(phonePhoto({ lensDark: true }), { lensW: 52 });
+  assert.equal(r.ok, true, "رد شد: " + r.reason);
+  assert.equal(r.source, "silhouette", "حفره‌ای نیست ⇒ باید از سایهٔ بیرونی ساخته شود");
+  assert.ok(Math.abs(r.lensW - 52) < 2, "عرض عدسی: " + r.lensW);
+  assert.ok(Math.abs(r.lensH - 130 * MM) < 4, "ارتفاع عدسی: " + r.lensH);
+  assert.ok(r.match < 85, "کیفیت باید پایین گزارش شود: " + r.match);
+  assert.equal(appearanceOf(r).lens, "photo", "عدسی تیره = فتوتایپ");
+});
+
+test("عددِ چاپیِ پل، مقیاس را اصلاح می‌کند", () => {
+  const hint = Math.round(44 * MM * 10) / 10;
+  const r = frameFromImage(phonePhoto({ tilt: 0 }), { lensW: 52, dbn: hint });
+  assert.equal(r.dbn, hint, "وقتی کاربر پل را می‌داند، همان را می‌پذیریم");
+  assert.ok(Math.abs(r.lensW - 52) < 1.5, "مقیاس نباید به‌هم بخورد: " + r.lensW);
+});
+
+test("عکس جانبی: طول دسته از روی نسبتِ تصویر", () => {
+  const side = templeFromSidePhoto(sidePhoto({}), { armPx: 168, templeLen: 145 });
+  assert.equal(side.ok, true, "رد شد: " + side.reason);
+  assert.ok(Math.abs(side.templeLen - 145) < 10, "طول دسته: " + side.templeLen);
+  assert.ok(side.confidence > 60, "اطمینان: " + side.confidence);
+});
+
+test("closeMask حلقهٔ نازک را می‌بندد بی‌آنکه فریم را بخورد", () => {
+  const img = phonePhoto({});
+  const seg = foregroundMask(img.width, img.height, img.data);
+  const count = (m) => m.reduce((a, b) => a + b, 0);
+  const before = count(seg.mask);
+  const copy = new Uint8Array(seg.mask);
+  assert.equal(closeMask(copy, img.width, img.height), true, "حلقهٔ رینگ باید بسته شود");
+  const after = count(copy);
+  assert.ok(after >= before, "بستنِ حفره نباید جوهر کم کند");
+  assert.ok(after - before < before * 0.28, "رشدِ بیش از حد: " + (after - before) / before);
+});
