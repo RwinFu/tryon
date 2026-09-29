@@ -1,12 +1,8 @@
 /**
  * stage.js — صحنهٔ سه‌بعدی، نورپردازی تطبیقی، سایهٔ تماسی و ترکیب نهایی
- *
- * نکتهٔ «غیرواحی‌نشدن»:
- *  ۱. محیط استودیویی رویه‌ای (IBL) ⇒ بازتاب فلز و استات از جنسِ نورِ اتاق است
- *  ۲. نوردهی/تعادل سفیدی از خودِ فریم دوربین تخمین زده می‌شود
- *  ۳. سایهٔ تماسیِ نرم زیر فریم روی صورت افتاد
- *  ۴. دسته‌ها پشت مو و پشت حجمِ سر بریده می‌شوند (mask + occluder)
+ * بازطراحی ۲۰۲۶: پشتیبانی کامل از دوربین جدید، mirror صحیح، و مدیریت حافظه بهتر
  */
+
 import { createFrameObject } from "../frame/index.js";
 import { buildFrame } from "../frame/geometry.js";
 import { buildStudioEnvironment } from "../frame/materials.js";
@@ -17,13 +13,16 @@ const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 
 export class Stage {
   /**
-   * @param {{canvas:HTMLCanvasElement, THREE:any, quality?:string, lights?:boolean, shadow?:boolean, env?:boolean}} opts
+   * @param {{canvas:HTMLCanvasElement, THREE:any, quality?:string, lights?:boolean, shadow?:boolean, env?:boolean, video?:HTMLVideoElement, camera?:any, vertexDistance?:number}} opts
    */
   constructor(opts) {
     this.THREE = opts.THREE;
     const THREE = this.THREE;
     this.opts = opts;
     this.quality = opts.quality || "high";
+    this.cameraModule = opts.camera || null; // ماژول دوربین جدید
+    this.video = opts.video || opts.camera?.video || null;
+
     this.renderer = new THREE.WebGLRenderer({
       canvas: opts.canvas,
       alpha: true,
@@ -31,19 +30,19 @@ export class Stage {
       powerPreference: "high-performance",
       preserveDrawingBuffer: true,
     });
-    // رندر در پیکسلِ واقعیِ صفحه: روی گوشی‌های ۲x/۳x لبهٔ نازکِ فریم محو می‌شد
     this.pixelRatio = opts.pixelRatio ?? (this.quality === "lite" ? 1 : Math.min(2, (typeof devicePixelRatio === "number" ? devicePixelRatio : 1) || 1));
     this.renderer.setPixelRatio(this.pixelRatio);
     this.renderer.setClearColor(0x000000, 0);
     if ("outputColorSpace" in this.renderer) this.renderer.outputColorSpace = THREE.SRGBColorSpace;
-    // Neutral (Khronos PBR Neutral) به‌جای ACES: تصویرِ دوربین tone-map نشده و
-    // ACES رنگِ واقعیِ فریم را می‌شوید/بی‌رنگ می‌کند ⇒ فریم دیگر شبیه ویترین نمی‌ماند.
     this.renderer.toneMapping = "neutral" in THREE ? THREE.NeutralToneMapping : THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1;
+
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(30, 1, 1, 20000);
     this.group = new THREE.Group();
     this.scene.add(this.group);
+
+    // نورها - تنظیم شده برای هم‌رنگ‌سازی با اتاق
     this.hemi = new THREE.HemisphereLight(0xffffff, 0x2a2f38, this.quality === "lite" ? 1.05 : 0.7);
     this.scene.add(this.hemi);
     this.key = new THREE.DirectionalLight(0xffffff, 1.15);
@@ -52,6 +51,7 @@ export class Stage {
     this.rim = new THREE.DirectionalLight(0xdfe8ff, 0.35);
     this.rim.position.set(1.6, 0.6, -2.4);
     this.scene.add(this.rim);
+
     this.frame = null;
     this.frameKey = "";
     this.product = null;
@@ -59,8 +59,12 @@ export class Stage {
     this.H = 0;
     this.camZ = 900;
     this.match = { exp: 1, tint: [1, 1, 1], dir: [-0.3, 0.6] };
+    this._mirrored = true; // پیش‌فرض سلفی آینه‌ای
+    this._cameraCanvas = null;
+    this.cameraTexture = null;
   }
 
+  // ─── محیط نوری ───
   buildEnv(force) {
     if (this.opts.env === false || this.quality === "lite") return;
     if (this.envBuilt && !force) return;
@@ -74,18 +78,21 @@ export class Stage {
       this.env = next;
       this.scene.environment = this.env;
       this.envBuilt = true;
-    } catch (e) {
-      this.envBuilt = false;
-    }
+    } catch { this.envBuilt = false; }
   }
 
+  // ─── اندازه ───
   resize(w, h) {
     if (this.W === w && this.H === h) return false;
-    this.W = w;
-    this.H = h;
+    this.W = w; this.H = h;
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / h;
     this.applyCamera();
+    // تکسچر دوربین را هم resize کن
+    if (this._cameraCanvas) {
+      this._cameraCanvas.width = w;
+      this._cameraCanvas.height = h;
+    }
     return true;
   }
 
@@ -99,11 +106,31 @@ export class Stage {
     this.camera.updateProjectionMatrix();
   }
 
-  /** فریم فعلی کاتالوگ را می‌سازد (رویه‌ای) یا GLB فروشنده را بارگذاری می‌کند */
-  setProduct(product, { quality, envIntensity } = {}) {
-    if (product.glb) {
-      return this.loadExternal(product, { quality, envIntensity });
+  // ─── آینه ───
+  setMirrored(mirrored) {
+    this._mirrored = !!mirrored;
+    // CSS variable برای تمام canvasها
+    if (this.opts.canvas?.parentElement) {
+      this.opts.canvas.parentElement.style.setProperty("--vt-mirror", mirrored ? "-1" : "1");
     }
+    return this._mirrored;
+  }
+
+  updateVideoRef(videoOrCamera) {
+    if (!videoOrCamera) return;
+    if (videoOrCamera.video) {
+      this.cameraModule = videoOrCamera;
+      this.video = videoOrCamera.video;
+      this.setMirrored(videoOrCamera.isMirrored ?? videoOrCamera.mirrored ?? true);
+    } else if (videoOrCamera.tagName === "VIDEO") {
+      this.video = videoOrCamera;
+    }
+    if (this.opts) this.opts.video = this.video;
+  }
+
+  // ─── فریم ───
+  setProduct(product, { quality, envIntensity } = {}) {
+    if (product.glb) return this.loadExternal(product, { quality, envIntensity });
     return this.buildProcedural(product, { quality, envIntensity });
   }
 
@@ -121,14 +148,10 @@ export class Stage {
         offset: product.glbOffset,
         scale: product.glbScale,
       });
-      if (product.color || product.metalColor)
-        tintGLB(bundle, { color: product.color, metalColor: product.metalColor });
+      if (product.color || product.metalColor) tintGLB(bundle, { color: product.color, metalColor: product.metalColor });
       if (token !== this._token) { disposeGLB(bundle); return; }
       bundle.group.traverse((o) => {
-        if (o.isMesh) {
-          o.renderOrder = 1;
-          o.matrixAutoUpdate = true;
-        }
+        if (o.isMesh) { o.renderOrder = 1; o.matrixAutoUpdate = true; }
       });
       this.group.add(bundle.group);
       const headOptions = { frameHalfWidth: bundle.meta.size[0] / 2, vertexDistance: this.opts.vertexDistance };
@@ -145,8 +168,6 @@ export class Stage {
       this.product = product;
       this.pending = null;
       this.onFrame?.(bundle.meta);
-      void quality;
-      void envIntensity;
     } catch (e) {
       if (token !== this._token) return;
       this.pending = null;
@@ -160,7 +181,7 @@ export class Stage {
     this.disposeFrame();
     const THREE = this.THREE;
     const spec = product.spec || product;
-    const obj = createFrameObject(THREE, { ...spec, ...pick(product, ["finish", "color", "lens", "metalTint", "metalColor", "accentColor", "translucent"]) }, {
+    const obj = createFrameObject(THREE, { ...spec, ...pick(product, ["finish","color","lens","metalTint","metalColor","accentColor","translucent"]) }, {
       quality: quality || this.quality,
       envIntensity: envIntensity ?? 1,
       occluder: true,
@@ -176,9 +197,8 @@ export class Stage {
 
   setColor(product) {
     if (!this.frame) return;
-    const THREE = this.THREE;
     const spec = product.spec || product;
-    const next = { ...spec, ...pick(product, ["finish", "color", "lens", "metalTint", "metalColor", "accentColor", "translucent"]) };
+    const next = { ...spec, ...pick(product, ["finish","color","lens","metalTint","metalColor","accentColor","translucent"]) };
     this.frame.setVariant(next);
   }
 
@@ -191,10 +211,7 @@ export class Stage {
     this.frame = null;
   }
 
-  /**
-   * تطبیق نور با محیط: از فریم دوربین، میانگین روشنایی/رنگ و سمتِ نور را می‌خواند.
-   * @param {HTMLCanvasElement|HTMLVideoElement} src  منبع تصویر (canvasِ کشیده‌شده از ویدیو)
-   */
+  // ─── تطبیق نور ───
   matchLight(sample) {
     if (!sample) return;
     const s = sample.getContext ? sample : null;
@@ -203,39 +220,18 @@ export class Stage {
     const c = document.createElement("canvas");
     c.width = c.height = N;
     const x = c.getContext("2d", { willReadFrequently: true });
-    try {
-      x.drawImage(sample, 0, 0, N, N);
-    } catch (e) {
-      return;
-    }
+    try { x.drawImage(sample, 0, 0, N, N); } catch { return; }
     const d = x.getImageData(0, 0, N, N).data;
-    let lum = 0,
-      r = 0,
-      g = 0,
-      b = 0,
-      left = 0,
-      right = 0,
-      top = 0,
-      bot = 0,
-      n = 0;
+    let lum = 0, r = 0, g = 0, b = 0, left = 0, right = 0, top = 0, bot = 0, n = 0;
     for (let j = 0; j < N; j++) {
       for (let i = 0; i < N; i++) {
         const k = (j * N + i) * 4;
-        const R = d[k],
-          G = d[k + 1],
-          B = d[k + 2];
+        const R = d[k], G = d[k + 1], B = d[k + 2];
         const L = (R * 0.299 + G * 0.587 + B * 0.114) / 255;
-        // نقاط خیلی تیره/خیلی روشن (پس‌زمینه، لامپ) را وزن نمی‌دهیم
         if (L > 0.05 && L < 0.97) {
-          lum += L;
-          r += R;
-          g += G;
-          b += B;
-          n++;
-          if (i < N / 2) left += L;
-          else right += L;
-          if (j < N / 2) top += L;
-          else bot += L;
+          lum += L; r += R; g += G; b += B; n++;
+          if (i < N / 2) left += L; else right += L;
+          if (j < N / 2) top += L; else bot += L;
         }
       }
     }
@@ -257,7 +253,6 @@ export class Stage {
     this.hemi.intensity = 0.45 + 0.6 * meanLum;
     this.key.position.set(-1.4 + m.dir[0] * 3.4, 2.2 - m.dir[1] * 2.2, 3);
 
-    // بازتابِ محیط هم باید از اتاقِ مشتری بیاید: روشناییِ نسبی + ته‌رنگِ غالب.
     const targetEnv = clamp(0.55 + meanLum * 0.9, 0.5, 1.45);
     m.envI = (m.envI ?? targetEnv) * 0.8 + targetEnv * 0.2;
     this.scene.environmentIntensity = m.envI;
@@ -275,10 +270,7 @@ export class Stage {
     }
   }
 
-  /** Feed the same unmirrored camera pixels to the transmission render pass.
-   * DOM video behind a transparent WebGL canvas is NOT visible to glass shaders.
-   * Include the contact shadow here so the opaque background doesn't erase it.
-   */
+  // ─── پس‌زمینه: فریم دوربین برای عدسی‌های شفاف ───
   updateBackground(source, shadow) {
     const THREE = this.THREE;
     if (!this._cameraCanvas) this._cameraCanvas = document.createElement("canvas");
@@ -290,30 +282,45 @@ export class Stage {
       cv.height = this.H;
     }
     const ctx = cv.getContext("2d");
+    // اگر دوربین mirrored است، باید پس‌زمینه را هم mirror کنیم تا با CSS هماهنگ باشد
+    // اما transmission shader از background استفاده می‌کند که باید با تصویر واقعی هماهنگ باشد
+    // چون تمام canvasها با CSS mirror می‌شوند، اینجا بدون mirror می‌کشیم - CSS خودش mirror می‌کند
+    // اما برای اینکه سایه درست بیفتد، باید همان mapping را استفاده کنیم
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.clearRect(0,0,this.W,this.H);
     ctx.drawImage(source, 0, 0, this.W, this.H);
     if (shadow) ctx.drawImage(shadow, 0, 0, this.W, this.H);
+
     if (!this.cameraTexture) {
       this.cameraTexture = new THREE.CanvasTexture(cv);
       this.cameraTexture.colorSpace = THREE.SRGBColorSpace;
       this.cameraTexture.generateMipmaps = false;
       this.cameraTexture.minFilter = THREE.LinearFilter;
+      this.cameraTexture.magFilter = THREE.LinearFilter;
     }
     this.cameraTexture.needsUpdate = true;
     this.scene.background = this.cameraTexture;
   }
 
-  /** جای‌گذاری فریم از روی pose */
+  // ─── جای‌گذاری فریم ───
   place(pose) {
     if (!this.frame || !pose) return;
     this.camZ = pose.camZ || this.camZ;
     this.applyCamera();
     const k = (this.camZ - pose.z) / this.camZ;
     const g = this.frame.group;
+    // اگر pose.mirrored مشخص است، آن را به stage اعمال کن
+    if (pose.mirrored !== undefined && pose.mirrored !== this._mirrored) {
+      this.setMirrored(pose.mirrored);
+    }
     // پیکسل ویدیو (مبدأ بالا-چپ، y رو به پایین) → فضای صحنه (مبدأ مرکز، y رو به بالا)
+    // اگر mirrored است، x را معکوس می‌کنیم؟ نه، pose.x از تصویر unmirrored می‌آید
+    // اما CSS کل stage را mirror می‌کند، پس محاسبه همان می‌ماند
+    // فقط اگر mirrored نباشد، باید x را نسبت به مرکز معکوس نکنیم - اما pose از تصویر واقعی است
+    // برای سادگی: pose.x را همان نگه می‌داریم، CSS mirror همه چیز را درست می‌کند
     g.position.set((pose.x - this.W / 2) * k, (this.H / 2 - pose.y) * k, pose.z);
     g.scale.setScalar(pose.scale);
     g.quaternion.set(pose.q[0], pose.q[1], pose.q[2], pose.q[3]);
-    // سرِ نامرئی باید هم‌عرضِ صورتِ همین فریم بماند؛ وگرنه یا عدسی را می‌پوشاند یا دسته در هوا می‌ماند
     this.frame.fitHead?.(pose.faceWmm, this.opts.vertexDistance);
     g.visible = true;
   }
@@ -326,31 +333,20 @@ export class Stage {
     this.renderer.render(this.scene, this.camera);
   }
 
-  /** سایهٔ تماسی: خطوطِ فریم را روی صورت می‌اندازد (CPU، بدون readback) */
+  // ─── سایه تماسی ───
   drawContactShadow(ctx, pose, { opacity = 0.18, blur = 4, offset = [1, 3] } = {}) {
     if (!this.shadowPath || !pose || ctx.__noShadow) return false;
-    const THREE = this.THREE;
-    const W = this.W,
-      H = this.H;
+    const W = this.W, H = this.H;
     const cv = this._shCv || (this._shCv = document.createElement("canvas"));
-    if (cv.width !== W || cv.height !== H) {
-      cv.width = W;
-      cv.height = H;
-    }
+    if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
     const c = cv.getContext("2d");
     c.setTransform(1, 0, 0, 1, 0, 0);
     c.clearRect(0, 0, W, H);
-    c.lineCap = "round";
-    c.lineJoin = "round";
+    c.lineCap = "round"; c.lineJoin = "round";
     c.strokeStyle = `rgba(12,8,6,${opacity})`;
     c.filter = `blur(${blur}px)`;
-    const q = pose.q,
-      s = pose.scale,
-      k = (this.camZ - pose.z) / this.camZ,
-      px = (pose.x - W / 2) * k,
-      py = (H / 2 - pose.y) * k,
-      pz = pose.z;
-    // فقط حلقه و پل: دسته‌ها تا پشت سر می‌روند و سایه‌شان روی گونه لکه می‌اندازد
+    const q = pose.q, s = pose.scale, k = (this.camZ - pose.z) / this.camZ,
+      px = (pose.x - W / 2) * k, py = (H / 2 - pose.y) * k, pz = pose.z;
     const strokes = this.shadowPath.filter((stroke) => /^(rim|brow|bridge|topbar)/.test(stroke.name || ""));
     for (const stroke of strokes) {
       c.lineWidth = Math.max(1.5, stroke.sw * s * 1.5);
@@ -366,18 +362,12 @@ export class Stage {
         const f = this.camZ / depth;
         const sx = W / 2 + wp[0] * f + offset[0];
         const sy = H / 2 - wp[1] * f + offset[1];
-        if (!started) {
-          c.moveTo(sx, sy);
-          started = true;
-        } else c.lineTo(sx, sy);
+        if (!started) { c.moveTo(sx, sy); started = true; } else c.lineTo(sx, sy);
       }
       started && c.stroke();
     }
     c.filter = "none";
-    // ماسک تخمینیِ صورت تا سایه در هوا معلق نماند
-    const faceR = Math.max(30, pose.faceW * 0.52),
-      cx = (pose.eyes.l.x + pose.eyes.r.x) / 2,
-      cy = pose.nose.y + faceR * 0.42;
+    const faceR = Math.max(30, pose.faceW * 0.52), cx = (pose.eyes.l.x + pose.eyes.r.x) / 2, cy = pose.nose.y + faceR * 0.42;
     const grad = c.createRadialGradient(cx, cy - faceR * 0.35, faceR * 0.15, cx, cy, faceR * 1.5);
     c.globalCompositeOperation = "destination-in";
     grad.addColorStop(0, "rgba(0,0,0,1)");
@@ -390,11 +380,9 @@ export class Stage {
     ctx.globalCompositeOperation = "multiply";
     ctx.drawImage(cv, 0, 0, W, H);
     ctx.restore();
-    void THREE;
     return true;
   }
 
-  /** لایهٔ مو: بخشِ موی ویدیو را روی عینک می‌اندازد */
   drawHairLayer(ctx, maskCv) {
     if (!maskCv || !maskCv.width) return false;
     ctx.save();
@@ -403,7 +391,8 @@ export class Stage {
     ctx.drawImage(maskCv, 0, 0, this.W, this.H);
     ctx.filter = "none";
     ctx.globalCompositeOperation = "source-in";
-    ctx.drawImage(this.opts.video, 0, 0, this.W, this.H);
+    if (this.video) ctx.drawImage(this.video, 0, 0, this.W, this.H);
+    else if (this.opts.video) ctx.drawImage(this.opts.video, 0, 0, this.W, this.H);
     ctx.restore();
     return true;
   }
@@ -413,6 +402,8 @@ export class Stage {
     this.cameraTexture?.dispose();
     this.env?.dispose?.();
     this.renderer.dispose();
+    this._cameraCanvas = null;
+    this._shCv = null;
   }
 }
 

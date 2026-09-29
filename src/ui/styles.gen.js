@@ -149,6 +149,31 @@ button {
   align-items: center;
   gap: 8px;
 }
+.camTools {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.camTools[hidden] {
+  display: none;
+}
+.camBtn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(18, 17, 15, 0.72);
+  border: 1px solid rgba(246, 243, 238, 0.2);
+  color: #f6f3ee;
+  display: grid;
+  place-items: center;
+  transition: transform 0.15s, background 0.2s, opacity 0.2s;
+}
+.camBtn:active { transform: scale(0.92); }
+.camBtn[data-on="1"] {
+  background: #f4efe6;
+  color: #1c1916;
+  border-color: #f4efe6;
+}
 .status {
   display: inline-flex;
   align-items: center;

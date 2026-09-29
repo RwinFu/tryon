@@ -108,6 +108,10 @@ export class VirtualTryOn extends Native {
   <header class="top">
     <div class="brand">${esc(c.brand.name || "")}<small>${esc(c.brand.tagline || "")}</small></div>
     <div class="topR">
+      <div class="camTools" id="camTools" hidden>
+        <button class="xbtn camBtn" id="camSwitch" type="button" aria-label="switch camera" title="تغییر دوربین"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M20 12c0 4.4-3.6 8-8 8s-8-3.6-8-8 3.6-8 8-8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M20 4v6h-6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <button class="xbtn camBtn" id="camTorch" type="button" aria-label="torch" title="چراغ" hidden><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-7 7c0 3 2 5 4 6v3h6v-3c2-1 4-3 4-6a7 7 0 0 0-7-7z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>
+      </div>
       <div class="status" id="status" data-state="idle"><i></i><span>${L("statusIdle")}</span></div>
       ${c.mode === "overlay" ? '<button class="xbtn" id="close" aria-label="' + L("close") + '"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M3.2 3.2l9.6 9.6M12.8 3.2l-9.6 9.6" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>' : ""}
     </div>
@@ -171,6 +175,9 @@ export class VirtualTryOn extends Native {
       hint: this.$("hint"),
       status: this.$("status"),
       sheet: this.$("sheet"),
+      camTools: this.$("camTools"),
+      camSwitch: this.$("camSwitch"),
+      camTorch: this.$("camTorch"),
     };
     this.ctx = {
       cv: this.el.cv.getContext("2d", { alpha: false }),
@@ -465,18 +472,28 @@ export class VirtualTryOn extends Native {
   }
 
   /* ─────────────────────────── اتصال موتور ──────────────────────── */
-  /** صفحهٔ عمودی (موبایل ایستاده) باید تصویر عمودی بگیرد تا صورت بریده نشود */
+  /** تشخیص عمودی بودن صفحه برای انتخاب رزولوشن مناسب دوربین */
   portraitCamera() {
-    return typeof window !== "undefined" && window.innerHeight > window.innerWidth * 1.05;
+    if (typeof window === "undefined") return false;
+    // استفاده از matchMedia دقیق‌تر است + fallback به ابعاد
+    try {
+      if (window.matchMedia && window.matchMedia("(orientation: portrait)").matches) return true;
+    } catch {}
+    return window.innerHeight > window.innerWidth * 1.05;
   }
 
   pickQuality() {
     const cfg = this.cfg;
-    return cfg.quality === "auto"
-      ? navigator.hardwareConcurrency > 4 && !/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
-        ? "high"
-        : "lite"
-      : cfg.quality;
+    if (cfg.quality !== "auto") return cfg.quality;
+    try {
+      const cores = navigator.hardwareConcurrency || 2;
+      const mem = navigator.deviceMemory || 4;
+      const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+      const saveData = navigator.connection?.saveData;
+      if (saveData) return "lite";
+      if (cores > 4 && mem >= 4 && !isMobile) return "high";
+      return "lite";
+    } catch { return "lite"; }
   }
 
   /**
@@ -518,23 +535,33 @@ export class VirtualTryOn extends Native {
     this.setStatus("search", t(cfg.lang, "loading"));
     try {
       const initP = this.prewarmP || this.prewarm();
-      initP.catch(() => {}); // اگر دوربین زودتر خطا داد، رد شدنِ این یکی unhandled نشود
+      initP.catch(() => {});
       this.quality = this.pickQuality();
-      // دوربین (اجازهٔ کاربر) موازی با بارگذاری مدل: طولانی‌ترین کارها هم‌زمان
       this.busy(t(cfg.lang, "cameraAsk"));
       this.el.stage.classList.toggle("lite", this.quality === "lite");
-      const camP = this.tracker.startCamera({ light: this.quality === "lite", portrait: this.portraitCamera() });
+      // ساخت stage قبل از دوربین برای نمایش سریع‌تر
       this.stage?.dispose?.();
-      this.stage = null;
       this.stage = new Stage({
         canvas: this.el.gl,
         THREE: this.THREE,
         quality: this.quality,
-        video: this.tracker.video,
+        video: null,
+        camera: null,
         vertexDistance: cfg.tracking.vertexDistance,
       });
       this.stage.onFrameError = (e) => this.hint(t(cfg.lang, "modelFailed") + " — " + (e?.message || ""), true);
       this.stage.setProduct({ ...this.product, ...(this.variants?.[this.variant] || {}) }, { quality: this.quality });
+
+      // شروع دوربین با ماژول جدید - موازی با لود مدل
+      const camOpts = { light: this.quality === "lite", portrait: this.portraitCamera(), facing: "user" };
+      const camP = this.tracker.startCamera(camOpts).then((stream) => {
+        // بعد از باز شدن دوربین، stage را به دوربین جدید وصل کن
+        this.stage.updateVideoRef(this.tracker.camera);
+        this.stage.setMirrored(this.tracker.camera.isMirrored);
+        this.updateCameraUI();
+        return stream;
+      });
+
       await camP;
       if (this.cfg.mode === "overlay" && this.hidden) {
         this.tracker.stopCamera();
@@ -553,18 +580,18 @@ export class VirtualTryOn extends Native {
         return;
       }
       this.syncSize();
-      this.onResize = this.onResize || (() => this.syncSize());
-      window.addEventListener("resize", this.onResize);
+      // ResizeObserver برای کانتینر - دقیق‌تر از window resize
+      this.setupResizeObserver();
       this.busy("");
       this.starting = false;
       this.el.gate.hidden = true;
       this.state = "live";
       this.setStatus("live", t(cfg.lang, "live"));
+      this.el.camTools && (this.el.camTools.hidden = false);
       this.loop();
-      // محیط نوری (PMREM) بعد از اولین فریم: دوربین زودتر دیده می‌شود
       requestAnimationFrame(() => this.stage?.buildEnv());
       if (cfg.features.hairLayer && this.quality !== "lite") setTimeout(() => this.tracker?.initHair?.().catch(() => {}), 4000);
-      this.emit("ready", { quality: this.quality, products: this.products.length });
+      this.emit("ready", { quality: this.quality, products: this.products.length, camera: { facing: this.tracker.camera.facing, torch: this.tracker.camera.torchSupported, zoom: this.tracker.camera.zoomSupported } });
     } catch (e) {
       this.booted = false;
       this.starting = false;
@@ -572,17 +599,88 @@ export class VirtualTryOn extends Native {
       this.state = "error";
       this.setStatus("error", t(cfg.lang, "cameraBlocked"));
       this.showError(e);
-      this.emit("error", { where: "boot", message: String(e?.message || e), name: e?.name });
+      this.emit("error", { where: "boot", message: String(e?.message || e), name: e?.name, key: e._key || e?.key });
       throw e;
     }
   }
 
+  setupResizeObserver() {
+    if (this._resizeObs) return;
+    this.onResize = this.onResize || (() => this.syncSize());
+    window.addEventListener("resize", this.onResize);
+    window.addEventListener("orientationchange", this.onResize);
+    try {
+      if (typeof ResizeObserver !== "undefined") {
+        this._resizeObs = new ResizeObserver(() => this.syncSize());
+        this._resizeObs.observe(this.el.stage);
+      }
+    } catch {}
+    // دوربین جدید خودش resize را emit می‌کند
+    if (this.tracker?.camera) {
+      this.tracker.camera.on("resize", () => this.syncSize());
+    }
+  }
+
+  updateCameraUI() {
+    const cam = this.tracker?.camera;
+    if (!cam || !this.el.camTools) return;
+    // دکمه تغییر دوربین فقط اگر بیش از یک دوربین داریم یا facing قابل تغییر است
+    const showSwitch = cam.devices?.length > 1 || true; // همیشه نشان بده برای تجربه بهتر
+    this.el.camSwitch.hidden = !showSwitch;
+    this.el.camTools.hidden = false;
+    if (cam.torchSupported) {
+      this.el.camTorch.hidden = false;
+      this.el.camTorch.dataset.on = cam.torchOn ? "1" : "0";
+      this.el.camTorch.style.opacity = cam.torchOn ? "1" : "0.7";
+    } else {
+      this.el.camTorch.hidden = true;
+    }
+  }
+
+  async handleCameraSwitch() {
+    if (this._switching) return;
+    this._switching = true;
+    const btn = this.el.camSwitch;
+    btn && (btn.disabled = true);
+    try {
+      this.hint(t(this.cfg.lang, "loading"), true);
+      await this.tracker.switchCamera();
+      this.stage.updateVideoRef(this.tracker.camera);
+      this.stage.setMirrored(this.tracker.camera.isMirrored);
+      this.syncSize();
+      this.updateCameraUI();
+      this.hint("", true);
+    } catch (e) {
+      this.hint(t(this.cfg.lang, "genericError"), true);
+      this.emit("error", { where: "switchCamera", message: String(e.message || e) });
+    } finally {
+      btn && (btn.disabled = false);
+      this._switching = false;
+    }
+  }
+
+  async handleTorchToggle() {
+    const cam = this.tracker?.camera;
+    if (!cam?.torchSupported) return;
+    try {
+      const next = !cam.torchOn;
+      await cam.setTorch(next);
+      this.el.camTorch.dataset.on = next ? "1" : "0";
+      this.el.camTorch.style.opacity = next ? "1" : "0.7";
+    } catch (e) {
+      this.hint(t(this.cfg.lang, "genericError"), true);
+    }
+  }
+
+
   syncSize() {
     if (this.tracker?.photoMode) return;
+    const cam = this.tracker?.camera;
     const v = this.tracker?.video;
-    if (!v?.videoWidth) return;
-    const W = v.videoWidth,
-      H = v.videoHeight;
+    const W = cam?.W || v?.videoWidth || 0;
+    const H = cam?.H || v?.videoHeight || 0;
+    if (!W || !H) return;
+    // فقط اگر واقعا عوض شده، canvasها را resize کن (جلوگیری از flicker)
     for (const c of [this.el.cv, this.el.gl, this.el.oc, this.el.sh, this.el.mesh]) {
       if (c.width !== W || c.height !== H) {
         c.width = W;
@@ -590,6 +688,8 @@ export class VirtualTryOn extends Native {
       }
     }
     this.stage?.resize(W, H);
+    // mirror را همگام کن
+    if (cam) this.stage?.setMirrored(cam.isMirrored);
   }
 
   busy(msg) {
@@ -642,7 +742,15 @@ export class VirtualTryOn extends Native {
 
   /* ─────────────────────────── حلقهٔ رندر ──────────────────────── */
   stopLoop() {
-    if (this.frameRequest !== undefined && this.frameRequest !== null) cancelAnimationFrame(this.frameRequest);
+    try {
+      const v = this.tracker?.camera?.video || this.tracker?.video;
+      if (v && this.frameRequest && v.cancelVideoFrameCallback) {
+        try { v.cancelVideoFrameCallback(this.frameRequest); } catch {}
+      }
+    } catch {}
+    if (this.frameRequest !== undefined && this.frameRequest !== null) {
+      try { cancelAnimationFrame(this.frameRequest); } catch {}
+    }
     this.frameRequest = 0;
   }
 
@@ -651,14 +759,27 @@ export class VirtualTryOn extends Native {
       this.frameRequest = 0;
       return;
     }
-    this.frameRequest = requestAnimationFrame(() => this.loop());
+    // استفاده از requestVideoFrameCallback اگر دوربین پشتیبانی کند - دقیق‌تر و کم‌مصرف‌تر
+    const schedule = () => {
+      if (this.tracker?.camera?.video?.requestVideoFrameCallback) {
+        this.frameRequest = this.tracker.camera.video.requestVideoFrameCallback(() => this.loop());
+      } else {
+        this.frameRequest = requestAnimationFrame(() => this.loop());
+      }
+    };
+    // برای اولین فریم، مستقیم اجرا کن، بقیه را schedule
+    if (!this._loopScheduled) {
+      this._loopScheduled = true;
+    } else {
+      // این فراخوانی از طریق rVFC یا rAF آمده، ادامه بده
+    }
+
     const tr = this.tracker,
       v = tr?.video;
-    if (!v?.videoWidth) return;
+    if (!v?.videoWidth) { schedule(); return; }
     const now = performance.now();
     this.frames = (this.frames || 0) + 1;
 
-    // تنظیم خودکار کیفیت بر اساس فریم‌ریت واقعی
     if (now - (this.fpsT0 || (this.fpsT0 = now)) > 3600) {
       const fps = (this.frames * 1000) / (now - this.fpsT0);
       this.frames = 0;
@@ -675,7 +796,7 @@ export class VirtualTryOn extends Native {
         this.hint(t(this.cfg.lang, "liteOn"), true);
       }
     }
-    if (now - (this.lastDraw || 0) < 1000 / (this.quality === "lite" ? 24 : 30)) return;
+    if (now - (this.lastDraw || 0) < 1000 / (this.quality === "lite" ? 24 : 30)) { schedule(); return; }
     this.lastDraw = now;
 
     this.syncSize();
@@ -709,12 +830,17 @@ export class VirtualTryOn extends Native {
 
     if (this.cfg.features.hairLayer && tr.segmenter && now - (this.lastSeg || 0) > (this.quality === "lite" ? 260 : 130)) {
       this.lastSeg = now;
-      // ماسک مو در بوم جدا؛ روی لایهٔ oc پیکسل‌های واقعی مو از ویدیو کشیده می‌شود (نه لکهٔ سفید)
       this.hairCv = this.hairCv || document.createElement("canvas");
       if (tr.segmentHair(this.hairCv)) this.stage.drawHairLayer(this.ctx.oc, this.hairCv);
       else this.ctx.oc.clearRect(0, 0, this.el.oc.width, this.el.oc.height);
     }
     this.scan.draw(pose);
+    // schedule next frame - use rVFC if available for better sync
+    if (this.tracker?.camera?.video?.requestVideoFrameCallback) {
+      this.frameRequest = this.tracker.camera.video.requestVideoFrameCallback(() => this.loop());
+    } else {
+      this.frameRequest = requestAnimationFrame(() => this.loop());
+    }
   }
 
   maybeHint(pose) {
@@ -983,6 +1109,8 @@ export class VirtualTryOn extends Native {
     const intent = () => this.prewarm()?.catch(() => {});
     for (const ev of ["pointerenter", "touchstart", "focusin"]) this.el.gate.addEventListener(ev, intent, { once: true, passive: true });
     this.$("photoStart")?.addEventListener("click", () => this.pickPhoto());
+    this.$("camSwitch")?.addEventListener("click", () => this.handleCameraSwitch());
+    this.$("camTorch")?.addEventListener("click", () => this.handleTorchToggle());
     this.$("close")?.addEventListener("click", () => this.close());
     this.$("openFit").addEventListener("click", () => this.openSheet());
     this.$("sheetClose").addEventListener("click", () => this.openSheet(false));
@@ -1351,17 +1479,30 @@ export class VirtualTryOn extends Native {
     }
     try {
       if (!this.tracker) throw new Error("موتور دوربین آماده نیست؛ دکمهٔ شروع را دوباره بزنید.");
-      if (!this.tracker.stream) await this.tracker.startCamera({ light: this.quality === "lite" });
+      if (!this.tracker.stream) {
+        await this.tracker.startCamera({ light: this.quality === "lite", portrait: this.portraitCamera() });
+        this.stage.updateVideoRef(this.tracker.camera);
+        this.stage.setMirrored(this.tracker.camera.isMirrored);
+        this.updateCameraUI();
+      }
       this.tracker.photoMode = false;
-      this.el.stage.style.removeProperty("--vt-mirror");
       this.el.stage.classList.remove("photo-mode");
+      // mirror را از دوربین بگیر، نه حذف
+      if (this.tracker.camera) {
+        this.el.stage.style.setProperty("--vt-mirror", this.tracker.camera.isMirrored ? "-1" : "1");
+        this.stage.setMirrored(this.tracker.camera.isMirrored);
+      } else {
+        this.el.stage.style.removeProperty("--vt-mirror");
+      }
       this.showCameraReturn(false);
       this.stage.opts.video = this.tracker.video;
       this.syncSize();
       this.state = "live";
       this.wasLive = false;
       this.el.gate.hidden = true;
+      this.el.camTools && (this.el.camTools.hidden = false);
       this.setStatus("live", t(this.cfg.lang, "live"));
+      this._loopScheduled = false;
       this.loop();
     } catch (error) {
       this.state = "error";
@@ -1371,12 +1512,14 @@ export class VirtualTryOn extends Native {
       this.el.gate.hidden = false;
       this.setStatus("error", t(this.cfg.lang, "cameraBlocked"));
       this.showError(error);
-      this.emit("error", { where: "resume", message: String(error?.message || error), name: error?.name });
+      this.emit("error", { where: "resume", message: String(error?.message || error), name: error?.name, key: error._key });
     }
   }
   close() {
     this.hidden = true;
     this.wasLive = false;
+    this._loopScheduled = false;
+    if (this.el.camTools) this.el.camTools.hidden = true;
     const wasStarting = this.starting;
     this.starting = false;
     if (wasStarting) {
@@ -1390,7 +1533,7 @@ export class VirtualTryOn extends Native {
     }
     this.state = this.booted ? "paused" : "idle";
     this.stopLoop();
-    this.tracker?.stopCamera?.(); // چراغ دوربین خاموش شود؛ با open() دوباره روشن می‌شود
+    this.tracker?.stopCamera?.();
     const style = document.documentElement.style;
     if (this.savedOverflow) {
       const { value, priority } = this.savedOverflow;
@@ -1437,7 +1580,9 @@ export class VirtualTryOn extends Native {
     this.destroyed = true;
     this.dead = true;
     this.stopLoop();
+    this._resizeObs?.disconnect?.();
     this.onResize && window.removeEventListener("resize", this.onResize);
+    window.removeEventListener("orientationchange", this.onResize);
     this.onVisibilityChange && document.removeEventListener("visibilitychange", this.onVisibilityChange);
     this.onGlobalKeydown && window.removeEventListener("keydown", this.onGlobalKeydown);
     this.mountListener && this.mountBtn?.removeEventListener("click", this.mountListener);
