@@ -1,11 +1,13 @@
 /**
  * tracking.js — ردیابی صورت با MediaPipe Face Landmarker + حل‌کردن فیت میلی‌متری
+ * بازطراحی ۲۰۲۶: اکنون از ماژول دوربین جدید (camera.js) استفاده می‌کند
  *
  * منطق اندازه‌گیری (چیزی که این کار را از «افکت اینستاگرام» جدا می‌کند):
  *  فاصلهٔ مردمک‌ها در پیکسل ↔ میلی‌متر واقعی ⇒ فاصلهٔ دوربین از صورت؛
-  *  فریم عینک vg میلی‌متر جلوتر از صفحهٔ چشم است ⇒ تصحیح مقیاس پرسپکتیو.
- * برای همین عینک در هر فاصله و هر چرخش سر، هم‌اندازهٔ واقعی می‌ماند.
+ *  فریم عینک vg میلی‌متر جلوتر از صفحهٔ چشم است ⇒ تصحیح مقیاس پرسپکتیو.
  */
+
+import { Camera, cameraErrorInfo } from "./camera.js";
 
 const MIRRORS = {
   vision: [
@@ -41,7 +43,7 @@ const P = {
   browR: 300,
   noseBridge: 6,
   noseTip: 4,
-  noseSideL: 188, // کنار پل بینی، جایی که پد می‌نشیند — نه شقیقه
+  noseSideL: 188,
   noseSideR: 412,
   chin: 152,
   faceL: 234,
@@ -57,7 +59,6 @@ const P = {
 };
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
-/** قطر عنبیهٔ بزرگسال. مقیاس میلی‌متر از همین ثابت می‌آید، نه از عرضِ فرضیِ صورت. */
 export const IRIS_MM = 11.7;
 const median = (a) => {
   if (!a.length) return 0;
@@ -65,23 +66,13 @@ const median = (a) => {
   return s.length % 2 ? s[(s.length - 1) >> 1] : (s[s.length / 2 - 1] + s[s.length / 2]) / 2;
 };
 
-/**
- * فاصلهٔ مردمک به میلی‌متر، از فاصلهٔ پیکسلیِ مردمک‌ها و قطر عنبیه.
- * فرمول قبلی ((مردمک/عرض‌صورت)×۱۳۸×۰٫۴۷) همیشه به کفِ ۵۲ می‌خورد و عینک را ~۲۰٪ بزرگ می‌کرد.
- * @returns {number|null}
- */
 export function estimatePdMm(pupilPx, irisDiamPx) {
   if (!(pupilPx > 4) || !(irisDiamPx > 1)) return null;
   return clamp((pupilPx * IRIS_MM) / irisDiamPx, 50, 78);
 }
 
 function irisDiameterPx(lms, toPx) {
-  const pairs = [
-    [469, 471],
-    [470, 472],
-    [474, 476],
-    [475, 477],
-  ];
+  const pairs = [[469, 471],[470, 472],[474, 476],[475, 477]];
   const ds = [];
   for (const [a, b] of pairs) {
     const d = pairPx(lms, a, b, toPx);
@@ -97,7 +88,7 @@ function pairPx(lms, a, b, toPx) {
   return Math.hypot(pb.x - pa.x, pb.y - pa.y);
 }
 
-/** فیلتر یک‌یورو: لرزش را می‌گیرد و تأخیر را کم نگه می‌دارد. */
+/** فیلتر یک‌یورو */
 class OneEuro {
   constructor(minCutoff = 1.1, beta = 0.008, dCutoff = 1.0) {
     this.minCutoff = minCutoff;
@@ -131,53 +122,19 @@ class OneEuro {
   }
 }
 
-function loadScript(src, timeout = 15000) {
-  return new Promise((resolve, reject) => {
-    const s = document.createElement("script");
-    let done = false;
-    const timer = setTimeout(() => {
-      if (!done) {
-        done = true;
-        s.remove();
-        reject(new Error("timeout: " + src));
-      }
-    }, timeout);
-    s.src = src;
-    s.crossOrigin = "anonymous";
-    s.onload = () => {
-      if (done) return;
-      done = true;
-      clearTimeout(timer);
-      resolve();
-    };
-    s.onerror = () => {
-      if (done) return;
-      done = true;
-      clearTimeout(timer);
-      s.remove();
-      reject(new Error("load failed: " + src));
-    };
-    document.head.appendChild(s);
-  });
-}
-
 async function withTimeout(p, ms, label) {
   let t;
   try {
     return await Promise.race([
       p,
-      new Promise((_, rej) => {
-        t = setTimeout(() => rej(new Error("timeout: " + label)), ms);
-      }),
+      new Promise((_, rej) => { t = setTimeout(() => rej(new Error("timeout: " + label)), ms); }),
     ]);
-  } finally {
-    clearTimeout(t);
-  }
+  } finally { clearTimeout(t); }
 }
 
 export class FaceTracker {
   /**
-   * @param {{baseURL:string, assets?:object, log?:(m:string)=>void, pd?:number, autoPd?:boolean, vertexDistance?:number, focalScale?:number, delegate?:string}} opts
+   * @param {{baseURL:string, assets?:object, log?:(m:string)=>void, pd?:number, autoPd?:boolean, vertexDistance?:number, focalScale?:number, delegate?:string, camera?:Camera}} opts
    */
   constructor(opts = {}) {
     this.o = opts;
@@ -186,13 +143,14 @@ export class FaceTracker {
     this.log = opts.log || (() => {});
     this.pdMm = opts.pd || 63;
     this.autoPd = opts.autoPd !== false;
-    this.vg = opts.vertexDistance ?? 13; // فاصلهٔ عدسی تا صفحهٔ چشم (mm)
-    this.focalScale = opts.focalScale || 0.75; // f ≈ 0.75×عرض تصویر (دوربین سلفون)
+    this.vg = opts.vertexDistance ?? 13;
+    this.focalScale = opts.focalScale || 0.75;
     this.state = "idle";
-    this.video = document.createElement("video");
-    this.video.autoplay = true;
-    this.video.playsInline = true;
-    this.video.muted = true;
+
+    // دوربین جدید - اگر بیرون داده شده استفاده کن، وگرنه بساز
+    this.camera = opts.camera || new Camera({ log: this.log, preferredFacing: "user" });
+    this.video = this.camera.video; // برای سازگاری با کد قدیمی
+
     this.W = 0;
     this.H = 0;
     this.f = { x: new OneEuro(), y: new OneEuro(), z: new OneEuro(), s: new OneEuro(1.5, 0.12), c: new OneEuro(0.18, 0.0006) };
@@ -204,39 +162,47 @@ export class FaceTracker {
     this.lastVideoTime = -1;
     this.faces = 0;
     this.missStreak = 0;
+    this.photoMode = false;
+    this.imageResult = null;
+    this.stream = null;
+
+    // اتصال رویدادهای دوربین
+    this.camera.on("resize", ({ w, h }) => { this.W = w; this.H = h; });
+    this.camera.on("state", (s) => {
+      if (s.state === "active") {
+        this.W = this.camera.W;
+        this.H = this.camera.H;
+        this.stream = this.camera.stream;
+        this.video = this.camera.video;
+      }
+    });
   }
 
-  get ready() {
-    return !!this.landmarker && this.state === "live";
-  }
+  get ready() { return !!this.landmarker && this.state === "live"; }
 
-  /** بارگذاری کتابخانه/مدل با چند آینه (برای شبکهٔ ایران) */
   async init(onProgress = () => {}) {
     const list = (key, fallback) => (this.assets[key] ? [].concat(this.assets[key], fallback) : fallback);
     const abs = (u) => (u.startsWith("http") || !this.base ? u : this.base + "/" + u);
 
     onProgress("3d", "در حال آماده‌سازی نمایش سه‌بعدی…");
     if (!this.vision) {
-      let mod = null,
-        fs = null,
-        err = null;
+      let mod = null, fs = null, err = null;
       for (const src of list("vision", MIRRORS.vision)) {
         try {
           mod = await withTimeout(import(abs(src.module)), 20000, "vision module");
           fs = await withTimeout(mod.FilesetResolver.forVisionTasks(abs(src.wasm)), 20000, "wasm");
           break;
-        } catch (e) {
-          err = e;
-        }
+        } catch (e) { err = e; }
       }
       if (!mod) throw err || new Error("MediaPipe unavailable");
       this.vision = mod;
       this.fileset = fs;
     }
-
     onProgress("model", "در حال آماده‌سازی تشخیص صورت…");
     this.landmarker = await this.createLandmarker(onProgress);
     this.state = "ready";
+    // دوربین را هم init کن
+    try { await this.camera.init(); } catch {}
     return this;
   }
 
@@ -262,9 +228,7 @@ export class FaceTracker {
             45000,
             "landmarker " + delegate,
           );
-        } catch (e) {
-          err = e;
-        }
+        } catch (e) { err = e; }
       }
     }
     throw err || new Error("face model unavailable");
@@ -288,110 +252,81 @@ export class FaceTracker {
           "hair model",
         );
         return this.segmenter;
-      } catch (e) {
-        err = e;
-      }
+      } catch (e) { err = e; }
     }
     this.hairFailed = true;
     this.log("hair-unavailable", err?.message || "");
     return null;
   }
 
-  /** دوربین را باز می‌کند؛ ترتیب محدودیت‌ها از general به specific */
-  async startCamera({ facing = "user", light = false, portrait = false } = {}) {
-    if (!window.isSecureContext) {
-      const e = new Error("این صفحه باید با HTTPS باز شود تا دوربین کار کند");
-      e.name = "SecurityError";
-      throw e;
+  /** شروع دوربین با ماژول جدید */
+  async startCamera({ facing = "user", light = false, portrait = false, deviceId = null, torch = false, zoom = null } = {}) {
+    if (this.photoMode) {
+      // از حالت عکس به دوربین برمی‌گردیم
+      this.photoMode = false;
+      this.imageResult = null;
     }
-    if (!navigator.mediaDevices?.getUserMedia) {
-      const e = new Error("API دوربین در این مرورگر در دسترس نیست");
-      e.name = "NotFoundError";
-      throw e;
+    try {
+      await this.camera.init();
+      const stream = await this.camera.start({
+        facing,
+        deviceId,
+        width: light ? 640 : 960,
+        height: light ? 480 : 720,
+        portrait,
+        torch,
+        zoom,
+      });
+      this.video = this.camera.video;
+      this.stream = stream;
+      this.W = this.camera.W;
+      this.H = this.camera.H;
+      this.photoMode = false;
+      this.imageResult = null;
+      this.resetTracking();
+      this.state = "live";
+      return stream;
+    } catch (e) {
+      const info = cameraErrorInfo(e);
+      const mapped = new Error(e.message || "camera unavailable");
+      mapped.name = e.name || "NotFoundError";
+      mapped._key = info.key;
+      throw mapped;
     }
-    // در حالت عمودی، ارتفاع بیشتر از عرض باشد؛ وگرنه object-fit:cover صورت را می‌بُرد
-    const base = light ? { w: 640, h: 480 } : { w: 960, h: 720 };
-    const want = portrait ? { w: base.h, h: base.w } : base;
-    const tries = [
-      {
-        video: {
-          facingMode: { ideal: facing },
-          width: { ideal: want.w, max: want.w * 2 },
-          height: { ideal: want.h, max: want.h * 2 },
-          frameRate: { ideal: 30, max: 60 },
-        },
-        audio: false,
-      },
-      { video: { width: { ideal: want.w }, height: { ideal: want.h } }, audio: false },
-      { video: true, audio: false },
-    ];
-    let err;
-    for (let i = 0; i < tries.length; i++) {
-      try {
-        if (i) await new Promise((r) => setTimeout(r, 600));
-        this.stream = await navigator.mediaDevices.getUserMedia(tries[i]);
-        this.video.srcObject = this.stream;
-        await this.waitForMetadata();
-        await withTimeout(this.video.play(), 10000, "camera playback");
-        if (!this.video.videoWidth) throw new Error("تصویر دوربین آماده نشد");
-        this.photoMode = false;
-        this.imageResult = null;
-        this.resetTracking();
-        this.state = "live";
-        return this.stream;
-      } catch (e) {
-        err = e;
-        this.stopCamera();
-        if (["NotAllowedError", "PermissionDeniedError", "NotFoundError", "SecurityError", "OverconstrainedError"].includes(e.name)) break;
-      }
-    }
-    throw err || new Error("camera unavailable");
   }
 
-  waitForMetadata(ms = 15000) {
-    return new Promise((resolve, reject) => {
-      const v = this.video;
-      let timer;
-      const cleanup = () => {
-        clearTimeout(timer);
-        v.removeEventListener("loadedmetadata", ok);
-        v.removeEventListener("error", bad);
-      };
-      const ok = () => {
-        cleanup();
-        resolve();
-      };
-      const bad = () => {
-        cleanup();
-        reject(new Error("خطا در خواندن دوربین"));
-      };
-      if (v.readyState >= 1 && v.videoWidth) return resolve();
-      v.addEventListener("loadedmetadata", ok, { once: true });
-      v.addEventListener("error", bad, { once: true });
-      timer = setTimeout(() => {
-        cleanup();
-        reject(new Error("timeout: camera metadata"));
-      }, ms);
-    });
+  /** برای سازگاری: enumerate devices */
+  async listCameras() {
+    return this.camera.enumerateDevices();
   }
+  async switchCamera() {
+    const s = await this.camera.switchFacing();
+    this.video = this.camera.video;
+    this.stream = s;
+    this.W = this.camera.W;
+    this.H = this.camera.H;
+    this.resetTracking();
+    return s;
+  }
+  async setTorch(on) { return this.camera.setTorch(on); }
+  async setZoom(z) { return this.camera.setZoom(z); }
 
   stopCamera() {
-    this.stream?.getTracks?.().forEach((t) => t.stop());
+    this.camera.stop();
     this.stream = null;
-    this.video.srcObject = null;
     this.lastVideoTime = -1;
     if (this.state === "live") this.state = "ready";
   }
 
   dispose() {
     this.stopCamera();
+    this.camera.dispose();
     this.landmarker?.close?.();
     this.segmenter?.close?.();
     this.landmarker = null;
     this.segmenter = null;
   }
 
-  /** A new image/person must never inherit another face's filters or auto-PD. */
   resetTracking() {
     this.pose = null;
     this.q = null;
@@ -406,24 +341,25 @@ export class FaceTracker {
     this.f = { x: new OneEuro(), y: new OneEuro(), z: new OneEuro(), s: new OneEuro(1.5, 0.12), c: new OneEuro(0.18, 0.0006) };
   }
 
-  /** ابعاد بوم/پیکسل‌ها از خودِ ویدیو می‌آید (بدون کشیدنِ دوباره) */
-  get size() {
-    return { w: this.W, h: this.H };
-  }
+  get size() { return { w: this.W, h: this.H }; }
 
   resize(w, h) {
     if (this.W === w && this.H === h) return false;
-    this.W = w;
-    this.H = h;
+    this.W = w; this.H = h;
     return true;
   }
 
-  /** یک فریم ویدیو را پردازش می‌کند؛ نتیجه در this.pose */
   process(ts, force = false) {
     const v = this.video;
     if (this.photoMode) return this.pose || null;
     if (!this.landmarker || !v.videoWidth) return null;
-    this.resize(v.videoWidth, v.videoHeight);
+    // سایز را از دوربین بگیر اگر تغییر کرده
+    if (this.camera.W && this.camera.H) {
+      this.W = this.camera.W;
+      this.H = this.camera.H;
+    } else {
+      this.resize(v.videoWidth, v.videoHeight);
+    }
     if (!force && v.currentTime === this.lastVideoTime) return this.pose || null;
     this.lastVideoTime = v.currentTime;
     let res = null;
@@ -444,15 +380,11 @@ export class FaceTracker {
     return this.pose;
   }
 
-  px(p) {
-    return { x: p.x * this.W, y: p.y * this.H };
-  }
+  px(p) { return { x: p.x * this.W, y: p.y * this.H }; }
 
-  /** حلpose: موقعیت/چرخش/مقیاس در «فضای پیکسلیِ z=0» (هم‌راستا با ویدیو) */
   solve(res, ts) {
     const lms = res.faceLandmarks[0];
-    const W = this.W,
-      H = this.H;
+    const W = this.W, H = this.H;
     const eyeL = this.px(lms[P.irisL] ? lms[P.irisL] : mid(lms[P.eyeOuterL], lms[159], lms[145]));
     const eyeR = this.px(lms[P.irisR] ? lms[P.irisR] : mid(lms[P.eyeOuterR], lms[386], lms[374]));
     const iris = Math.max(4, Math.hypot(eyeR.x - eyeL.x, eyeR.y - eyeL.y));
@@ -460,8 +392,7 @@ export class FaceTracker {
     const nose = this.px(lms[P.noseBridge]);
     const tip = this.px(lms[P.noseTip]);
     const chin = this.px(lms[P.chin]);
-    const faceL = this.px(lms[P.faceL]),
-      faceR = this.px(lms[P.faceR]);
+    const faceL = this.px(lms[P.faceL]), faceR = this.px(lms[P.faceR]);
     const faceW = Math.max(1, Math.hypot(faceR.x - faceL.x, faceR.y - faceL.y));
 
     const q = quatFrom(res, lms, { midEye, nose, tip, faceW, H, W }, (v) => this.px(v));
@@ -473,7 +404,6 @@ export class FaceTracker {
     const eyesOpen = pairPx(lms, 159, 145, (p) => this.px(p)) > iris * 0.035 &&
       pairPx(lms, 386, 374, (p) => this.px(p)) > iris * 0.035;
 
-    // ── PD خودکار از قطر عنبیه (میلی‌مترِ شناخته‌شده)، نه از نسبتِ جادوییِ عرض صورت ──
     if (this.autoPd && frontal && eyesOpen) {
       const est = estimatePdMm(iris, irisDia);
       if (est && est > 50 && est < 78) {
@@ -493,12 +423,9 @@ export class FaceTracker {
     }
     const pdMm = this.pdMm;
 
-    // Undo foreshortening before converting pixels to mm. Otherwise yaw shrinks
-    // the model once here and a second time when the quaternion is applied.
     const focalPx = this.focalScale * Math.max(W, H);
     const scale = iris / (pdMm * projectedEyeAxis);
     const vgPx = this.vg * scale;
-    // Eye corners follow the skull, not gaze. Keep the anchor fixed when pupils move.
     const socketL = mid(lms[33], lms[133]);
     const socketR = mid(lms[362], lms[263]);
     const anchor = this.px(mid(socketL, socketR));
@@ -515,13 +442,10 @@ export class FaceTracker {
       front,
     };
 
-    // ── هموارسازی (One€) + حدس سرعت ──
     const t = ts || performance.now();
     const jump = this.pose ? Math.hypot(raw.x - this.pose.x, raw.y - this.pose.y) / Math.max(1, scale) : 0;
     const relock = jump > 46;
-    if (relock) {
-      for (const filter of Object.values(this.f)) filter.xPrev = null;
-    }
+    if (relock) { for (const filter of Object.values(this.f)) filter.xPrev = null; }
     const k = relock ? 0 : 1;
     const x = k ? this.f.x.filter(raw.x, t) : raw.x;
     const y = k ? this.f.y.filter(raw.y, t) : raw.y;
@@ -548,24 +472,12 @@ export class FaceTracker {
     const pitch = Math.asin(clamp(-smoothFront[1], -1, 1));
 
     const pose = {
-      x,
-      y,
-      z,
-      scale: s,
-      q: this.q,
-      front,
-      camZ,
-      focalPx,
-      iris,
-      irisDiaPx: irisDia,
-      faceW,
+      x, y, z, scale: s, q: this.q, front, camZ, focalPx,
+      iris, irisDiaPx: irisDia, faceW,
       faceWmm: faceW / (scale * projectedEyeAxis),
       faceHmm: Math.hypot(chin.x - this.px(lms[10]).x, chin.y - this.px(lms[10]).y) / scale,
       noseWmm: pairPx(lms, P.noseSideL, P.noseSideR, (p) => this.px(p)) / (scale * projectedEyeAxis),
-      chinPx: chin,
-      pdMm,
-      autoPd: this.autoPd,
-      pdLocked: this.pdLocked,
+      chinPx: chin, pdMm, autoPd: this.autoPd, pdLocked: this.pdLocked,
       landmarkPx: (i) => this.px(lms[i]),
       landmarks: lms,
       eyes: { l: eyeL, r: eyeR },
@@ -573,29 +485,17 @@ export class FaceTracker {
       chin: { x: chin.x, y: chin.y },
       tip: { x: tip.x, y: tip.y },
       quality: {
-        frontal: front[2],
-        yaw,
-        pitch,
-        size: iris / W,
-        // راهنماهای کاربر (کلیدهای i18n)
-        hint:
-          iris / W < 0.13
-            ? "closer"
-            : front[2] < 0.55
-              ? "frontal"
-              : Math.abs(pitch) > 0.42
-                ? "level"
-                : bridgeY / Math.max(1, iris) > 0.9
-                  ? "down"
-                  : null,
+        frontal: front[2], yaw, pitch, size: iris / W,
+        hint: iris / W < 0.13 ? "closer" : front[2] < 0.55 ? "frontal" : Math.abs(pitch) > 0.42 ? "level" : bridgeY / Math.max(1, iris) > 0.9 ? "down" : null,
       },
       stable: !relock,
+      mirrored: this.camera.isMirrored,
+      facing: this.camera.facing,
     };
     this.pose = pose;
     return pose;
   }
 
-  /** حالت «عکس» : یک تصویر استاتیک را پردازش می‌کند (بدون دوربین) */
   async processImage(img) {
     if (!this.landmarker) return null;
     const cv = this._imgCv || (this._imgCv = document.createElement("canvas"));
@@ -626,18 +526,14 @@ export class FaceTracker {
   }
 
   segmentHair(dstCanvas) {
-    if (!this.segmenter || !this.video.videoWidth) return false;
+    if (!this.segmenter || (!this.video.videoWidth && !this.photoMode)) return false;
     try {
       const res = this.segmenter.segmentForVideo(this.video, performance.now());
       const mask = res.categoryMask;
       const d = mask.getAsUint8Array();
-      const mw = mask.width || 256,
-        mh = mask.height || 256;
+      const mw = mask.width || 256, mh = mask.height || 256;
       const ctx = dstCanvas.getContext("2d", { willReadFrequently: true });
-      if (dstCanvas.width !== mw || dstCanvas.height !== mh) {
-        dstCanvas.width = mw;
-        dstCanvas.height = mh;
-      }
+      if (dstCanvas.width !== mw || dstCanvas.height !== mh) { dstCanvas.width = mw; dstCanvas.height = mh; }
       const img = ctx.createImageData(mw, mh);
       const o = img.data;
       for (let i = 0; i < d.length; i++) {
@@ -667,22 +563,17 @@ function quatFrom(res, lms, g, toPx) {
   const m = res.facialTransformationMatrixes?.[0]?.data;
   if (m && m.length === 16) {
     try {
-      // three.Matrix4.fromArray(stored column-major) → decompose
       const q = quatFromMat4(m);
       if (q) {
         const front = applyQ(q, [0, 0, 1]);
         if (isFinite(q[0]) && front[2] > 0.02) return q;
       }
-    } catch (e) {
-      /* ignore, هندسی */
-    }
+    } catch {}
   }
   return quatGeometric(lms, g, toPx);
 }
 
-/** استخراج کواترنیون از ماتریس ۴×۴ (ستونی، هم‌خوان three) */
 function quatFromMat4(m) {
-  // Remove per-axis scale from MediaPipe's similarity transform first.
   if (!Array.from(m).every(Number.isFinite)) return null;
   m = Array.from(m);
   for (const col of [0, 4, 8]) {
@@ -712,23 +603,17 @@ function quatFromMat4(m) {
   return n > 1e-6 ? q.map((v) => v / n) : null;
 }
 
-/** چرخش تقریبی از خط چشم + مکان بینی (وقتی ماتریس در دسترس نیست) */
 function quatGeometric(lms, g, toPx) {
   const roll = -Math.atan2(toPx(lms[263]).y - toPx(lms[33]).y, toPx(lms[263]).x - toPx(lms[33]).x);
   const faceW = Math.max(1, Math.abs(toPx(lms[454]).x - toPx(lms[234]).x));
   const yawN = clamp(((toPx(lms[4]).x - g.midEye.x) / faceW) * 1.9, -0.6, 0.6);
   const pitchN = clamp(1.25 * ((toPx(lms[4]).y - g.midEye.y) / Math.max(1, g.faceW)) - 0.22, -0.45, 0.45);
-  const e = [pitchN, yawN, roll, "YXZ"];
-  return eulerToQuat(e[0], e[1], e[2]);
+  return eulerToQuat(pitchN, yawN, roll);
 }
 
 function eulerToQuat(pitch, yaw, roll) {
-  const c1 = Math.cos(pitch / 2),
-    c2 = Math.cos(yaw / 2),
-    c3 = Math.cos(roll / 2);
-  const s1 = Math.sin(pitch / 2),
-    s2 = Math.sin(yaw / 2),
-    s3 = Math.sin(roll / 2);
+  const c1 = Math.cos(pitch / 2), c2 = Math.cos(yaw / 2), c3 = Math.cos(roll / 2);
+  const s1 = Math.sin(pitch / 2), s2 = Math.sin(yaw / 2), s3 = Math.sin(roll / 2);
   return [
     s1 * c2 * c3 - c1 * s2 * s3,
     c1 * s2 * c3 + s1 * c2 * s3,
@@ -737,7 +622,6 @@ function eulerToQuat(pitch, yaw, roll) {
   ];
 }
 
-/** چرخش بردار با کواترنیون [x,y,z,w] */
 export function applyQ(q, v) {
   const [x, y, z, w] = q;
   const ix = w * v[0] + y * v[2] - z * v[1];
