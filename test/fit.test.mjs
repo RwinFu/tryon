@@ -79,11 +79,11 @@ test("فریم خیلی پهن یا خیلی باریک رد می‌شود", () 
 });
 
 test("دسانتراسیون: اختلاف مرکز عدسی تا مردمک", () => {
-  const spec = toEngineSpec(CATALOG[0]); // lensW 52 + dbn 18 → ۷۰ مرکز تا مرکز
+  const spec = toEngineSpec(CATALOG[0]); // RB2140: lensW 50 + dbn 22 → ۷۲ مرکز تا مرکز
   const dec = (pd) => fitReport(CATALOG[0], pose({ pdMm: pd }), spec).find((r) => r.key === "decentration");
-  assert.ok(Math.abs(parseFloat(dec(70).value)) < 0.05, dec(70).value);
-  assert.equal(dec(70).status, "good");
-  assert.ok(Math.abs(Math.abs(parseFloat(dec(64).value)) - 3) < 0.11, dec(64).value);
+  assert.ok(Math.abs(parseFloat(dec(72).value)) < 0.05, dec(72).value);
+  assert.equal(dec(72).status, "good");
+  assert.ok(Math.abs(Math.abs(parseFloat(dec(64).value)) - 4) < 0.11, dec(64).value);
   assert.equal(dec(50).status, "warn");
 });
 

@@ -1,152 +1,630 @@
 {
-  "version": 2,
-  "updated": "2026-09-22",
+  "version": 3,
+  "updated": "2026-09-29",
   "products": [
     {
       "id": "AR-101",
-      "sku": "AR-101",
-      "name": "مربعی کلاسیک",
+      "sku": "RB2140-901-58-50",
+      "name": "Original Wayfarer Classic",
       "brand": "Ray-Ban",
-      "price": 4850000,
-      "currency": "تومان",
-      "size": "52□18-145",
-      "shape": "square",
+      "modelCode": "RB2140 901/58",
+      "modelFamily": "Original Wayfarer Classic",
+      "size": "50□22-150",
+      "shape": "wayfarer",
       "style": "full",
       "material": "acetate",
+      "composition": "Acetate",
+      "lensH": 41,
+      "lensHSource": "manufacturer",
       "finish": "polished-black",
-      "lens": "clear",
+      "color": "#111216",
+      "lens": {
+        "type": "solid",
+        "color": "#52645a",
+        "tint": 0.74
+      },
       "gender": "unisex",
       "tags": [
-        "optical",
-        "classic"
+        "ray-ban",
+        "sun",
+        "iconic",
+        "wayfarer"
       ],
       "bestFor": [
         "round",
         "oval",
         "heart"
       ],
+      "sourceUrl": "https://www.ray-ban.com/usa/sunglasses/RB2140%20UNISEX%20original%20wayfarer%20classic-black/805289126577",
+      "url": "https://www.ray-ban.com/usa/sunglasses/RB2140%20UNISEX%20original%20wayfarer%20classic-black/805289126577",
+      "sourceName": "صفحهٔ سازنده",
+      "sourceType": "manufacturer",
+      "sourceChecked": "2026-09-29",
+      "modelAssetStatus": "procedural-preview",
+      "modelAssetNote": "هندسهٔ پیش‌نمایش؛ مدل رسمی/اسکنِ همان SKU نیست.",
       "colors": [
         {
-          "name": "مشکی براق",
-          "color": "#101114",
-          "finish": "polished-black"
-        },
-        {
-          "name": "لاک‌پشتی عسلی",
-          "color": "#7a4a22",
-          "finish": "havana"
-        },
-        {
-          "name": "خاکستری مات",
-          "color": "#4b4f55",
-          "finish": "matte-sand"
-        },
-        {
-          "name": "یشمی",
-          "color": "#2f4436",
-          "finish": "acetate"
+          "name": "مشکی براق · G-15 سبز",
+          "color": "#111216",
+          "finish": "polished-black",
+          "lens": {
+            "type": "solid",
+            "color": "#52645a",
+            "tint": 0.74
+          }
         }
       ],
       "spec": {
-        "shape": "square",
+        "shape": "wayfarer",
         "style": "full",
         "material": "acetate",
-        "lensW": 52,
-        "lensH": 44,
-        "dbn": 18,
-        "templeLen": 145,
-        "rimW": 5.4,
-        "rimT": 3.7,
-        "pantoDeg": 9
+        "lensW": 50,
+        "lensH": 41,
+        "dbn": 22,
+        "templeLen": 150,
+        "rimW": 5.2,
+        "rimT": 4,
+        "baseCurve": 6.5,
+        "pantoDeg": 7,
+        "bridgeDrop": 0.46
       }
     },
     {
       "id": "AR-102",
-      "sku": "AR-102",
-      "name": "مستطیل اداری",
+      "sku": "RB2140-902-51-50",
+      "name": "Original Wayfarer Classic",
       "brand": "Ray-Ban",
-      "currency": "تومان",
-      "size": "54□16-145",
-      "shape": "rectangle",
+      "modelCode": "RB2140 902/51",
+      "modelFamily": "Original Wayfarer Classic",
+      "size": "50□22-150",
+      "shape": "wayfarer",
       "style": "full",
       "material": "acetate",
-      "lens": "clear",
+      "composition": "Acetate",
+      "lensH": 41,
+      "lensHSource": "manufacturer",
+      "finish": "havana",
+      "color": "#754626",
+      "lens": {
+        "type": "solid",
+        "color": "#6b4a37",
+        "tint": 0.5
+      },
       "gender": "unisex",
       "tags": [
-        "optical",
-        "office"
+        "ray-ban",
+        "sun",
+        "iconic",
+        "wayfarer"
       ],
       "bestFor": [
         "round",
         "oval",
-        "triangle"
+        "heart"
       ],
+      "sourceUrl": "https://www.ray-ban.com/usa/sunglasses/RB2140%20UNISEX%20original%20wayfarer%20classic-tortoise/805289183082",
+      "url": "https://www.ray-ban.com/usa/sunglasses/RB2140%20UNISEX%20original%20wayfarer%20classic-tortoise/805289183082",
+      "sourceName": "صفحهٔ سازنده",
+      "sourceType": "manufacturer",
+      "sourceChecked": "2026-09-29",
+      "modelAssetStatus": "procedural-preview",
+      "modelAssetNote": "هندسهٔ پیش‌نمایش؛ مدل رسمی/اسکنِ همان SKU نیست.",
       "colors": [
         {
-          "name": "مشکی",
-          "color": "#14161a",
-          "finish": "polished-black"
-        },
-        {
-          "name": "سرمه‌ای",
-          "color": "#232f4c",
-          "finish": "denim-blue"
-        },
-        {
-          "name": "شفاف یخی",
-          "color": "#cfd8dc",
-          "finish": "crystal",
-          "translucent": 0.55
+          "name": "لاک‌پشتی براق · قهوه‌ای روشن",
+          "color": "#754626",
+          "finish": "havana",
+          "lens": {
+            "type": "solid",
+            "color": "#6b4a37",
+            "tint": 0.5
+          }
         }
       ],
       "spec": {
-        "shape": "rectangle",
+        "shape": "wayfarer",
         "style": "full",
         "material": "acetate",
-        "lensW": 54,
-        "lensH": 33,
-        "dbn": 16,
-        "templeLen": 145,
-        "rimW": 4.4,
-        "rimT": 3.2
+        "lensW": 50,
+        "lensH": 41,
+        "dbn": 22,
+        "templeLen": 150,
+        "rimW": 5.2,
+        "rimT": 4,
+        "baseCurve": 6.5,
+        "pantoDeg": 7,
+        "bridgeDrop": 0.46
       }
     },
     {
       "id": "AR-103",
-      "sku": "AR-103",
-      "name": "گرد رترو",
-      "brand": "Cartier",
-      "currency": "تومان",
-      "size": "49□21-145",
-      "shape": "round",
+      "sku": "RB3025-002-58-62",
+      "name": "Aviator Classic",
+      "brand": "Ray-Ban",
+      "modelCode": "RB3025 002/58",
+      "modelFamily": "Aviator Classic",
+      "size": "62□14-140",
+      "shape": "aviator",
       "style": "full",
-      "material": "acetate",
-      "lens": "clear",
+      "material": "metal",
+      "composition": "Metal",
+      "lensH": 54.2,
+      "lensHSource": "manufacturer",
+      "finish": "gunmetal-polish",
+      "color": "#24272c",
+      "metalColor": "#24272c",
+      "lens": {
+        "type": "solid",
+        "color": "#53645b",
+        "tint": 0.74
+      },
       "gender": "unisex",
       "tags": [
-        "retro",
-        "optical"
+        "ray-ban",
+        "sun",
+        "pilot",
+        "double-bridge",
+        "aviator"
+      ],
+      "bestFor": [
+        "square",
+        "round",
+        "oblong"
+      ],
+      "sourceUrl": "https://www.ray-ban.com/usa/sunglasses/RB3025%20UNISEX%20aviator%20classic-black/805289115700",
+      "url": "https://www.ray-ban.com/usa/sunglasses/RB3025%20UNISEX%20aviator%20classic-black/805289115700",
+      "sourceName": "صفحهٔ سازنده",
+      "sourceType": "manufacturer",
+      "sourceChecked": "2026-09-29",
+      "modelAssetStatus": "procedural-preview",
+      "modelAssetNote": "هندسهٔ پیش‌نمایش؛ مدل رسمی/اسکنِ همان SKU نیست.",
+      "colors": [
+        {
+          "name": "مشکی پولیش · سبز پلاریزه",
+          "color": "#24272c",
+          "finish": "gunmetal-polish",
+          "metalColor": "#24272c",
+          "lens": {
+            "type": "solid",
+            "color": "#53645b",
+            "tint": 0.74
+          }
+        }
+      ],
+      "spec": {
+        "shape": "aviator",
+        "style": "full",
+        "material": "metal",
+        "lensW": 62,
+        "lensH": 54.2,
+        "dbn": 14,
+        "templeLen": 140,
+        "baseCurve": 6,
+        "pantoDeg": 6,
+        "templeW": 2.3,
+        "templeT": 1.4,
+        "doubleBridge": true,
+        "highBridge": true,
+        "nosePads": true,
+        "metalRimW": 1.55,
+        "metalRimT": 1.2,
+        "teardrop": 0.34,
+        "topWide": 1.08
+      }
+    },
+    {
+      "id": "AR-104",
+      "sku": "RB3447-029-50",
+      "name": "Round Metal",
+      "brand": "Ray-Ban",
+      "modelCode": "RB3447 029",
+      "modelFamily": "Round Metal",
+      "size": "50□21-145",
+      "shape": "roundmetal",
+      "style": "full",
+      "material": "metal",
+      "composition": "Metal",
+      "lensH": 46.9,
+      "lensHSource": "manufacturer",
+      "finish": "gunmetal",
+      "color": "#5c646d",
+      "metalColor": "#5c646d",
+      "lens": {
+        "type": "solid",
+        "color": "#53645b",
+        "tint": 0.72
+      },
+      "gender": "unisex",
+      "tags": [
+        "ray-ban",
+        "sun",
+        "round",
+        "roundmetal"
       ],
       "bestFor": [
         "square",
         "oblong",
         "diamond"
       ],
+      "sourceUrl": "https://www.ray-ban.com/usa/sunglasses/RB3447%20UNISEX%20round%20metal-gunmetal/805289439936",
+      "url": "https://www.ray-ban.com/usa/sunglasses/RB3447%20UNISEX%20round%20metal-gunmetal/805289439936",
+      "sourceName": "صفحهٔ سازنده",
+      "sourceType": "manufacturer",
+      "sourceChecked": "2026-09-29",
+      "modelAssetStatus": "procedural-preview",
+      "modelAssetNote": "هندسهٔ پیش‌نمایش؛ مدل رسمی/اسکنِ همان SKU نیست.",
       "colors": [
         {
-          "name": "عسلی تیره",
-          "color": "#6a4222",
-          "finish": "havana"
-        },
+          "name": "گان‌متال مات · G-15 سبز",
+          "color": "#5c646d",
+          "finish": "gunmetal",
+          "metalColor": "#5c646d",
+          "lens": {
+            "type": "solid",
+            "color": "#53645b",
+            "tint": 0.72
+          }
+        }
+      ],
+      "spec": {
+        "shape": "roundmetal",
+        "style": "full",
+        "material": "metal",
+        "lensW": 50,
+        "lensH": 46.9,
+        "dbn": 21,
+        "templeLen": 145,
+        "baseCurve": 5.5,
+        "pantoDeg": 8,
+        "templeW": 2,
+        "templeT": 1.4,
+        "nosePads": true,
+        "metalRimW": 1.4,
+        "metalRimT": 1.15
+      }
+    },
+    {
+      "id": "AR-105",
+      "sku": "RB3447-112-58-50",
+      "name": "Round Metal",
+      "brand": "Ray-Ban",
+      "modelCode": "RB3447 112/58",
+      "modelFamily": "Round Metal",
+      "size": "50□21-145",
+      "shape": "roundmetal",
+      "style": "full",
+      "material": "metal",
+      "composition": "Metal",
+      "lensH": 46.9,
+      "lensHSource": "manufacturer",
+      "finish": "gold",
+      "color": "#c6a25b",
+      "metalColor": "#c6a25b",
+      "lens": {
+        "type": "solid",
+        "color": "#53645b",
+        "tint": 0.72
+      },
+      "gender": "unisex",
+      "tags": [
+        "ray-ban",
+        "sun",
+        "round",
+        "roundmetal"
+      ],
+      "bestFor": [
+        "square",
+        "oblong",
+        "diamond"
+      ],
+      "sourceUrl": "https://www.ray-ban.com/mea/sunglasses/RB3447%20UNISEX%20round%20metal-gold/8053672416107",
+      "url": "https://www.ray-ban.com/mea/sunglasses/RB3447%20UNISEX%20round%20metal-gold/8053672416107",
+      "sourceName": "صفحهٔ سازنده",
+      "sourceType": "manufacturer",
+      "sourceChecked": "2026-09-29",
+      "modelAssetStatus": "procedural-preview",
+      "modelAssetNote": "هندسهٔ پیش‌نمایش؛ مدل رسمی/اسکنِ همان SKU نیست.",
+      "colors": [
         {
-          "name": "زرشکی",
-          "color": "#5e1a22",
-          "finish": "oxblood"
-        },
+          "name": "طلایی مات · G-15 سبز پلاریزه",
+          "color": "#c6a25b",
+          "finish": "gold",
+          "metalColor": "#c6a25b",
+          "lens": {
+            "type": "solid",
+            "color": "#53645b",
+            "tint": 0.72
+          }
+        }
+      ],
+      "spec": {
+        "shape": "roundmetal",
+        "style": "full",
+        "material": "metal",
+        "lensW": 50,
+        "lensH": 46.9,
+        "dbn": 21,
+        "templeLen": 145,
+        "baseCurve": 5.5,
+        "pantoDeg": 8,
+        "templeW": 2,
+        "templeT": 1.4,
+        "nosePads": true,
+        "metalRimW": 1.4,
+        "metalRimT": 1.15
+      }
+    },
+    {
+      "id": "AR-106",
+      "sku": "RB3016-901-58-55",
+      "name": "Clubmaster Classic",
+      "brand": "Ray-Ban",
+      "modelCode": "RB3016 901/58",
+      "modelFamily": "Clubmaster Classic",
+      "size": "55□21-150",
+      "shape": "browline",
+      "style": "brow",
+      "material": "acetate",
+      "composition": "Acetate / metal",
+      "lensH": 47.5,
+      "lensHSource": "manufacturer",
+      "finish": "polished-black",
+      "color": "#141518",
+      "metalColor": "#b89a63",
+      "metalTint": "gold",
+      "lens": {
+        "type": "solid",
+        "color": "#526159",
+        "tint": 0.73
+      },
+      "gender": "unisex",
+      "tags": [
+        "ray-ban",
+        "sun",
+        "browline",
+        "classic",
+        "browline"
+      ],
+      "bestFor": [
+        "round",
+        "triangle",
+        "oval"
+      ],
+      "sourceUrl": "https://www.ray-ban.com/usa/sunglasses/RB3016%20UNISEX%20clubmaster%20classic-black%20on%20gold/8056597847889",
+      "url": "https://www.ray-ban.com/usa/sunglasses/RB3016%20UNISEX%20clubmaster%20classic-black%20on%20gold/8056597847889",
+      "sourceName": "صفحهٔ سازنده",
+      "sourceType": "manufacturer",
+      "sourceChecked": "2026-09-29",
+      "modelAssetStatus": "procedural-preview",
+      "modelAssetNote": "هندسهٔ پیش‌نمایش؛ مدل رسمی/اسکنِ همان SKU نیست.",
+      "colors": [
         {
-          "name": "مشکی",
-          "color": "#111216",
-          "finish": "polished-black"
+          "name": "مشکی/طلایی · G-15 سبز پلاریزه",
+          "color": "#141518",
+          "finish": "polished-black",
+          "metalColor": "#b89a63",
+          "lens": {
+            "type": "solid",
+            "color": "#526159",
+            "tint": 0.73
+          },
+          "metalTint": "gold"
+        }
+      ],
+      "spec": {
+        "shape": "browline",
+        "style": "brow",
+        "material": "acetate",
+        "lensW": 55,
+        "lensH": 47.5,
+        "dbn": 21,
+        "templeLen": 150,
+        "rimW": 5,
+        "rimT": 3.3,
+        "pantoDeg": 7,
+        "bridgeDrop": 0.42,
+        "nosePads": true,
+        "metalRimW": 1.55,
+        "metalRimT": 1.2,
+        "bridgeMaterial": "metal",
+        "browMaterial": "metal",
+        "templeMaterial": "metal"
+      }
+    },
+    {
+      "id": "AR-107",
+      "sku": "RB3016-130933-49",
+      "name": "Clubmaster Classic",
+      "brand": "Ray-Ban",
+      "modelCode": "RB3016 130933",
+      "modelFamily": "Clubmaster Classic",
+      "size": "49□21-140",
+      "shape": "browline",
+      "style": "brow",
+      "material": "acetate",
+      "composition": "Acetate / metal",
+      "lensH": 42.3,
+      "lensHSource": "manufacturer",
+      "finish": "havana",
+      "color": "#6b4329",
+      "metalColor": "#b89a63",
+      "metalTint": "gold",
+      "lens": {
+        "type": "solid",
+        "color": "#6b4a36",
+        "tint": 0.5
+      },
+      "gender": "unisex",
+      "tags": [
+        "ray-ban",
+        "sun",
+        "browline",
+        "classic",
+        "browline"
+      ],
+      "bestFor": [
+        "round",
+        "triangle",
+        "oval"
+      ],
+      "sourceUrl": "https://www.ray-ban.com/usa/sunglasses/RB3016%20UNISEX%20clubmaster%20classic-havana/8056597260282",
+      "url": "https://www.ray-ban.com/usa/sunglasses/RB3016%20UNISEX%20clubmaster%20classic-havana/8056597260282",
+      "sourceName": "صفحهٔ سازنده",
+      "sourceType": "manufacturer",
+      "sourceChecked": "2026-09-29",
+      "modelAssetStatus": "procedural-preview",
+      "modelAssetNote": "هندسهٔ پیش‌نمایش؛ مدل رسمی/اسکنِ همان SKU نیست.",
+      "colors": [
+        {
+          "name": "هاوانا براق · قهوه‌ای B-15",
+          "color": "#6b4329",
+          "finish": "havana",
+          "metalColor": "#b89a63",
+          "lens": {
+            "type": "solid",
+            "color": "#6b4a36",
+            "tint": 0.5
+          },
+          "metalTint": "gold"
+        }
+      ],
+      "spec": {
+        "shape": "browline",
+        "style": "brow",
+        "material": "acetate",
+        "lensW": 49,
+        "lensH": 42.3,
+        "dbn": 21,
+        "templeLen": 140,
+        "rimW": 4.8,
+        "rimT": 3.1,
+        "pantoDeg": 7,
+        "bridgeDrop": 0.42,
+        "nosePads": true,
+        "metalRimW": 1.5,
+        "metalRimT": 1.2,
+        "bridgeMaterial": "metal",
+        "browMaterial": "metal",
+        "templeMaterial": "metal"
+      }
+    },
+    {
+      "id": "AR-108",
+      "sku": "RB4171-865-13-54",
+      "name": "Erika Classic",
+      "brand": "Ray-Ban",
+      "modelCode": "RB4171 865/13",
+      "modelFamily": "Erika Classic",
+      "size": "54□18-145",
+      "shape": "panto",
+      "style": "full",
+      "material": "acetate",
+      "composition": "Injected frame",
+      "lensH": 46,
+      "lensHSource": "manufacturer",
+      "finish": "matte-tortoise",
+      "color": "#7b5a3d",
+      "lens": {
+        "type": "gradient",
+        "color": "#755947",
+        "tint": 0.56
+      },
+      "gender": "unisex",
+      "tags": [
+        "ray-ban",
+        "sun",
+        "panto",
+        "panto"
+      ],
+      "bestFor": [
+        "square",
+        "oblong",
+        "diamond"
+      ],
+      "sourceUrl": "https://www.ray-ban.com/usa/sunglasses/RB4171%20UNISEX%20017-erika%20classic-tortoise/805289742470",
+      "url": "https://www.ray-ban.com/usa/sunglasses/RB4171%20UNISEX%20017-erika%20classic-tortoise/805289742470",
+      "sourceName": "صفحهٔ سازنده",
+      "sourceType": "manufacturer",
+      "sourceChecked": "2026-09-29",
+      "modelAssetStatus": "procedural-preview",
+      "modelAssetNote": "هندسهٔ پیش‌نمایش؛ مدل رسمی/اسکنِ همان SKU نیست.",
+      "colors": [
+        {
+          "name": "هاوانا مات · قهوه‌ای",
+          "color": "#7b5a3d",
+          "finish": "matte-tortoise",
+          "lens": {
+            "type": "gradient",
+            "color": "#755947",
+            "tint": 0.56
+          }
+        }
+      ],
+      "spec": {
+        "shape": "panto",
+        "style": "full",
+        "material": "acetate",
+        "lensW": 54,
+        "lensH": 46,
+        "dbn": 18,
+        "templeLen": 145,
+        "rimW": 4.35,
+        "rimT": 3.15,
+        "baseCurve": 6,
+        "pantoDeg": 8,
+        "bridgeDrop": 0.45
+      }
+    },
+    {
+      "id": "AR-109",
+      "sku": "RB2180-710-73-49",
+      "name": "RB2180",
+      "brand": "Ray-Ban",
+      "modelCode": "RB2180 710/73",
+      "modelFamily": "RB2180",
+      "size": "49□21-145",
+      "shape": "round",
+      "style": "full",
+      "material": "acetate",
+      "composition": "Injected frame",
+      "lensH": 47.4,
+      "lensHSource": "manufacturer",
+      "finish": "havana",
+      "color": "#8a6443",
+      "lens": {
+        "type": "solid",
+        "color": "#70513e",
+        "tint": 0.56
+      },
+      "gender": "unisex",
+      "tags": [
+        "ray-ban",
+        "sun",
+        "round",
+        "round"
+      ],
+      "bestFor": [
+        "square",
+        "oblong",
+        "diamond"
+      ],
+      "sourceUrl": "https://www.ray-ban.com/usa/sunglasses/RB2180%20UNISEX%20rb2180-light%20havana/8053672358612",
+      "url": "https://www.ray-ban.com/usa/sunglasses/RB2180%20UNISEX%20rb2180-light%20havana/8053672358612",
+      "sourceName": "صفحهٔ سازنده",
+      "sourceType": "manufacturer",
+      "sourceChecked": "2026-09-29",
+      "modelAssetStatus": "procedural-preview",
+      "modelAssetNote": "هندسهٔ پیش‌نمایش؛ مدل رسمی/اسکنِ همان SKU نیست.",
+      "colors": [
+        {
+          "name": "هاوانا روشن · قهوه‌ای B-15",
+          "color": "#8a6443",
+          "finish": "havana",
+          "lens": {
+            "type": "solid",
+            "color": "#70513e",
+            "tint": 0.56
+          }
         }
       ],
       "spec": {
@@ -154,101 +632,624 @@
         "style": "full",
         "material": "acetate",
         "lensW": 49,
-        "lensH": 47,
+        "lensH": 47.4,
         "dbn": 21,
         "templeLen": 145,
-        "rimW": 4.6
+        "rimW": 4.7,
+        "rimT": 3.2,
+        "pantoDeg": 5,
+        "bridgeDrop": 0.43
       }
     },
     {
-      "id": "AR-104",
-      "sku": "AR-104",
-      "name": "گربه‌ای الكانسا",
-      "brand": "Chrome Hearts",
-      "currency": "تومان",
-      "size": "54□17-140",
-      "shape": "cateye",
+      "id": "AR-110",
+      "sku": "RB4340-710-50",
+      "name": "Wayfarer Ease",
+      "brand": "Ray-Ban",
+      "modelCode": "RB4340 710",
+      "modelFamily": "Wayfarer Ease",
+      "size": "50□22-150",
+      "shape": "wayfarer",
       "style": "full",
       "material": "acetate",
-      "lens": "clear",
-      "gender": "female",
+      "composition": "Injected frame",
+      "lensH": 41,
+      "lensHSource": "manufacturer",
+      "finish": "havana",
+      "color": "#9a734e",
+      "lens": {
+        "type": "solid",
+        "color": "#53645b",
+        "tint": 0.72
+      },
+      "gender": "unisex",
       "tags": [
-        "fashion",
-        "women"
+        "ray-ban",
+        "sun",
+        "wayfarer",
+        "wayfarer"
       ],
       "bestFor": [
         "round",
         "oval",
-        "triangle",
-        "square"
+        "heart"
       ],
+      "sourceUrl": "https://www.ray-ban.com/usa/sunglasses/RB4340%20UNISEX%20P004-wayfarer%20ease-tortoise/8053672770438",
+      "url": "https://www.ray-ban.com/usa/sunglasses/RB4340%20UNISEX%20P004-wayfarer%20ease-tortoise/8053672770438",
+      "sourceName": "صفحهٔ سازنده",
+      "sourceType": "manufacturer",
+      "sourceChecked": "2026-09-29",
+      "modelAssetStatus": "procedural-preview",
+      "modelAssetNote": "هندسهٔ پیش‌نمایش؛ مدل رسمی/اسکنِ همان SKU نیست.",
       "colors": [
         {
-          "name": "مشکی/طلایی",
-          "color": "#131418",
-          "finish": "polished-black",
-          "accentColor": "#d8b478"
-        },
-        {
-          "name": "شکلاتی",
-          "color": "#4a2c1c",
-          "finish": "tortoise-light"
-        },
-        {
-          "name": "یاسی شفاف",
-          "color": "#b9b3d6",
-          "finish": "crystal",
-          "translucent": 0.62
-        },
-        {
-          "name": "قرمز لاکی",
-          "color": "#7d1822",
-          "finish": "acetate"
+          "name": "هاوانا روشن · G-15 سبز",
+          "color": "#9a734e",
+          "finish": "havana",
+          "lens": {
+            "type": "solid",
+            "color": "#53645b",
+            "tint": 0.72
+          }
         }
       ],
       "spec": {
-        "shape": "cateye",
+        "shape": "wayfarer",
         "style": "full",
         "material": "acetate",
-        "lensW": 54,
-        "lensH": 42,
-        "dbn": 17,
-        "templeLen": 140,
-        "rimW": 5.6,
-        "catAmp": 0.46,
-        "catWidth": 0.34
+        "lensW": 50,
+        "lensH": 41,
+        "dbn": 22,
+        "templeLen": 150,
+        "rimW": 4.65,
+        "rimT": 3.4,
+        "baseCurve": 6,
+        "pantoDeg": 5,
+        "bridgeDrop": 0.46
       }
     },
     {
-      "id": "AR-105",
-      "sku": "AR-105",
-      "name": "پانتو فرانسوی",
+      "id": "AR-111",
+      "sku": "RB2132-901-58-55",
+      "name": "New Wayfarer Classic",
       "brand": "Ray-Ban",
-      "currency": "تومان",
-      "size": "51□20-145",
+      "modelCode": "RB2132 901/58",
+      "modelFamily": "New Wayfarer Classic",
+      "size": "55□18-145",
+      "shape": "wayfarer",
+      "style": "full",
+      "material": "acetate",
+      "composition": "Nylon frame",
+      "lensH": 40.8,
+      "lensHSource": "manufacturer",
+      "finish": "polished-black",
+      "color": "#111216",
+      "lens": {
+        "type": "solid",
+        "color": "#52645a",
+        "tint": 0.74
+      },
+      "gender": "unisex",
+      "tags": [
+        "ray-ban",
+        "sun",
+        "wayfarer",
+        "wayfarer"
+      ],
+      "bestFor": [
+        "round",
+        "oval",
+        "heart"
+      ],
+      "sourceUrl": "https://www.ray-ban.com/usa/sunglasses/RB2132%20UNISEX%20new%20wayfarer%20classic-black/805289083078",
+      "url": "https://www.ray-ban.com/usa/sunglasses/RB2132%20UNISEX%20new%20wayfarer%20classic-black/805289083078",
+      "sourceName": "صفحهٔ سازنده",
+      "sourceType": "manufacturer",
+      "sourceChecked": "2026-09-29",
+      "modelAssetStatus": "procedural-preview",
+      "modelAssetNote": "هندسهٔ پیش‌نمایش؛ مدل رسمی/اسکنِ همان SKU نیست.",
+      "colors": [
+        {
+          "name": "مشکی براق · G-15 سبز پلاریزه",
+          "color": "#111216",
+          "finish": "polished-black",
+          "lens": {
+            "type": "solid",
+            "color": "#52645a",
+            "tint": 0.74
+          }
+        }
+      ],
+      "spec": {
+        "shape": "wayfarer",
+        "style": "full",
+        "material": "acetate",
+        "lensW": 55,
+        "lensH": 40.8,
+        "dbn": 18,
+        "templeLen": 145,
+        "rimW": 4.7,
+        "rimT": 3.45,
+        "baseCurve": 6,
+        "pantoDeg": 5,
+        "bridgeDrop": 0.43
+      }
+    },
+    {
+      "id": "AR-112",
+      "sku": "RB4171-63254L-54",
+      "name": "Erika Classic Exclusive",
+      "brand": "Ray-Ban",
+      "modelCode": "RB4171 63254L",
+      "modelFamily": "Erika Classic Exclusive",
+      "size": "54□18-145",
       "shape": "panto",
       "style": "full",
       "material": "acetate",
-      "lens": "clear",
+      "composition": "Nylon frame",
+      "lensH": 46,
+      "lensHSource": "manufacturer",
+      "finish": "crystal",
+      "color": "#777e83",
+      "lens": {
+        "type": "gradient",
+        "color": "#536d84",
+        "tint": 0.51
+      },
       "gender": "unisex",
       "tags": [
-        "boutique"
+        "ray-ban",
+        "sun",
+        "panto",
+        "panto"
       ],
       "bestFor": [
         "square",
         "oblong",
         "diamond"
       ],
+      "sourceUrl": "https://www.ray-ban.com/usa/sunglasses/RB4171%20FEMALE%20erika%20classic%20exclusive-transparent/8056597539487",
+      "url": "https://www.ray-ban.com/usa/sunglasses/RB4171%20FEMALE%20erika%20classic%20exclusive-transparent/8056597539487",
+      "sourceName": "صفحهٔ سازنده",
+      "sourceType": "manufacturer",
+      "sourceChecked": "2026-09-29",
+      "modelAssetStatus": "procedural-preview",
+      "modelAssetNote": "هندسهٔ پیش‌نمایش؛ مدل رسمی/اسکنِ همان SKU نیست.",
       "colors": [
         {
-          "name": "لاک‌پشتی کهربایی",
-          "color": "#8a5a26",
-          "finish": "havana"
-        },
+          "name": "شفاف خاکستری · آبی گرادیان",
+          "color": "#777e83",
+          "finish": "crystal",
+          "lens": {
+            "type": "gradient",
+            "color": "#536d84",
+            "tint": 0.51
+          }
+        }
+      ],
+      "spec": {
+        "shape": "panto",
+        "style": "full",
+        "material": "acetate",
+        "lensW": 54,
+        "lensH": 46,
+        "dbn": 18,
+        "templeLen": 145,
+        "rimW": 4.35,
+        "rimT": 3.15,
+        "baseCurve": 6,
+        "pantoDeg": 8,
+        "bridgeDrop": 0.45
+      }
+    },
+    {
+      "id": "AR-113",
+      "sku": "VPLB76-530700",
+      "name": "Origins 33",
+      "brand": "Police",
+      "modelCode": "VPLB76 530700",
+      "modelFamily": "Origins 33",
+      "size": "53□19-145",
+      "shape": "panto",
+      "style": "full",
+      "material": "acetate",
+      "composition": "Acetate / metal",
+      "lensH": 43,
+      "lensHSource": "estimated",
+      "finish": "polished-black",
+      "color": "#131519",
+      "metalColor": "#b8b9ba",
+      "lens": "clear",
+      "gender": "unisex",
+      "tags": [
+        "police",
+        "optical",
+        "origins",
+        "panto"
+      ],
+      "bestFor": [
+        "square",
+        "oblong",
+        "diamond"
+      ],
+      "sourceUrl": "https://policelifestyle.com/uk-en/origins-33-man-eyeglasses-police-vplb76-p",
+      "url": "https://policelifestyle.com/uk-en/origins-33-man-eyeglasses-police-vplb76-p",
+      "sourceName": "صفحهٔ سازنده",
+      "sourceType": "manufacturer",
+      "sourceChecked": "2026-09-29",
+      "modelAssetStatus": "procedural-preview",
+      "modelAssetNote": "هندسهٔ پیش‌نمایش؛ مدل رسمی/اسکنِ همان SKU نیست.",
+      "colors": [
         {
-          "name": "زیتونی مات",
-          "color": "#4a4a2c",
-          "finish": "olive"
+          "name": "مشکی براق / جزئیات فلزی",
+          "color": "#131519",
+          "finish": "polished-black",
+          "metalColor": "#b8b9ba",
+          "lens": "clear"
+        }
+      ],
+      "spec": {
+        "shape": "panto",
+        "style": "full",
+        "material": "acetate",
+        "lensW": 53,
+        "lensH": 43,
+        "dbn": 19,
+        "templeLen": 145,
+        "rimW": 4.7,
+        "rimT": 3.35,
+        "pantoDeg": 8,
+        "bridgeDrop": 0.45,
+        "metalRimW": 1.5,
+        "metalRimT": 1.2,
+        "templeMaterial": "metal"
+      }
+    },
+    {
+      "id": "AR-114",
+      "sku": "VPLA48-530700",
+      "name": "Origins 23",
+      "brand": "Police",
+      "modelCode": "VPLA48 530700",
+      "modelFamily": "Origins 23",
+      "size": "53□21-145",
+      "shape": "square",
+      "style": "full",
+      "material": "acetate",
+      "composition": "Acetate / metal",
+      "lensH": 43,
+      "lensHSource": "estimated",
+      "finish": "polished-black",
+      "color": "#14161a",
+      "metalColor": "#9c8150",
+      "lens": "clear",
+      "gender": "unisex",
+      "tags": [
+        "police",
+        "optical",
+        "origins",
+        "square"
+      ],
+      "bestFor": [
+        "round",
+        "oval",
+        "heart"
+      ],
+      "sourceUrl": "https://policelifestyle.com/sl-en/origins-23-man-eyeglasses-police-vpla48-p",
+      "url": "https://policelifestyle.com/sl-en/origins-23-man-eyeglasses-police-vpla48-p",
+      "sourceName": "صفحهٔ سازنده",
+      "sourceType": "manufacturer",
+      "sourceChecked": "2026-09-29",
+      "modelAssetStatus": "procedural-preview",
+      "modelAssetNote": "هندسهٔ پیش‌نمایش؛ مدل رسمی/اسکنِ همان SKU نیست.",
+      "colors": [
+        {
+          "name": "مشکی براق / طلایی",
+          "color": "#14161a",
+          "finish": "polished-black",
+          "metalColor": "#9c8150",
+          "lens": "clear"
+        }
+      ],
+      "spec": {
+        "shape": "square",
+        "style": "full",
+        "material": "acetate",
+        "lensW": 53,
+        "lensH": 43,
+        "dbn": 21,
+        "templeLen": 145,
+        "rimW": 5,
+        "rimT": 3.8,
+        "pantoDeg": 5,
+        "bridgeDrop": 0.47,
+        "templeMaterial": "metal"
+      }
+    },
+    {
+      "id": "AR-115",
+      "sku": "VPLD09-5807GN",
+      "name": "Zenith 3",
+      "brand": "Police",
+      "modelCode": "VPLD09 5807GN",
+      "modelFamily": "Zenith 3",
+      "size": "58□14-145",
+      "shape": "square",
+      "style": "full",
+      "material": "acetate",
+      "composition": "Injected frame / metal",
+      "lensH": 42,
+      "lensHSource": "estimated",
+      "finish": "translucent-amber",
+      "color": "#83634c",
+      "metalColor": "#44484b",
+      "lens": "clear",
+      "gender": "unisex",
+      "tags": [
+        "police",
+        "optical",
+        "sport",
+        "square"
+      ],
+      "bestFor": [
+        "round",
+        "oval",
+        "heart"
+      ],
+      "sourceUrl": "https://policelifestyle.com/sl-en/zenith-3-man-eyeglasses-police-vpld09-p",
+      "url": "https://policelifestyle.com/sl-en/zenith-3-man-eyeglasses-police-vpld09-p",
+      "sourceName": "صفحهٔ سازنده",
+      "sourceType": "manufacturer",
+      "sourceChecked": "2026-09-29",
+      "modelAssetStatus": "procedural-preview",
+      "modelAssetNote": "هندسهٔ پیش‌نمایش؛ مدل رسمی/اسکنِ همان SKU نیست.",
+      "colors": [
+        {
+          "name": "قهوه‌ای شفاف",
+          "color": "#83634c",
+          "finish": "translucent-amber",
+          "metalColor": "#44484b",
+          "lens": "clear"
+        }
+      ],
+      "spec": {
+        "shape": "square",
+        "style": "full",
+        "material": "acetate",
+        "lensW": 58,
+        "lensH": 42,
+        "dbn": 14,
+        "templeLen": 145,
+        "rimW": 4.3,
+        "rimT": 3.1,
+        "pantoDeg": 4,
+        "topWide": 1.03,
+        "templeMaterial": "metal"
+      }
+    },
+    {
+      "id": "AR-116",
+      "sku": "VPLG74-534G0Y",
+      "name": "Champ 3",
+      "brand": "Police",
+      "modelCode": "VPLG74 534G0Y",
+      "modelFamily": "Champ 3",
+      "size": "53□17-145",
+      "shape": "aviator",
+      "style": "full",
+      "material": "acetate",
+      "composition": "Acetate",
+      "lensH": 43,
+      "lensHSource": "estimated",
+      "finish": "crystal",
+      "color": "#747b7c",
+      "lens": "clear",
+      "gender": "unisex",
+      "tags": [
+        "police",
+        "optical",
+        "aviator",
+        "aviator"
+      ],
+      "bestFor": [
+        "square",
+        "round",
+        "oblong"
+      ],
+      "sourceUrl": "https://policelifestyle.com/ww-en/champ-3-man-eyeglasses-police-vplg74-p",
+      "url": "https://policelifestyle.com/ww-en/champ-3-man-eyeglasses-police-vplg74-p",
+      "sourceName": "صفحهٔ سازنده",
+      "sourceType": "manufacturer",
+      "sourceChecked": "2026-09-29",
+      "modelAssetStatus": "procedural-preview",
+      "modelAssetNote": "هندسهٔ پیش‌نمایش؛ مدل رسمی/اسکنِ همان SKU نیست.",
+      "colors": [
+        {
+          "name": "خاکستری شفاف",
+          "color": "#747b7c",
+          "finish": "crystal",
+          "lens": "clear"
+        }
+      ],
+      "spec": {
+        "shape": "aviator",
+        "style": "full",
+        "material": "acetate",
+        "lensW": 53,
+        "lensH": 43,
+        "dbn": 17,
+        "templeLen": 145,
+        "rimW": 4.35,
+        "rimT": 3.1,
+        "bridgeDrop": 0.4,
+        "teardrop": 0.19,
+        "topWide": 1.02
+      }
+    },
+    {
+      "id": "AR-117",
+      "sku": "VPLN17-5403GU",
+      "name": "Origins Lite 22",
+      "brand": "Police",
+      "modelCode": "VPLN17 5403GU",
+      "modelFamily": "Origins Lite 22",
+      "size": "54□17-145",
+      "shape": "square",
+      "style": "full",
+      "material": "acetate",
+      "composition": "Acetate",
+      "lensH": 40,
+      "lensHSource": "estimated",
+      "finish": "crystal",
+      "color": "#9da2a4",
+      "lens": "clear",
+      "gender": "unisex",
+      "tags": [
+        "police",
+        "optical",
+        "origins-lite",
+        "square"
+      ],
+      "bestFor": [
+        "round",
+        "oval",
+        "heart"
+      ],
+      "sourceUrl": "https://policelifestyle.com/pl-en/origins-lite-22-man-eyeglasses-police-vpln17-p",
+      "url": "https://policelifestyle.com/pl-en/origins-lite-22-man-eyeglasses-police-vpln17-p",
+      "sourceName": "صفحهٔ سازنده",
+      "sourceType": "manufacturer",
+      "sourceChecked": "2026-09-29",
+      "modelAssetStatus": "procedural-preview",
+      "modelAssetNote": "هندسهٔ پیش‌نمایش؛ مدل رسمی/اسکنِ همان SKU نیست.",
+      "colors": [
+        {
+          "name": "خاکستری روشن شفاف",
+          "color": "#9da2a4",
+          "finish": "crystal",
+          "lens": "clear"
+        }
+      ],
+      "spec": {
+        "shape": "square",
+        "style": "full",
+        "material": "acetate",
+        "lensW": 54,
+        "lensH": 40,
+        "dbn": 17,
+        "templeLen": 145,
+        "rimW": 4.25,
+        "rimT": 3,
+        "pantoDeg": 4
+      }
+    },
+    {
+      "id": "AR-118",
+      "sku": "VPLP10-540509",
+      "name": "Origins Lite 28",
+      "brand": "Police",
+      "modelCode": "VPLP10 540509",
+      "modelFamily": "Origins Lite 28",
+      "size": "54□19-145",
+      "shape": "hexagon",
+      "style": "full",
+      "material": "metal",
+      "composition": "Metal / injected",
+      "lensH": 44,
+      "lensHSource": "estimated",
+      "finish": "gunmetal",
+      "color": "#777d82",
+      "metalColor": "#777d82",
+      "lens": "clear",
+      "gender": "unisex",
+      "tags": [
+        "police",
+        "optical",
+        "hexagonal",
+        "hexagon"
+      ],
+      "bestFor": [
+        "round",
+        "oval",
+        "heart"
+      ],
+      "sourceUrl": "https://policelifestyle.com/ww-en/origins-lite-28-man-eyeglasses-police-vplp10-vplp10540509-p",
+      "url": "https://policelifestyle.com/ww-en/origins-lite-28-man-eyeglasses-police-vplp10-vplp10540509-p",
+      "sourceName": "صفحهٔ سازنده",
+      "sourceType": "manufacturer",
+      "sourceChecked": "2026-09-29",
+      "modelAssetStatus": "procedural-preview",
+      "modelAssetNote": "هندسهٔ پیش‌نمایش؛ مدل رسمی/اسکنِ همان SKU نیست.",
+      "colors": [
+        {
+          "name": "روثنیوم براق",
+          "color": "#777d82",
+          "finish": "gunmetal",
+          "metalColor": "#777d82",
+          "lens": "clear"
+        }
+      ],
+      "spec": {
+        "shape": "hexagon",
+        "style": "full",
+        "material": "metal",
+        "lensW": 54,
+        "lensH": 44,
+        "dbn": 19,
+        "templeLen": 145,
+        "templeW": 2,
+        "templeT": 1.4,
+        "nosePads": true,
+        "metalRimW": 1.55,
+        "metalRimT": 1.25,
+        "hexBlend": 0.58,
+        "hexSides": 6,
+        "templeMaterial": "acetate",
+        "endpieceMaterial": "metal"
+      }
+    },
+    {
+      "id": "AR-119",
+      "sku": "VPLR65-510706",
+      "name": "Supernova 7",
+      "brand": "Police",
+      "modelCode": "VPLR65 510706",
+      "modelFamily": "Supernova 7",
+      "size": "51□19-150",
+      "shape": "panto",
+      "style": "full",
+      "material": "acetate",
+      "composition": "Acetate",
+      "lensH": 43,
+      "lensHSource": "estimated",
+      "finish": "havana",
+      "color": "#755233",
+      "lens": "clear",
+      "gender": "unisex",
+      "tags": [
+        "police",
+        "optical",
+        "panto",
+        "panto"
+      ],
+      "bestFor": [
+        "square",
+        "oblong",
+        "diamond"
+      ],
+      "sourceUrl": "https://policelifestyle.com/ww-en/supernova-7-man-eyeglasses-police-vplr65-vplr65510706-p?variant=VPLR65+510706",
+      "url": "https://policelifestyle.com/ww-en/supernova-7-man-eyeglasses-police-vplr65-vplr65510706-p?variant=VPLR65+510706",
+      "sourceName": "صفحهٔ سازنده",
+      "sourceType": "manufacturer",
+      "sourceChecked": "2026-09-29",
+      "modelAssetStatus": "procedural-preview",
+      "modelAssetNote": "هندسهٔ پیش‌نمایش؛ مدل رسمی/اسکنِ همان SKU نیست.",
+      "colors": [
+        {
+          "name": "هاوانا متوسط براق",
+          "color": "#755233",
+          "finish": "havana",
+          "lens": "clear"
         }
       ],
       "spec": {
@@ -256,1102 +1257,637 @@
         "style": "full",
         "material": "acetate",
         "lensW": 51,
-        "lensH": 47,
-        "dbn": 20,
-        "templeLen": 145,
-        "rimW": 4.8
-      }
-    },
-    {
-      "id": "AR-106",
-      "sku": "AR-106",
-      "name": "ابروفلز",
-      "brand": "Police",
-      "currency": "تومان",
-      "size": "53□18-145",
-      "shape": "browline",
-      "style": "brow",
-      "material": "acetate",
-      "lens": "clear",
-      "gender": "unisex",
-      "tags": [
-        "classic",
-        "unisex"
-      ],
-      "bestFor": [
-        "round",
-        "triangle",
-        "oval"
-      ],
-      "colors": [
-        {
-          "name": "مشکی/نقره‌ای",
-          "color": "#15171b",
-          "finish": "polished-black",
-          "metalColor": "#c2c7cd"
-        },
-        {
-          "name": "توسکی/طلایی",
-          "color": "#3e434b",
-          "finish": "matte-sand",
-          "metalColor": "#d3b273"
-        },
-        {
-          "name": "لاک‌پشتی",
-          "color": "#6a3f20",
-          "finish": "havana",
-          "metalColor": "#cbb27a"
-        }
-      ],
-      "spec": {
-        "shape": "browline",
-        "style": "brow",
-        "material": "acetate",
-        "lensW": 53,
         "lensH": 43,
-        "dbn": 18,
-        "templeLen": 145,
-        "rimW": 5.8
-      }
-    },
-    {
-      "id": "AR-107",
-      "sku": "AR-107",
-      "name": "هشت‌ضلعی طوسی",
-      "brand": "Cartier",
-      "currency": "تومان",
-      "size": "50□19-145",
-      "shape": "octagon",
-      "style": "full",
-      "material": "acetate",
-      "lens": "clear",
-      "gender": "unisex",
-      "tags": [
-        "designer"
-      ],
-      "bestFor": [
-        "round",
-        "square",
-        "oval"
-      ],
-      "colors": [
-        {
-          "name": "دودی شفاف",
-          "color": "#6a6f74",
-          "finish": "crystal",
-          "translucent": 0.7
-        },
-        {
-          "name": "مشکی",
-          "color": "#111215",
-          "finish": "polished-black"
-        }
-      ],
-      "spec": {
-        "shape": "octagon",
-        "style": "full",
-        "material": "acetate",
-        "lensW": 50,
-        "lensH": 45,
         "dbn": 19,
-        "templeLen": 145,
-        "rimW": 4.2
+        "templeLen": 150,
+        "rimW": 4.8,
+        "rimT": 3.65,
+        "pantoDeg": 9,
+        "bridgeDrop": 0.46
       }
     },
     {
-      "id": "AR-108",
-      "sku": "AR-108",
-      "name": "شش‌ضلعی هندسی",
-      "brand": "Chrome Hearts",
-      "currency": "تومان",
-      "size": "51□20-145",
-      "shape": "geometric",
-      "style": "full",
-      "material": "acetate",
-      "lens": "clear",
-      "gender": "unisex",
-      "tags": [
-        "statement"
-      ],
-      "bestFor": [
-        "round",
-        "oval",
-        "heart"
-      ],
-      "colors": [
-        {
-          "name": "عنابی",
-          "color": "#4c1620",
-          "finish": "oxblood"
-        },
-        {
-          "name": "شتری",
-          "color": "#8a6a44",
-          "finish": "horn"
-        }
-      ],
-      "spec": {
-        "shape": "geometric",
-        "style": "full",
-        "material": "acetate",
-        "lensW": 51,
-        "lensH": 44,
-        "dbn": 20,
-        "templeLen": 145,
-        "rimW": 4.6
-      }
-    },
-    {
-      "id": "AR-109",
-      "sku": "AR-109",
-      "name": "بزرگ اورسایز",
-      "brand": "Police",
-      "currency": "تومان",
-      "size": "56□17-145",
-      "shape": "oversize",
-      "style": "full",
-      "material": "acetate",
-      "lens": {
-        "type": "gradient",
-        "color": "#2c2f36",
-        "tint": 0.62
-      },
-      "gender": "unisex",
-      "tags": [
-        "sun",
-        "statement"
-      ],
-      "bestFor": [
-        "oblong",
-        "square",
-        "triangle"
-      ],
-      "colors": [
-        {
-          "name": "مشکی",
-          "color": "#0f1013",
-          "finish": "polished-black"
-        },
-        {
-          "name": "لاک‌پشتی",
-          "color": "#7d4c22",
-          "finish": "havana"
-        }
-      ],
-      "spec": {
-        "shape": "oversize",
-        "style": "full",
-        "material": "acetate",
-        "lensW": 56,
-        "lensH": 54,
-        "dbn": 17,
-        "templeLen": 145,
-        "rimW": 6.2
-      }
-    },
-    {
-      "id": "AR-110",
-      "sku": "AR-110",
-      "name": "پروانه‌ای تابستانی",
-      "brand": "Chrome Hearts",
-      "currency": "تومان",
-      "size": "55□16-140",
-      "shape": "butterfly",
-      "style": "full",
-      "material": "acetate",
-      "lens": {
-        "type": "gradient",
-        "color": "#40302a",
-        "tint": 0.55
-      },
-      "gender": "female",
-      "tags": [
-        "sun",
-        "women"
-      ],
-      "bestFor": [
-        "round",
-        "square",
-        "diamond"
-      ],
-      "colors": [
-        {
-          "name": "مشکی/عدسی عسلی",
-          "color": "#121317",
-          "finish": "polished-black"
-        },
-        {
-          "name": "کرم",
-          "color": "#d8cbb6",
-          "finish": "acetate"
-        }
-      ],
-      "spec": {
-        "shape": "butterfly",
-        "style": "full",
-        "material": "acetate",
-        "lensW": 55,
-        "lensH": 45,
-        "dbn": 16,
-        "templeLen": 140,
-        "rimW": 5.2
-      }
-    },
-    {
-      "id": "AR-111",
-      "sku": "AR-111",
-      "name": "سپر اسپرت",
+      "id": "AR-120",
+      "sku": "CRESW00676",
+      "name": "Santos de Cartier Rimless",
       "brand": "Cartier",
-      "currency": "تومان",
-      "size": "60□15-135",
-      "shape": "shield",
-      "style": "full",
-      "material": "acetate",
-      "lens": {
-        "type": "mirror",
-        "color": "#20343c",
-        "tint": 0.8
-      },
-      "gender": "unisex",
-      "tags": [
-        "sport",
-        "sun"
-      ],
-      "bestFor": [
-        "oblong",
-        "square"
-      ],
-      "colors": [
-        {
-          "name": "مشکی مات",
-          "color": "#141618",
-          "finish": "matte-black"
-        },
-        {
-          "name": "نئون مات",
-          "color": "#3b4a2f",
-          "finish": "matte-sand"
-        }
-      ],
-      "spec": {
-        "shape": "shield",
-        "style": "full",
-        "material": "acetate",
-        "lensW": 60,
-        "lensH": 42,
-        "dbn": 15,
-        "templeLen": 135,
-        "rimW": 6.4,
-        "rimT": 4.2
-      }
-    },
-    {
-      "id": "AR-112",
-      "sku": "AR-112",
-      "name": "مربعی شاخ گاو",
-      "brand": "Ray-Ban",
-      "currency": "تومان",
-      "size": "53□17-145",
-      "shape": "square",
-      "style": "full",
-      "material": "acetate",
-      "lens": "clear",
-      "gender": "unisex",
-      "tags": [
-        "natural",
-        "premium"
-      ],
-      "bestFor": [
-        "round",
-        "oval",
-        "heart"
-      ],
-      "colors": [
-        {
-          "name": "شاخ طبیعی",
-          "color": "#8a6a44",
-          "finish": "horn"
-        }
-      ],
-      "spec": {
-        "shape": "square",
-        "style": "full",
-        "material": "acetate",
-        "lensW": 53,
-        "lensH": 45,
-        "dbn": 17,
-        "templeLen": 145,
-        "rimW": 5.6
-      }
-    },
-    {
-      "id": "AR-201",
-      "sku": "AR-201",
-      "name": "خلبانی طلایی",
-      "brand": "Chrome Hearts",
-      "currency": "تومان",
-      "size": "58□14-135",
-      "shape": "aviator",
-      "style": "full",
-      "material": "metal",
-      "lens": {
-        "type": "gradient",
-        "color": "#4a3a26",
-        "tint": 0.55
-      },
-      "gender": "unisex",
-      "tags": [
-        "sun",
-        "iconic"
-      ],
-      "bestFor": [
-        "square",
-        "round",
-        "oblong"
-      ],
-      "colors": [
-        {
-          "name": "طلایی/دودی",
-          "color": "#d8b478",
-          "metalColor": "#d8b478",
-          "finish": "polished"
-        },
-        {
-          "name": "نقره‌ای آینه‌ای",
-          "color": "#c6cbd2",
-          "metalColor": "#c6cbd2",
-          "lens": {
-            "type": "mirror",
-            "color": "#2a3b45"
-          }
-        },
-        {
-          "name": "مشکی مات",
-          "color": "#181a1d",
-          "metalColor": "#2c2f33",
-          "finish": "matte-black"
-        }
-      ],
-      "spec": {
-        "shape": "aviator",
-        "style": "full",
-        "material": "metal",
-        "lensW": 58,
-        "lensH": 54,
-        "dbn": 14,
-        "templeLen": 135,
-        "doubleBridge": true
-      }
-    },
-    {
-      "id": "AR-202",
-      "sku": "AR-202",
-      "name": "گرد فلزی ظریف",
-      "brand": "Ray-Ban",
-      "currency": "تومان",
-      "size": "47□21-145",
-      "shape": "roundmetal",
-      "style": "full",
-      "material": "metal",
-      "lens": "clear",
-      "gender": "unisex",
-      "tags": [
-        "vintage",
-        "light"
-      ],
-      "bestFor": [
-        "square",
-        "oblong",
-        "diamond"
-      ],
-      "colors": [
-        {
-          "name": "مسی",
-          "color": "#93683f",
-          "metalColor": "#93683f"
-        },
-        {
-          "name": "طلایی",
-          "color": "#d3b273",
-          "metalColor": "#d3b273"
-        },
-        {
-          "name": "روثنیوم",
-          "color": "#6a6f74",
-          "metalColor": "#6a6f74",
-          "finish": "brushed"
-        }
-      ],
-      "spec": {
-        "shape": "roundmetal",
-        "style": "full",
-        "material": "metal",
-        "lensW": 47,
-        "lensH": 46,
-        "dbn": 21,
-        "templeLen": 145,
-        "metalRimW": 1.9
-      }
-    },
-    {
-      "id": "AR-203",
-      "sku": "AR-203",
-      "name": "مستطیل تیتانیوم",
-      "brand": "Police",
-      "currency": "تومان",
-      "size": "54□17-145",
-      "shape": "rectangle",
-      "style": "full",
-      "material": "titanium",
-      "lens": "clear",
-      "gender": "unisex",
-      "tags": [
-        "ultralight",
-        "office"
-      ],
-      "bestFor": [
-        "round",
-        "oval",
-        "heart",
-        "triangle"
-      ],
-      "colors": [
-        {
-          "name": "تیتانیوم نقره‌ای",
-          "color": "#a7a9ac",
-          "metalColor": "#a7a9ac",
-          "finish": "brushed"
-        },
-        {
-          "name": "تیتانیوم مشکی",
-          "color": "#26292d",
-          "metalColor": "#2c3035",
-          "finish": "brushed"
-        },
-        {
-          "name": "رزگلد",
-          "color": "#c58e75",
-          "metalColor": "#c58e75"
-        }
-      ],
-      "spec": {
-        "shape": "rectangle",
-        "style": "full",
-        "material": "titanium",
-        "lensW": 54,
-        "lensH": 34,
-        "dbn": 17,
-        "templeLen": 145,
-        "templeT": 1.5,
-        "metalRimW": 1.7
-      }
-    },
-    {
-      "id": "AR-204",
-      "sku": "AR-204",
-      "name": "نیم‌فریم مستطیلی",
-      "brand": "Cartier",
-      "currency": "تومان",
-      "size": "55□16-145",
-      "shape": "rectangle",
-      "style": "half",
-      "material": "metal",
-      "lens": "clear",
-      "gender": "unisex",
-      "tags": [
-        "business"
-      ],
-      "bestFor": [
-        "round",
-        "oval",
-        "oblong"
-      ],
-      "colors": [
-        {
-          "name": "نقره‌ای",
-          "color": "#c3c8ce",
-          "metalColor": "#c3c8ce"
-        },
-        {
-          "name": "طلایی",
-          "color": "#d3b273",
-          "metalColor": "#d3b273"
-        }
-      ],
-      "spec": {
-        "shape": "rectangle",
-        "style": "half",
-        "material": "metal",
-        "lensW": 55,
-        "lensH": 37,
-        "dbn": 16,
-        "templeLen": 145
-      }
-    },
-    {
-      "id": "AR-205",
-      "sku": "AR-205",
-      "name": "بدون فریم",
-      "brand": "Ray-Ban",
-      "currency": "تومان",
-      "size": "53□18-140",
+      "modelCode": "CRESW00676",
+      "modelFamily": "Santos de Cartier Rimless",
+      "size": "56□20-145",
       "shape": "rectangle",
       "style": "rimless",
       "material": "metal",
-      "lens": "clear",
+      "composition": "Rimless metal",
+      "lensH": 39,
+      "lensHSource": "estimated",
+      "finish": "gold",
+      "color": "#c9a85e",
+      "metalColor": "#c9a85e",
+      "lens": {
+        "type": "solid",
+        "color": "#697077",
+        "tint": 0.68
+      },
       "gender": "unisex",
       "tags": [
-        "minimal",
-        "light"
+        "cartier",
+        "sun",
+        "rimless",
+        "santos",
+        "rectangle"
       ],
       "bestFor": [
-        "square",
         "round",
-        "triangle",
-        "oblong"
+        "oval",
+        "heart"
       ],
+      "sourceUrl": "https://www.cartier.com/en-se/bags-and-accessories/sunglasses/santos-de-cartier/santos-de-cartier-sunglasses-CRESW00676",
+      "url": "https://www.cartier.com/en-se/bags-and-accessories/sunglasses/santos-de-cartier/santos-de-cartier-sunglasses-CRESW00676",
+      "sourceName": "صفحهٔ سازنده",
+      "sourceType": "manufacturer",
+      "sourceChecked": "2026-09-29",
+      "modelAssetStatus": "procedural-preview",
+      "modelAssetNote": "هندسهٔ پیش‌نمایش؛ مدل رسمی/اسکنِ همان SKU نیست.",
       "colors": [
         {
-          "name": "نقره‌ای براق",
-          "color": "#d4d9de",
-          "metalColor": "#d4d9de"
-        },
-        {
-          "name": "طلایی رز",
-          "color": "#c58e75",
-          "metalColor": "#c58e75"
+          "name": "طلایی برس‌خورده · خاکستری",
+          "color": "#c9a85e",
+          "finish": "gold",
+          "metalColor": "#c9a85e",
+          "lens": {
+            "type": "solid",
+            "color": "#697077",
+            "tint": 0.68
+          }
         }
       ],
       "spec": {
         "shape": "rectangle",
         "style": "rimless",
         "material": "metal",
-        "lensW": 53,
-        "lensH": 38,
-        "dbn": 18,
-        "templeLen": 140
-      }
-    },
-    {
-      "id": "AR-206",
-      "sku": "AR-206",
-      "name": "هشت‌ضلعی فلزی",
-      "brand": "Ray-Ban",
-      "currency": "تومان",
-      "size": "49□20-145",
-      "shape": "octagon",
-      "style": "full",
-      "material": "metal",
-      "lens": "clear",
-      "gender": "unisex",
-      "tags": [
-        "vintage",
-        "unisex"
-      ],
-      "bestFor": [
-        "round",
-        "square",
-        "oval"
-      ],
-      "colors": [
-        {
-          "name": "مشکی/طلایی",
-          "color": "#1c1e22",
-          "metalColor": "#d3b273"
-        },
-        {
-          "name": "دودی",
-          "color": "#5c646d",
-          "metalColor": "#5c646d",
-          "finish": "brushed"
-        }
-      ],
-      "spec": {
-        "shape": "octagon",
-        "style": "full",
-        "material": "metal",
-        "lensW": 49,
-        "lensH": 45,
+        "lensW": 56,
+        "lensH": 39,
         "dbn": 20,
         "templeLen": 145,
-        "metalRimW": 1.8
+        "templeW": 2.2,
+        "templeT": 1.5,
+        "bridgeDrop": 0.45,
+        "nosePads": true,
+        "metalRimW": 1.3,
+        "metalRimT": 1.05,
+        "rimlessMounts": true
       }
     },
     {
-      "id": "AR-207",
-      "sku": "AR-207",
-      "name": "خلبانی مستطیلی مشکی",
+      "id": "AR-121",
+      "sku": "CRESW00660",
+      "name": "Panthère de Cartier Cat-Eye Rimless",
       "brand": "Cartier",
-      "currency": "تومان",
-      "size": "56□16-140",
-      "shape": "aviator",
-      "style": "full",
-      "material": "metal",
-      "lens": {
-        "type": "photo",
-        "color": "#16181c",
-        "tint": 0.9
-      },
-      "gender": "unisex",
-      "tags": [
-        "sun",
-        "unisex"
-      ],
-      "bestFor": [
-        "round",
-        "oval",
-        "heart"
-      ],
-      "colors": [
-        {
-          "name": "مشکی/دودی",
-          "color": "#191b1f",
-          "metalColor": "#24272c"
-        },
-        {
-          "name": "سبز ارتشی",
-          "color": "#3c4632",
-          "metalColor": "#4d573f"
-        }
-      ],
-      "spec": {
-        "shape": "aviator",
-        "style": "full",
-        "material": "metal",
-        "lensW": 56,
-        "lensH": 48,
-        "dbn": 16,
-        "templeLen": 140,
-        "doubleBridge": true
-      }
-    },
-    {
-      "id": "AR-208",
-      "sku": "AR-208",
-      "name": "مربعی سیم‌ظریف",
-      "brand": "Chrome Hearts",
-      "currency": "تومان",
-      "size": "51□19-145",
-      "shape": "square",
-      "style": "full",
-      "material": "metal",
-      "lens": "clear",
-      "gender": "unisex",
-      "tags": [
-        "optical",
-        "light"
-      ],
-      "bestFor": [
-        "round",
-        "oval",
-        "triangle"
-      ],
-      "colors": [
-        {
-          "name": "نقره‌ای",
-          "color": "#c4c9cf",
-          "metalColor": "#c4c9cf"
-        },
-        {
-          "name": "Gunmetal",
-          "color": "#5c646d",
-          "metalColor": "#5c646d"
-        },
-        {
-          "name": "طلایی مات",
-          "color": "#b39a68",
-          "metalColor": "#b39a68",
-          "finish": "brushed"
-        }
-      ],
-      "spec": {
-        "shape": "square",
-        "style": "full",
-        "material": "metal",
-        "lensW": 51,
-        "lensH": 44,
-        "dbn": 19,
-        "templeLen": 145,
-        "metalRimW": 1.8
-      }
-    },
-    {
-      "id": "AR-301",
-      "sku": "AR-301",
-      "name": "مربعی نوجوان",
-      "brand": "Ray-Ban",
-      "currency": "تومان",
-      "size": "46□16-130",
-      "shape": "square",
-      "style": "full",
-      "material": "acetate",
-      "lens": "clear",
-      "gender": "unisex",
-      "tags": [
-        "kids",
-        "flex"
-      ],
-      "bestFor": [
-        "round",
-        "square"
-      ],
-      "colors": [
-        {
-          "name": "آبی آسمانی",
-          "color": "#4a7ba8",
-          "finish": "acetate"
-        },
-        {
-          "name": "صورتی",
-          "color": "#c46a86",
-          "finish": "acetate"
-        },
-        {
-          "name": "سبز ارتشی",
-          "color": "#5a6b46",
-          "finish": "acetate"
-        }
-      ],
-      "spec": {
-        "shape": "square",
-        "style": "full",
-        "material": "acetate",
-        "lensW": 46,
-        "lensH": 38,
-        "dbn": 16,
-        "templeLen": 130,
-        "rimW": 4.8
-      }
-    },
-    {
-      "id": "AR-302",
-      "sku": "AR-302",
-      "name": "گرد بچگانه فلزی",
-      "brand": "Police",
-      "currency": "تومان",
-      "size": "44□17-125",
-      "shape": "roundmetal",
-      "style": "full",
-      "material": "metal",
-      "lens": "clear",
-      "gender": "unisex",
-      "tags": [
-        "kids"
-      ],
-      "bestFor": [
-        "square",
-        "oblong"
-      ],
-      "colors": [
-        {
-          "name": "بنفش",
-          "color": "#7a5ea6",
-          "metalColor": "#7a5ea6"
-        },
-        {
-          "name": "فیروزه‌ای",
-          "color": "#3f9aa8",
-          "metalColor": "#3f9aa8"
-        }
-      ],
-      "spec": {
-        "shape": "roundmetal",
-        "style": "full",
-        "material": "metal",
-        "lensW": 44,
-        "lensH": 43,
-        "dbn": 17,
-        "templeLen": 125
-      }
-    },
-    {
-      "id": "AR-401",
-      "sku": "AR-401",
-      "name": "گربه‌ای آفتابی",
-      "brand": "Cartier",
-      "currency": "تومان",
-      "size": "55□16-140",
+      "modelCode": "CRESW00660",
+      "modelFamily": "Panthère de Cartier Cat-Eye Rimless",
+      "size": "61□15-140",
       "shape": "cateye",
-      "style": "full",
-      "material": "acetate",
+      "style": "rimless",
+      "material": "metal",
+      "composition": "Rimless metal",
+      "lensH": 50,
+      "lensHSource": "estimated",
+      "finish": "gold",
+      "color": "#c9a85e",
+      "metalColor": "#c9a85e",
       "lens": {
         "type": "gradient",
-        "color": "#3a2436",
-        "tint": 0.6
+        "color": "#765744",
+        "tint": 0.58
       },
-      "gender": "female",
+      "gender": "unisex",
       "tags": [
+        "cartier",
         "sun",
-        "women"
+        "rimless",
+        "cat-eye",
+        "panthere",
+        "cateye"
       ],
       "bestFor": [
         "round",
         "square",
         "oval"
       ],
+      "sourceUrl": "https://www.cartier.com/en-us/bags-and-accessories/sunglasses/panthere-de-cartier/panthere-de-cartier-sunglasses-CRESW00660.html",
+      "url": "https://www.cartier.com/en-us/bags-and-accessories/sunglasses/panthere-de-cartier/panthere-de-cartier-sunglasses-CRESW00660.html",
+      "sourceName": "صفحهٔ سازنده",
+      "sourceType": "manufacturer",
+      "sourceChecked": "2026-09-29",
+      "modelAssetStatus": "procedural-preview",
+      "modelAssetNote": "هندسهٔ پیش‌نمایش؛ مدل رسمی/اسکنِ همان SKU نیست.",
       "colors": [
         {
-          "name": "مشکی",
-          "color": "#111215",
-          "finish": "polished-black"
-        },
-        {
-          "name": "لاک‌پشتی",
-          "color": "#7a4a22",
-          "finish": "havana"
-        },
-        {
-          "name": "کرم مرواریدی",
-          "color": "#ddd3c2",
-          "finish": "acetate"
+          "name": "طلایی / عدسی قهوه‌ای گرادیان",
+          "color": "#c9a85e",
+          "finish": "gold",
+          "metalColor": "#c9a85e",
+          "lens": {
+            "type": "gradient",
+            "color": "#765744",
+            "tint": 0.58
+          }
         }
       ],
       "spec": {
         "shape": "cateye",
-        "style": "full",
-        "material": "acetate",
-        "lensW": 55,
-        "lensH": 43,
-        "dbn": 16,
+        "style": "rimless",
+        "material": "metal",
+        "lensW": 61,
+        "lensH": 50,
+        "dbn": 15,
         "templeLen": 140,
-        "rimW": 5.8,
-        "catAmp": 0.5
+        "templeW": 2.2,
+        "templeT": 1.5,
+        "nosePads": true,
+        "metalRimW": 1.25,
+        "metalRimT": 1,
+        "catAmp": 0.3,
+        "catWidth": 0.38,
+        "rimlessMounts": true
       }
     },
     {
-      "id": "AR-402",
-      "sku": "AR-402",
-      "name": "مربعی پلاریزه",
-      "brand": "Chrome Hearts",
-      "currency": "تومان",
-      "size": "54□18-145",
-      "shape": "square",
-      "style": "full",
-      "material": "acetate",
+      "id": "AR-122",
+      "sku": "CRESW00686",
+      "name": "Panthère de Cartier",
+      "brand": "Cartier",
+      "modelCode": "CRESW00686",
+      "modelFamily": "Panthère de Cartier",
+      "size": "56□18-145",
+      "shape": "rectangle",
+      "style": "rimless",
+      "material": "metal",
+      "composition": "Rimless metal",
+      "lensH": 40,
+      "lensHSource": "estimated",
+      "finish": "gold",
+      "color": "#c9a85e",
+      "metalColor": "#c9a85e",
       "lens": {
-        "type": "photo",
-        "color": "#141619",
-        "tint": 0.92
+        "type": "mirror",
+        "color": "#a78b62",
+        "tint": 0.66
       },
       "gender": "unisex",
       "tags": [
+        "cartier",
         "sun",
-        "polarized"
+        "rimless",
+        "panthere",
+        "rectangle"
       ],
       "bestFor": [
         "round",
-        "oblong",
+        "oval",
         "heart"
       ],
+      "sourceUrl": "https://www.cartier.com/en-gb/bags-and-accessories/sunglasses/panthere-de-cartier/panthere-de-cartier-sunglasses-CRESW00686",
+      "url": "https://www.cartier.com/en-gb/bags-and-accessories/sunglasses/panthere-de-cartier/panthere-de-cartier-sunglasses-CRESW00686",
+      "sourceName": "صفحهٔ سازنده",
+      "sourceType": "manufacturer",
+      "sourceChecked": "2026-09-29",
+      "modelAssetStatus": "procedural-preview",
+      "modelAssetNote": "هندسهٔ پیش‌نمایش؛ مدل رسمی/اسکنِ همان SKU نیست.",
       "colors": [
         {
-          "name": "مشکی/سبز",
-          "color": "#15171a",
-          "finish": "polished-black",
-          "accentColor": "#6fa07a"
-        },
+          "name": "طلایی / عدسی خاکستری آینه‌ای",
+          "color": "#c9a85e",
+          "finish": "gold",
+          "metalColor": "#c9a85e",
+          "lens": {
+            "type": "mirror",
+            "color": "#a78b62",
+            "tint": 0.66
+          }
+        }
+      ],
+      "spec": {
+        "shape": "rectangle",
+        "style": "rimless",
+        "material": "metal",
+        "lensW": 56,
+        "lensH": 40,
+        "dbn": 18,
+        "templeLen": 145,
+        "templeW": 2.2,
+        "templeT": 1.5,
+        "nosePads": true,
+        "metalRimW": 1.25,
+        "metalRimT": 1,
+        "rimlessMounts": true
+      }
+    },
+    {
+      "id": "AR-123",
+      "sku": "CRESW00404",
+      "name": "C de Cartier Signature",
+      "brand": "Cartier",
+      "modelCode": "CRESW00404",
+      "modelFamily": "C de Cartier Signature",
+      "size": "54□21-145",
+      "shape": "rectangle",
+      "style": "full",
+      "material": "metal",
+      "composition": "Black PVD metal front / acetate temples",
+      "lensH": 39,
+      "lensHSource": "estimated",
+      "finish": "polished-black",
+      "color": "#18191c",
+      "metalColor": "#3b3b3e",
+      "metalTint": "gold",
+      "lens": {
+        "type": "solid",
+        "color": "#61646a",
+        "tint": 0.72
+      },
+      "gender": "unisex",
+      "tags": [
+        "cartier",
+        "sun",
+        "double-bridge",
+        "signature-c",
+        "rectangle"
+      ],
+      "bestFor": [
+        "round",
+        "oval",
+        "heart"
+      ],
+      "sourceUrl": "https://www.cartier.com/en-gb/bags-and-accessories/sunglasses/signature-c-de-cartier/c-de-cartier-signature-sunglasses-CRESW00404",
+      "url": "https://www.cartier.com/en-gb/bags-and-accessories/sunglasses/signature-c-de-cartier/c-de-cartier-signature-sunglasses-CRESW00404",
+      "sourceName": "صفحهٔ سازنده",
+      "sourceType": "manufacturer",
+      "sourceChecked": "2026-09-29",
+      "modelAssetStatus": "procedural-preview",
+      "modelAssetNote": "هندسهٔ پیش‌نمایش؛ مدل رسمی/اسکنِ همان SKU نیست.",
+      "colors": [
         {
-          "name": "ماهی‌گوشتی",
-          "color": "#4a6b6b",
-          "finish": "acetate"
+          "name": "مشکی PVD / پل طلایی · خاکستری تیره",
+          "color": "#18191c",
+          "finish": "polished-black",
+          "metalColor": "#3b3b3e",
+          "lens": {
+            "type": "solid",
+            "color": "#61646a",
+            "tint": 0.72
+          },
+          "metalTint": "gold"
+        }
+      ],
+      "spec": {
+        "shape": "rectangle",
+        "style": "full",
+        "material": "metal",
+        "lensW": 54,
+        "lensH": 39,
+        "dbn": 21,
+        "templeLen": 145,
+        "rimW": 4.2,
+        "rimT": 3,
+        "pantoDeg": 2,
+        "doubleBridge": true,
+        "nosePads": true,
+        "metalRimW": 1.4,
+        "metalRimT": 1.2,
+        "bridgeMaterial": "accent",
+        "templeMaterial": "acetate",
+        "endpieceMaterial": "metal"
+      }
+    },
+    {
+      "id": "AR-124",
+      "sku": "CRESW00628",
+      "name": "Première de Cartier",
+      "brand": "Cartier",
+      "modelCode": "CRESW00628",
+      "modelFamily": "Première de Cartier",
+      "size": "53□20-145",
+      "shape": "rectangle",
+      "style": "full",
+      "material": "acetate",
+      "composition": "Black composite",
+      "lensH": 40,
+      "lensHSource": "estimated",
+      "finish": "polished-black",
+      "color": "#151619",
+      "lens": {
+        "type": "solid",
+        "color": "#64676c",
+        "tint": 0.66
+      },
+      "gender": "unisex",
+      "tags": [
+        "cartier",
+        "sun",
+        "premiere",
+        "rectangle"
+      ],
+      "bestFor": [
+        "round",
+        "oval",
+        "heart"
+      ],
+      "sourceUrl": "https://www.cartier.com/en-gb/bags-and-accessories/sunglasses/premiere-de-cartier/premiere-de-cartier-sunglasses-CRESW00628",
+      "url": "https://www.cartier.com/en-gb/bags-and-accessories/sunglasses/premiere-de-cartier/premiere-de-cartier-sunglasses-CRESW00628",
+      "sourceName": "صفحهٔ سازنده",
+      "sourceType": "manufacturer",
+      "sourceChecked": "2026-09-29",
+      "modelAssetStatus": "procedural-preview",
+      "modelAssetNote": "هندسهٔ پیش‌نمایش؛ مدل رسمی/اسکنِ همان SKU نیست.",
+      "colors": [
+        {
+          "name": "مشکی / عدسی خاکستری",
+          "color": "#151619",
+          "finish": "polished-black",
+          "lens": {
+            "type": "solid",
+            "color": "#64676c",
+            "tint": 0.66
+          }
+        }
+      ],
+      "spec": {
+        "shape": "rectangle",
+        "style": "full",
+        "material": "acetate",
+        "lensW": 53,
+        "lensH": 40,
+        "dbn": 20,
+        "templeLen": 145,
+        "rimW": 4.6,
+        "rimT": 3.5,
+        "pantoDeg": 3,
+        "bridgeDrop": 0.42
+      }
+    },
+    {
+      "id": "AR-125",
+      "sku": "CRESW00792",
+      "name": "Santos de Cartier Titanium",
+      "brand": "Cartier",
+      "modelCode": "CRESW00792",
+      "modelFamily": "Santos de Cartier Titanium",
+      "size": "54□21-145",
+      "shape": "square",
+      "style": "full",
+      "material": "metal",
+      "composition": "Titanium rim / metal",
+      "lensH": 40,
+      "lensHSource": "estimated",
+      "finish": "gold",
+      "color": "#bd9a58",
+      "metalColor": "#bd9a58",
+      "lens": {
+        "type": "solid",
+        "color": "#526359",
+        "tint": 0.75
+      },
+      "gender": "unisex",
+      "tags": [
+        "cartier",
+        "sun",
+        "santos",
+        "square"
+      ],
+      "bestFor": [
+        "round",
+        "oval",
+        "heart"
+      ],
+      "sourceUrl": "https://www.cartier.com/en-lv/bags-and-accessories/sunglasses/santos-de-cartier/santos-de-cartier-sunglasses-CRESW00792",
+      "url": "https://www.cartier.com/en-lv/bags-and-accessories/sunglasses/santos-de-cartier/santos-de-cartier-sunglasses-CRESW00792",
+      "sourceName": "صفحهٔ سازنده",
+      "sourceType": "manufacturer",
+      "sourceChecked": "2026-09-29",
+      "modelAssetStatus": "procedural-preview",
+      "modelAssetNote": "هندسهٔ پیش‌نمایش؛ مدل رسمی/اسکنِ همان SKU نیست.",
+      "colors": [
+        {
+          "name": "طلایی برس‌خورده · سبز پلاریزه",
+          "color": "#bd9a58",
+          "finish": "gold",
+          "metalColor": "#bd9a58",
+          "lens": {
+            "type": "solid",
+            "color": "#526359",
+            "tint": 0.75
+          }
+        }
+      ],
+      "spec": {
+        "shape": "square",
+        "style": "full",
+        "material": "metal",
+        "lensW": 54,
+        "lensH": 40,
+        "dbn": 21,
+        "templeLen": 145,
+        "pantoDeg": 4,
+        "bridgeDrop": 0.45,
+        "nosePads": true,
+        "metalRimW": 1.65,
+        "metalRimT": 1.3
+      }
+    },
+    {
+      "id": "AR-126",
+      "sku": "CH-BONENNOISSEUR-II-BK-BS-53",
+      "name": "Bonennoisseur II",
+      "brand": "Chrome Hearts",
+      "modelCode": "BONENNOISSEUR II BK/BS",
+      "modelFamily": "Bonennoisseur II",
+      "size": "53□19-150",
+      "shape": "square",
+      "style": "full",
+      "material": "acetate",
+      "composition": "Acetate / titanium / sterling silver",
+      "lensH": 41,
+      "lensHSource": "estimated",
+      "finish": "polished-black",
+      "color": "#151619",
+      "metalColor": "#9b9b9c",
+      "accentColor": "#b9b9b5",
+      "lens": "clear",
+      "gender": "unisex",
+      "tags": [
+        "chrome-hearts",
+        "optical",
+        "combination",
+        "square"
+      ],
+      "bestFor": [
+        "round",
+        "oval",
+        "heart"
+      ],
+      "sourceUrl": "https://modesens.com/product/chrome-hearts-bonennoisseur-ii---black-brushed-silver-glasses-64031349/",
+      "url": "https://modesens.com/product/chrome-hearts-bonennoisseur-ii---black-brushed-silver-glasses-64031349/",
+      "sourceName": "فروشندهٔ تخصصی",
+      "sourceType": "retailer",
+      "sourceNote": "منبع، مشخصات و سایز 53-19-150 را فهرست می‌کند؛ ارتفاع عدسی در منبع نیست و تخمینی است.",
+      "sourceChecked": "2026-09-29",
+      "modelAssetStatus": "procedural-preview",
+      "modelAssetNote": "هندسهٔ پیش‌نمایش؛ مدل رسمی/اسکنِ همان SKU نیست.",
+      "colors": [
+        {
+          "name": "مشکی / نقره‌ای برس‌خورده",
+          "color": "#151619",
+          "finish": "polished-black",
+          "metalColor": "#9b9b9c",
+          "accentColor": "#b9b9b5",
+          "lens": "clear"
         }
       ],
       "spec": {
         "shape": "square",
         "style": "full",
         "material": "acetate",
-        "lensW": 54,
-        "lensH": 47,
-        "dbn": 18,
-        "templeLen": 145
+        "lensW": 53,
+        "lensH": 41,
+        "dbn": 19,
+        "templeLen": 150,
+        "rimW": 4.8,
+        "rimT": 3.4,
+        "pantoDeg": 3,
+        "nosePads": true,
+        "metalRimW": 1.5,
+        "metalRimT": 1.2,
+        "bridgeMaterial": "metal",
+        "templeMaterial": "metal"
       }
     },
     {
-      "id": "AR-403",
-      "sku": "AR-403",
-      "name": "گرد آفتابی متال",
-      "brand": "Police",
-      "currency": "تومان",
-      "size": "50□20-140",
-      "shape": "round",
-      "style": "full",
-      "material": "metal",
-      "lens": {
-        "type": "mirror",
-        "color": "#1f3a3f",
-        "tint": 0.8
-      },
-      "gender": "unisex",
-      "tags": [
-        "sun",
-        "retro"
-      ],
-      "bestFor": [
-        "square",
-        "oblong"
-      ],
-      "colors": [
-        {
-          "name": "طلایی/آینه سبز",
-          "color": "#d0ad6c",
-          "metalColor": "#d0ad6c"
-        },
-        {
-          "name": "مشکی/آینه آبی",
-          "color": "#1a1c20",
-          "metalColor": "#2a2e34"
-        }
-      ],
-      "spec": {
-        "shape": "round",
-        "style": "full",
-        "material": "metal",
-        "lensW": 50,
-        "lensH": 49,
-        "dbn": 20,
-        "templeLen": 140
-      }
-    },
-    {
-      "id": "AR-404",
-      "sku": "AR-404",
-      "name": "هندسی آفتابی مات",
+      "id": "AR-127",
+      "sku": "CH-GITTIN-ANY-52-19-145",
+      "name": "Gittin Any?",
       "brand": "Chrome Hearts",
-      "currency": "تومان",
-      "size": "55□17-145",
-      "shape": "geometric",
+      "modelCode": "GITTIN ANY?",
+      "modelFamily": "Gittin Any?",
+      "size": "52□19-145",
+      "shape": "square",
       "style": "full",
       "material": "acetate",
-      "lens": {
-        "type": "photo",
-        "color": "#191a1d",
-        "tint": 0.88
-      },
-      "gender": "unisex",
-      "tags": [
-        "sun",
-        "designer"
-      ],
-      "bestFor": [
-        "round",
-        "oval"
-      ],
-      "colors": [
-        {
-          "name": "خاکی مات",
-          "color": "#6f6552",
-          "finish": "matte-sand"
-        },
-        {
-          "name": "مشکی مات",
-          "color": "#16181b",
-          "finish": "matte-black"
-        }
-      ],
-      "spec": {
-        "shape": "geometric",
-        "style": "full",
-        "material": "acetate",
-        "lensW": 55,
-        "lensH": 48,
-        "dbn": 17,
-        "templeLen": 145,
-        "rimW": 5.4
-      }
-    },
-    {
-      "id": "AR-405",
-      "sku": "AR-405",
-      "name": "کروازئوس پل بلندی",
-      "brand": "Cartier",
-      "currency": "تومان",
-      "size": "52□18-145",
-      "shape": "oval",
-      "style": "full",
-      "material": "acetate",
+      "composition": "Acetate / silver hardware",
+      "lensH": 41,
+      "lensHSource": "estimated",
+      "finish": "polished-black",
+      "color": "#141519",
+      "metalColor": "#c3a05e",
+      "accentColor": "#c3a05e",
       "lens": "clear",
       "gender": "unisex",
       "tags": [
-        "fit-asian",
-        "optical"
+        "chrome-hearts",
+        "optical",
+        "square",
+        "square"
       ],
       "bestFor": [
         "round",
-        "square",
-        "triangle"
+        "oval",
+        "heart"
       ],
+      "sourceUrl": "https://modesens.com/product/chrome-hearts-gittin-any-blackgoldplated-107182274/",
+      "url": "https://modesens.com/product/chrome-hearts-gittin-any-blackgoldplated-107182274/",
+      "sourceName": "فروشندهٔ تخصصی",
+      "sourceType": "retailer",
+      "sourceNote": "فهرست فروشندهٔ کالای کلکسیونی برای رنگ مشکی/طلایی و سایز 52-19-145؛ موجودی و اصالت از این برنامه تأیید نمی‌شود.",
+      "sourceChecked": "2026-09-29",
+      "modelAssetStatus": "procedural-preview",
+      "modelAssetNote": "هندسهٔ پیش‌نمایش؛ مدل رسمی/اسکنِ همان SKU نیست.",
       "colors": [
         {
-          "name": "قهوه‌ای شفاف",
-          "color": "#7d5a3c",
-          "finish": "translucent-amber"
-        },
-        {
-          "name": "مشکی",
+          "name": "مشکی / طلایی plated",
           "color": "#141519",
-          "finish": "polished-black"
+          "finish": "polished-black",
+          "metalColor": "#c3a05e",
+          "accentColor": "#c3a05e",
+          "lens": "clear"
         }
       ],
       "spec": {
-        "shape": "oval",
+        "shape": "square",
         "style": "full",
         "material": "acetate",
         "lensW": 52,
-        "lensH": 40,
-        "dbn": 18,
+        "lensH": 41,
+        "dbn": 19,
         "templeLen": 145,
-        "highBridge": true
+        "rimW": 5,
+        "rimT": 3.8,
+        "pantoDeg": 4,
+        "bridgeDrop": 0.43,
+        "templeMaterial": "metal"
       }
     },
     {
-      "id": "AR-406",
-      "sku": "AR-406",
-      "name": "ورزشی کبریتی",
-      "brand": "Ray-Ban",
-      "currency": "تومان",
-      "size": "62□14-135",
-      "shape": "shield",
+      "id": "AR-128",
+      "sku": "CH-VAGILANTE-BK-GP-54",
+      "name": "Vagilante",
+      "brand": "Chrome Hearts",
+      "modelCode": "VAGILANTE BK/GP",
+      "modelFamily": "Vagilante",
+      "size": "54□19-149",
+      "shape": "rectangle",
       "style": "full",
       "material": "acetate",
-      "lens": {
-        "type": "mirror",
-        "color": "#3a2a1e",
-        "tint": 0.85
-      },
+      "composition": "Acetate / metal hardware",
+      "lensH": 38,
+      "lensHSource": "estimated",
+      "finish": "polished-black",
+      "color": "#151619",
+      "metalColor": "#c3a05e",
+      "accentColor": "#c3a05e",
+      "lens": "clear",
       "gender": "unisex",
       "tags": [
-        "sport",
-        "sun"
+        "chrome-hearts",
+        "optical",
+        "rectangular",
+        "rectangle"
       ],
       "bestFor": [
-        "square",
-        "oblong"
+        "round",
+        "oval",
+        "heart"
       ],
+      "sourceUrl": "https://modesens.com/product/chrome-hearts-vagilante-glasses-blackgold-plated-107379731/",
+      "url": "https://modesens.com/product/chrome-hearts-vagilante-glasses-blackgold-plated-107379731/",
+      "sourceName": "فروشندهٔ تخصصی",
+      "sourceType": "retailer",
+      "sourceNote": "فهرست فروشنده برای Vagilante رنگ مشکی/طلایی و سایز 54-19-149؛ ارتفاع عدسی تخمینی است.",
+      "sourceChecked": "2026-09-29",
+      "modelAssetStatus": "procedural-preview",
+      "modelAssetNote": "هندسهٔ پیش‌نمایش؛ مدل رسمی/اسکنِ همان SKU نیست.",
       "colors": [
         {
-          "name": "مشکی/نارنجی",
-          "color": "#17181b",
-          "finish": "matte-black",
-          "accentColor": "#d97a3a"
-        },
-        {
-          "name": "آبی متالیک",
-          "color": "#2a4a6b",
-          "finish": "brushed",
-          "metalColor": "#4c7299"
+          "name": "مشکی / طلایی",
+          "color": "#151619",
+          "finish": "polished-black",
+          "metalColor": "#c3a05e",
+          "accentColor": "#c3a05e",
+          "lens": "clear"
         }
       ],
       "spec": {
-        "shape": "shield",
+        "shape": "rectangle",
         "style": "full",
         "material": "acetate",
-        "lensW": 62,
-        "lensH": 46,
-        "dbn": 14,
-        "templeLen": 135,
-        "rimW": 6.8,
-        "templeW": 6.4,
-        "templeT": 3
+        "lensW": 54,
+        "lensH": 38,
+        "dbn": 19,
+        "templeLen": 149,
+        "rimW": 4.6,
+        "rimT": 3.6,
+        "pantoDeg": 2,
+        "bridgeDrop": 0.4,
+        "templeMaterial": "metal"
       }
     }
   ]

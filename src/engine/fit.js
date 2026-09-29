@@ -47,12 +47,12 @@ export const SHAPE_COPY = {
     label: "کشیده (مستطیلی)",
     advice:
       "صورت کشیده‌تر از حالت متعادل است. فریم پهن و عمیق، طول صورت را کوتاه‌تر نشان می‌دهد؛ فریم باریک و بلند آن را بیشتر می‌کشد.",
-    want: ["oversize", "square", "rectangle", "aviator", "browline"],
+    want: ["panto", "square", "rectangle", "aviator", "browline"],
   },
   round: {
     label: "گرد",
     advice: "پهنای صورت در گونه و فک جمع می‌شود. فریم گوشه‌دار و مستطیلی خط صورت را می‌شکند و صورت کشیده‌تر و خوش‌قاب دیده می‌شود.",
-    want: ["square", "rectangle", "cateye", "browline", "geometric"],
+    want: ["square", "rectangle", "cateye", "browline", "hexagon"],
   },
   square: {
     label: "مربعی",
@@ -62,12 +62,12 @@ export const SHAPE_COPY = {
   oval: {
     label: "بیضی",
     advice: "تناسبات صورت متعادل است؛ تقریباً هر فریمی می‌آید. برای شروع فریم‌های مشخصه‌دار مثل گربه‌ای و مربعی.",
-    want: ["cateye", "square", "aviator", "browline", "octagon"],
+    want: ["cateye", "square", "aviator", "browline", "wayfarer"],
   },
   heart: {
     label: "قلبی",
     advice: "پیشانی پهن‌تر از فک است. فریمی که پایینش گرد و سبک باشد و پهنای کمتری داشته باشد، تعادل را برمی‌گرداند.",
-    want: ["round", "roundmetal", "oval", "aviator", "light"],
+    want: ["round", "roundmetal", "oval", "aviator", "rimless"],
   },
   diamond: {
     label: "الماسی",
@@ -77,7 +77,7 @@ export const SHAPE_COPY = {
   triangle: {
     label: "مثلثی",
     advice: "فک پهن‌تر از پیشانی است. تأکید روی خط بالایی فریم و رنگ‌های روشن‌تر در بالا، تعادل می‌سازد.",
-    want: ["cateye", "aviator", "butterfly", "oversize", "octagon"],
+    want: ["cateye", "aviator", "browline", "square", "rectangle"],
   },
 };
 

@@ -4,7 +4,6 @@ const searchInput = document.getElementById("productSearch");
 const filters = document.getElementById("frameFilters");
 const countLabel = document.getElementById("productCount");
 const number = new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 1 });
-const money = new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 0 });
 let catalog = [];
 let activeMaterial = "all";
 let activeBrand = "all";
@@ -17,6 +16,7 @@ const framePaths = {
   aviator: '<path d="M16 18h59l-4 31q-4 23-26 23T18 49l-2-31Z"/><path d="M164 18h-59l4 31q4 23 26 23t27-23l2-31Z"/>',
   rectangle: '<rect x="12" y="20" width="65" height="38" rx="11"/><rect x="103" y="20" width="65" height="38" rx="11"/>',
   square: '<path d="M24 16h41q13 0 13 13v18q0 13-13 13H25q-13 0-13-13V29q0-13 12-13Z"/><path d="M156 16h-41q-13 0-13 13v18q0 13 13 13h40q13 0 13-13V29q0-13-12-13Z"/>',
+  wayfarer: '<path d="M13 22Q13 14 23 15l44 4q11 1 11 12v20q-1 14-15 15l-30-2Q17 63 14 50L11 28q-1-4 2-6Z"/><path d="M167 22q0-8-10-7l-44 4q-11 1-11 12v20q1 14 15 15l30-2q16-1 19-14l3-22q1-4-2-6Z"/>',
   panto: '<path d="M15 22q29-13 61 0v20q-2 23-29 23-29 0-32-23V22Z"/><path d="M165 22q-29-13-61 0v20q2 23 29 23 29 0 32-23V22Z"/>',
   browline: '<path d="M13 29q32-23 65-5v20q-3 19-29 19-29 0-34-21l-2-13Z"/><path d="M167 29q-32-23-65-5v20q3 19 29 19 29 0 34-21l2-13Z"/>',
   octagon: '<path d="m22 17 42 0 14 14-4 26-13 12-41-3-9-12V29l11-12Z"/><path d="m158 17-42 0-14 14 4 26 13 12 41-3 9-12V29l-11-12Z"/>',
@@ -40,13 +40,19 @@ function safeColor(value) {
   return /^#[0-9a-f]{3,8}$/i.test(color) ? color : "#353a3c";
 }
 
-function materialLabel(material) {
-  return ({ acetate: "استات", metal: "فلزی", titanium: "تیتانیوم" })[material] || "فریم";
+function safeExternalURL(value) {
+  try {
+    const url = new URL(String(value || ""));
+    return url.protocol === "https:" || url.protocol === "http:" ? url.href : "";
+  } catch {
+    return "";
+  }
 }
 
-function priceLabel(price) {
-  const amount = Number(price);
-  return Number.isFinite(amount) && amount > 0 ? `${money.format(amount)} تومان` : "";
+function materialLabel(product) {
+  const composition = String(product?.composition || "").trim();
+  if (composition) return escapeHTML(composition);
+  return ({ acetate: "استات", metal: "فلزی", titanium: "تیتانیوم" })[product?.material] || "فریم";
 }
 
 function renderCards(items) {
@@ -66,16 +72,25 @@ function renderCards(items) {
         .map((color) => `<i style="background:${safeColor(color.color)}" title="${escapeHTML(color.name || "رنگ فریم")}" aria-hidden="true"></i>`)
         .join("");
       const size = String(product.size || "").replace(/[^0-9□×\-. ]/g, "");
-      const escapedId = escapeHTML(id);
       const escapedName = escapeHTML(product.name || id);
       const brand = String(product.brand || "آروین");
+      const modelCode = escapeHTML(product.modelCode || product.sku || id);
+      const source = safeExternalURL(product.sourceUrl || product.url);
+      const sourceName = escapeHTML(product.sourceName || (product.sourceType === "retailer" ? "فروشنده" : "سازنده"));
+      const sourceLink = source
+        ? `<a class="sourceLink" href="${escapeHTML(source)}" target="_blank" rel="noopener noreferrer">مشاهده در ${sourceName}<span aria-hidden="true"> ↗</span></a>`
+        : `<span class="sourceLink sourceMissing">منبع ثبت نشده</span>`;
+      const heightNote = product.lensHSource && product.lensHSource !== "manufacturer" ? "ارتفاع عدسی تخمینی" : "ارتفاع از منبع سازنده";
+      const previewNote = product.modelAssetStatus === "procedural-preview" ? "پیش‌نمایش هندسی · نه مدل رسمی" : "مدل سه‌بعدی";
       return `<article class="pcard" data-material="${escapeHTML(product.material || "")}" data-brand="${escapeHTML(brand)}" style="--frame-color:${safeColor(colors[0]?.color)}">
-        <div class="pcardTop"><span class="brandName">${escapeHTML(brand)}</span><span class="material">${materialLabel(product.material)}</span></div>
+        <div class="pcardTop"><span class="brandName">${escapeHTML(brand)}</span><span class="material">${materialLabel(product)}</span></div>
         <div class="shot">${icon(product.shape)}<span class="frameMark" aria-hidden="true">${escapeHTML(sku)}</span></div>
         <h3>${escapedName}</h3>
-        <div class="pcardMeta"><span class="size">${escapeHTML(size || "سایز ثبت نشده")}</span><span class="price">${priceLabel(product.price)}</span></div>
+        <div class="modelLine" dir="ltr">${modelCode}</div>
+        <div class="pcardMeta"><span class="size">${escapeHTML(size || "سایز ثبت نشده")}</span><span class="heightNote">${heightNote}</span></div>
+        <div class="sourceMeta">${sourceLink}<span class="assetNote">${previewNote}</span></div>
         <div class="productFoot">
-          ${swatches ? `<span class="swatches" aria-label="${colors.length} رنگ موجود">${swatches}</span>` : ""}
+          ${swatches ? `<span class="swatches" aria-label="${colors.length} رنگ مرجع">${swatches}</span>` : ""}
           <button class="tryon-btn" type="button" data-tryon-open data-tryon-sku="${escapeHTML(sku)}" aria-label="پرو مجازی ${escapedName}">پرو مجازی</button>
         </div>
       </article>`;
@@ -88,7 +103,7 @@ function applyFilters() {
   const filtered = catalog.filter((product) => {
     const materialOK = activeMaterial === "all" || product.material === activeMaterial;
     const brandOK = activeBrand === "all" || product.brand === activeBrand;
-    const haystack = `${product.name || ""} ${product.id || ""} ${product.sku || ""}`.toLocaleLowerCase("fa-IR");
+    const haystack = `${product.name || ""} ${product.id || ""} ${product.sku || ""} ${product.modelCode || ""}`.toLocaleLowerCase("fa-IR");
     return materialOK && brandOK && (!query || haystack.includes(query) || String(product.brand || "").toLocaleLowerCase("fa-IR").includes(query));
   });
   renderCards(filtered);
