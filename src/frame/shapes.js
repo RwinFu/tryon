@@ -13,6 +13,7 @@ export const SHAPE_KEYS = [
   "oval",
   "panto",
   "square",
+  "wayfarer",
   "rectangle",
   "cateye",
   "aviator",
@@ -34,6 +35,7 @@ export const SHAPE_PRESETS = {
   oval: { exp: 2.0, depth: 0.74, corner: 0 },
   panto: { exp: 2.6, depth: 0.95, topFlatten: 0.12, bottomShift: 0.05 },
   square: { exp: 5.0, depth: 0.9, corner: 0.16 },
+  wayfarer: { exp: 4.6, depth: 0.82, corner: 0.12 },
   rectangle: { exp: 7.0, depth: 0.6, corner: 0.22 },
   cateye: {
     exp: 3.1,
@@ -84,6 +86,41 @@ function lame(theta, exp) {
   return [Math.sign(c) * Math.abs(c) ** p, Math.sign(s) * Math.abs(s) ** p];
 }
 
+/**
+ * مسیرِ کلاسیک Wayfarer: ابروی زاویه‌دار، بینی باریک و کاسهٔ پایینِ نرم.
+ * این سیلوئتِ قابل‌تنظیم جای مدل/اسکن رسمی را نمی‌گیرد؛ فقط فرم را از یک
+ * superellipse عمومی به family shape نزدیک‌تر می‌کند.
+ */
+function wayfarerOutline(samples) {
+  const segments = [
+    [[0.78, 0.82], [0.36, 1.02], [-0.37, 1.00], [-0.68, 0.88]],
+    [[-0.68, 0.88], [-0.90, 0.83], [-1.00, 0.70], [-1.00, 0.46]],
+    [[-1.00, 0.46], [-1.02, 0.18], [-0.98, -0.34], [-0.86, -0.55]],
+    [[-0.86, -0.55], [-0.75, -0.83], [-0.51, -0.97], [-0.22, -0.98]],
+    [[-0.22, -0.98], [0.16, -1.02], [0.54, -0.93], [0.73, -0.70]],
+    [[0.73, -0.70], [0.91, -0.49], [0.98, -0.05], [1.00, 0.18]],
+    [[1.00, 0.18], [1.02, 0.50], [0.96, 0.74], [0.78, 0.82]],
+  ];
+  const raw = [];
+  const steps = Math.max(12, Math.ceil(samples / segments.length));
+  for (const [a, b, c, d] of segments) {
+    for (let i = 0; i < steps; i++) {
+      const t = i / steps, u = 1 - t;
+      const x = u ** 3 * a[0] + 3 * u ** 2 * t * b[0] + 3 * u * t ** 2 * c[0] + t ** 3 * d[0];
+      const y = u ** 3 * a[1] + 3 * u ** 2 * t * b[1] + 3 * u * t ** 2 * c[1] + t ** 3 * d[1];
+      raw.push({ x, y });
+    }
+  }
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  for (const p of raw) {
+    minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
+    minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
+  }
+  const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
+  const rx = (maxX - minX) / 2 || 1, ry = (maxY - minY) / 2 || 1;
+  return resample(raw.map((p) => ({ x: (p.x - cx) / rx, y: (p.y - cy) / ry })), samples, true);
+}
+
 /** چندضلعی منتظم با گوشهٔ نرم (برای شش‌ضلعی/هشت‌ضلعی). */
 function polygon(theta, sides, corner) {
   const seg = TAU / sides;
@@ -107,11 +144,16 @@ export function lensOutline(spec, side = 1, samples = 220) {
   const h = (p.lensH || (p.lensW || 51) * (p.depth || 0.88)) / 2;
   const exp = clamp(p.exp || 3, 1.6, 14);
   const pts = new Array(samples);
+  const wayfarer = p.shape === "wayfarer" ? wayfarerOutline(samples) : null;
 
   for (let i = 0; i < samples; i++) {
     // از نیم‌رخ سمت بیرونی شروع کن تا قرینگیِ عددی حفظ شود
     const th = (i / samples) * TAU;
-    let [bx, by] = p.hexBlend ? polygon(th, p.hexSides || 6, 1 - p.hexBlend) : lame(th, exp);
+    let [bx, by] = wayfarer
+      ? [wayfarer[i].x, wayfarer[i].y]
+      : p.hexBlend
+        ? polygon(th, p.hexSides || 6, 1 - p.hexBlend)
+        : lame(th, exp);
 
     if (p.hexBlend) {
       const [ex, ey] = lame(th, 2.2);
@@ -125,9 +167,6 @@ export function lensOutline(spec, side = 1, samples = 220) {
     // x>0 = سمت شقیقه (بیرون)، x<0 = سمت بینی
     const out = clamp(x / w, -1, 1); // ۱ بیرون، ۱- داخل
     const up = clamp(y / h, -1, 1);
-
-    if (p.topWide) x *= 1 + (p.topWide - 1) * 0; // placeholder, applied below on width
-    if (p.topWide) y *= 1;
 
     // پهن‌تر بودن بالای فریم (خلبانی/گربه‌ای)
     if (p.topWide) {
@@ -198,7 +237,13 @@ export function lensOutline(spec, side = 1, samples = 220) {
 
     pts[i] = { x: x * side, y };
   }
-  return pts;
+
+  // پارامترهای شکل فقط سیلوئت را تغییر می‌دهند؛ ابعاد چاپی EYE باید ثابت بماند.
+  // به‌ویژه topWide/teardrop نباید عدسیِ ۵۰ میلی‌متری را بزرگ‌تر از ۵۰ بسازند.
+  const bounds = outlineBounds(pts);
+  const sx = bounds.w > 0 ? (p.lensW || 51) / bounds.w : 1;
+  const sy = bounds.h > 0 ? (p.lensH || (p.lensW || 51) * (p.depth || 0.88)) / bounds.h : 1;
+  return pts.map((point) => ({ x: point.x * sx, y: point.y * sy }));
 }
 
 /** محاسبهٔ ارتفاع واقعی از روی نقاط (برای نرمال‌سازی). */

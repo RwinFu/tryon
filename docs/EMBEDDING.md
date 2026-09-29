@@ -271,7 +271,7 @@ tryon.on("tryon:cart", (e) => {
       "price": 6200000,
       "currency": "تومان",
       "url": "/products/arvin-cateye",
-      "shape": "cateye",              // round|oval|panto|square|rectangle|cateye|aviator|browline|geometric|hexagon|octagon|shield|butterfly|triangle|roundmetal|oversize
+      "shape": "cateye",              // round|oval|panto|square|wayfarer|rectangle|cateye|aviator|browline|geometric|hexagon|octagon|shield|butterfly|triangle|roundmetal|oversize
       "style": "full",                // full|half|brow|rimless|clip
       "material": "acetate",          // acetate|metal|mixed|titanium
       "finish": "tortoise",           // یکی از ۱۸ finishing در FINISHES

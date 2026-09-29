@@ -160,6 +160,90 @@ function rotateX(g, ang) {
 }
 
 /**
+ * یک رینگ استاتِ واقعی‌تر از sweep ساده می‌سازد: دهانهٔ عدسی اندازهٔ اسمی دارد،
+ * بدنه دور آن به بیرون می‌رود، و لبهٔ داخل/خارج هر دو bevel دارند. سطح‌های
+ * جلو و پشت بسته‌اند تا در نور/چرخش، لبهٔ باز و «دو لوله روی هم» دیده نشود.
+ */
+function annularRim(innerInput, outerInput, { side, lensCX, depth, rimWidth, dome }) {
+  const count = Math.min(innerInput.length, outerInput.length);
+  const inner = resample(innerInput, count, true);
+  const outer = resample(outerInput, count, true);
+  const bevelWidth = Math.max(0.22, Math.min(rimWidth * 0.17, 0.82, rimWidth * 0.32));
+  const bevelDepth = Math.max(0.12, Math.min(depth * 0.18, 0.72));
+  const innerFace = resample(offsetOutline(inner, -bevelWidth), count, true);
+  const outerFace = resample(offsetOutline(outer, bevelWidth), count, true);
+  const loops = [
+    { pts: inner, z: depth / 2 - bevelDepth },
+    { pts: innerFace, z: depth / 2 },
+    { pts: outerFace, z: depth / 2 },
+    { pts: outer, z: depth / 2 - bevelDepth },
+    { pts: outer, z: -depth / 2 + bevelDepth },
+    { pts: outerFace, z: -depth / 2 },
+    { pts: innerFace, z: -depth / 2 },
+    { pts: inner, z: -depth / 2 + bevelDepth },
+  ];
+  const position = [], uv = [], index = [];
+  for (const loop of loops) {
+    for (const p of loop.pts) {
+      position.push(p.x + side * lensCX, p.y, -dome(p.x, p.y) + loop.z);
+      uv.push(p.x / 100 + 0.5, p.y / 100 + 0.5);
+    }
+  }
+  const centerAt = (loopIndex, i) => loops[loopIndex % loops.length].pts[i % count];
+  const expectedNormal = (layer, i) => {
+    const a = centerAt(layer, i), b = centerAt(layer + 1, i);
+    const x = (a.x + b.x) * 0.5, y = (a.y + b.y) * 0.5;
+    switch (layer) {
+      case 0: return [-x, -y, 1];       // bevel at the lens aperture, front
+      case 1: return [0, 0, 1];         // front face
+      case 2: return [x, y, 1];          // outside bevel, front
+      case 3: return [x, y, 0];          // outside wall
+      case 4: return [x, y, -1];         // outside bevel, back
+      case 5: return [0, 0, -1];        // back face
+      case 6: return [-x, -y, -1];       // inside bevel, back
+      default: return [-x, -y, 0];       // aperture wall
+    }
+  };
+  const vector = (i) => [position[i * 3], position[i * 3 + 1], position[i * 3 + 2]];
+  const cross3 = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+  const addTriangle = (a, b, c, target) => {
+    const pa = vector(a), pb = vector(b), pc = vector(c);
+    const ab = [pb[0] - pa[0], pb[1] - pa[1], pb[2] - pa[2]];
+    const ac = [pc[0] - pa[0], pc[1] - pa[1], pc[2] - pa[2]];
+    const n = cross3(ab, ac);
+    if (n[0] * target[0] + n[1] * target[1] + n[2] * target[2] < 0) index.push(a, c, b);
+    else index.push(a, b, c);
+  };
+  for (let layer = 0; layer < loops.length; layer++) {
+    const nextLayer = (layer + 1) % loops.length;
+    for (let i = 0; i < count; i++) {
+      const j = (i + 1) % count;
+      const a = layer * count + i, b = nextLayer * count + i;
+      const c = nextLayer * count + j, d = layer * count + j;
+      const target = expectedNormal(layer, i);
+      addTriangle(a, b, c, target);
+      addTriangle(a, c, d, target);
+    }
+  }
+  const normal = new Array(position.length).fill(0);
+  for (let i = 0; i < index.length; i += 3) {
+    const ia = index[i], ib = index[i + 1], ic = index[i + 2];
+    const a = vector(ia), b = vector(ib), c = vector(ic);
+    const n = cross3([b[0] - a[0], b[1] - a[1], b[2] - a[2]], [c[0] - a[0], c[1] - a[1], c[2] - a[2]]);
+    for (const v of [ia, ib, ic]) {
+      normal[v * 3] += n[0];
+      normal[v * 3 + 1] += n[1];
+      normal[v * 3 + 2] += n[2];
+    }
+  }
+  for (let i = 0; i < normal.length; i += 3) {
+    const len = Math.hypot(normal[i], normal[i + 1], normal[i + 2]) || 1;
+    normal[i] /= len; normal[i + 1] /= len; normal[i + 2] /= len;
+  }
+  return { position, normal, uv, index, vertexCount: position.length / 3 };
+}
+
+/**
  * ساخت یک فریم کامل.
  * @param {object} spec  پارامترها (بیشترها اختیاری‌اند)
  * @returns {{roles:Object, bbox:Object, meta:Object, parts:Array}}
@@ -172,14 +256,16 @@ export function buildFrame(rawSpec = {}) {
 
   const halfH = s.lensH / 2;
   const lensCX = s.lensW / 2 + s.dbn / 2;
-  /** لبهٔ داخلی لنز در مختصات قاب (محل رسیدن فریم به پل) */
-  const innerX = Math.max(s.dbn * 0.5 + 0.6, lensCX - s.lensW / 2 + rimWEarly(s) * 0.3);
-  const outerX = lensCX + s.lensW / 2 - rimWEarly(s) * 0.3;
   const R = wrapRadius(s.baseCurve);
   const panto = -s.pantoDeg * D2R;
   const isMetal = !!s.metal;
   const rimW = isMetal ? s.metalRimW : s.rimW;
   const rimT = isMetal ? s.metalRimT : s.rimT;
+  const metalTemple = s.templeMaterial === "metal" || (s.templeMaterial !== "acetate" && isMetal);
+  const endpieceRole = s.endpieceMaterial === "accent" ? "accent" : s.endpieceMaterial === "frame" ? "frame" : isMetal ? "metal" : metalTemple ? "metal" : "frame";
+  // داخل پل باید روی بخش بینی‌روِ رینگ بنشیند؛ نه بیرون از فریم.
+  const innerX = Math.max(1.2, s.dbn / 2 - rimW * (isMetal ? 0.75 : 0.95));
+  const outerX = lensCX + s.lensW / 2 + (isMetal ? rimW * 0.6 : rimW);
 
   /** zِ سطح لنز در مختصات موضعی لنز (فریم چرخیدهٔ دور چشم) */
   const dome = (x, y) => {
@@ -187,74 +273,90 @@ export function buildFrame(rawSpec = {}) {
     return r2 < R * R ? R - Math.sqrt(R * R - r2) : R;
   };
 
-  // ── . دور لنز (rim) ────────────────────────────────────────────────
-  // اگر خطِ دنبالی‌شده از عکس محصول داده شود، همان را جای منحنی پایه می‌گذاریم
+  // ── ۱. دور لنز: دهانه بر اساس سایز چاپی، بدنه رو به بیرون ─────────────
+  // لنزِ ورودی همان اندازهٔ اسمیِ EYE است. در فریم استات، حلقه به بیرون
+  // offset می‌شود؛ در مدل قبلی علامت offset برعکس بود و خود عدسی از فریم بزرگ‌تر.
   const externalOutline = (side, samples) => {
     const lp = side > 0 ? s.lensPathR || s.lensPath : s.lensPathL || s.lensPath;
     if (!lp) return null;
     const pts = lp.map((p) => (Array.isArray(p) ? { x: p[0], y: p[1] } : { x: p.x, y: p.y }));
     return resample(pts, samples, true);
   };
+  const bridgeIsMetal = s.bridgeMaterial === "metal" || isMetal || s.style === "rimless";
+  const bridgeRole = s.bridgeMaterial === "accent" ? "accent" : bridgeIsMetal ? "metal" : "frame";
+  const browMaterial = s.browMaterial === "metal" ? "metal" : "frame";
   for (const side of [1, -1]) {
-    const raw = externalOutline(side, 260) || lensOutline(s, side, 260);
-    const outer = resample(smoothPts(raw, 1), s.style === "rimless" ? 4 : 132, true);
-    const path = outer.map((p) => {
-      const lx = p.x - side * (s.lensW / 2) * 0; // مرکز لنز در مختصات خودش
-      return { x: p.x, y: p.y, z: -dome(lx, p.y) * 1.0 };
-    });
-    if (s.style !== "rimless") {
-      // نیمهٔ پایین / بالا برای half & brow
-      const all = path;
-      let use = all;
-      let profile = roundedRectProfile(rimW, rimT, rimW * 0.5 * s.bevel + 0.2, 4);
-      if (s.style === "half") {
-        use = pickRange(all, (p) => p.y < halfH * 0.18);
-        if (!use.length) use = all.slice(0, Math.floor(all.length / 2));
-      } else if (s.style === "brow") {
-        use = pickRange(all, (p) => p.y > -halfH * 0.1);
-        profile = roundedRectProfile(rimW * 1.35, rimT * 1.25, rimW * 0.45, 4);
-      }
-      const role = s.style === "brow" ? "frame" : isMetal ? "metal" : "frame";
-      if (s.style === "brow") {
-        const lowPath = pickRange(all, (p) => p.y <= -halfH * 0.06).map((p) => ({
-          x: p.x + side * lensCX,
-          y: p.y,
-          z: p.z + 0.35,
-        }));
-        if (lowPath.length > 5)
-          add(
-            side > 0 ? "lowrimR" : "lowrimL",
-            "metal",
-            sweep(lowPath, roundedRectProfile(1.7, 1.4, 0.5, 3), { closed: false }),
-          );
-      }
-      const rimPath = use.map((p) => ({ x: p.x + side * lensCX, y: p.y, z: p.z }));
-      if (rimPath.length > 6) {
-        add(side > 0 ? "rimR" : "rimL", role, sweep(rimPath, profile, { closed: s.style === "full" }), {
-          path: rimPath,
-          sw: Math.max(rimW, rimT),
-        });
-      }
-      // سیم نایلونی بالای عدسی در نیم‌فریم
-      if (s.style === "half") {
-        const cordPath = pickRange(all, (p) => p.y >= halfH * 0.18).map((p) => ({
-          x: p.x + side * lensCX,
-          y: p.y,
-          z: p.z + rimT * 0.28,
-        }));
-        if (cordPath.length > 4)
-          add(side > 0 ? "cordR" : "cordL", "metal", sweep(cordPath, ellipseProfile(0.7, 0.7, 6), { closed: false }));
-      }
-      // عدسی
-      const inner = resample(offsetOutline(raw, -rimW * (s.style === "half" ? 0.35 : 0.9)), 96, true);
-      const capPath = inner.map((p) => ({ x: p.x + side * lensCX, y: p.y, z: -dome(p.x, p.y) + 0.35 }));
-      add(side > 0 ? "lensR" : "lensL", "lens", lensSurface(capPath, R, s));
-    } else {
-      // فریم بدون حلقه: عدسی کمی بزرگ‌تر و سوراخ‌شده
-      const inner = resample(offsetOutline(raw, -0.6), 96, true);
-      const capPath = inner.map((p) => ({ x: p.x + side * lensCX, y: p.y, z: -dome(p.x, p.y) + 0.35 }));
-      add(side > 0 ? "lensR" : "lensL", "lens", lensSurface(capPath, R, s));
+    const raw = resample(smoothPts(externalOutline(side, 260) || lensOutline(s, side, 260), 1), 132, true);
+    const localPath = (pts, zOffset = 0) => pts.map((p) => ({
+      x: p.x + side * lensCX,
+      y: p.y,
+      z: -dome(p.x, p.y) + zOffset,
+    }));
+    const lensInset = s.style === "rimless"
+      ? Math.max(0.08, Math.min(0.24, s.lensInset * 0.25))
+      : isMetal
+        ? Math.max(0.34, rimW * 0.44)
+        : Math.max(0.38, s.lensInset || 0.7);
+    const lensOutlineInner = resample(offsetOutline(raw, lensInset), 96, true);
+    const capPath = lensOutlineInner.map((p) => ({ x: p.x + side * lensCX, y: p.y, z: -dome(p.x, p.y) + 0.2 }));
+
+    if (s.style === "full" && !isMetal) {
+      const outer = resample(offsetOutline(raw, -rimW), 132, true);
+      const rimPath = localPath(outer);
+      add(side > 0 ? "rimR" : "rimL", "frame", annularRim(raw, outer, {
+        side, lensCX, depth: rimT, rimWidth: rimW, dome,
+      }), { path: rimPath, sw: rimW });
+    } else if (s.style === "full") {
+      const rimPath = localPath(raw);
+      add(side > 0 ? "rimR" : "rimL", "metal", sweep(
+        rimPath,
+        ellipseProfile(rimW, rimT, 10),
+        { closed: true },
+      ), { path: rimPath, sw: rimW });
+    } else if (s.style === "brow") {
+      const outer = resample(offsetOutline(raw, -rimW * 0.72), 132, true);
+      const top = pickRange(outer, (p) => p.y > -halfH * 0.08);
+      const low = pickRange(raw, (p) => p.y <= -halfH * 0.08);
+      const topPath = localPath(top);
+      const lowPath = localPath(low, 0.34);
+      if (topPath.length > 5) add(side > 0 ? "browR" : "browL", "frame", sweep(
+        topPath,
+        roundedRectProfile(rimW * 1.38, rimT * 1.22, Math.min(rimW * 0.42, rimT * 0.45), 5),
+        { closed: false },
+      ), { path: topPath, sw: rimW * 1.3 });
+      if (lowPath.length > 5) add(side > 0 ? "lowrimR" : "lowrimL", browMaterial, sweep(
+        lowPath,
+        ellipseProfile(s.metalRimW || 1.65, s.metalRimT || 1.3, 8),
+        { closed: false },
+      ), { path: lowPath, sw: s.metalRimW || 1.65 });
+    } else if (s.style === "half") {
+      const upper = pickRange(raw, (p) => p.y >= -halfH * 0.04);
+      const lower = pickRange(raw, (p) => p.y < -halfH * 0.04);
+      const upperPath = localPath(upper);
+      const lowerPath = localPath(lower, 0.26);
+      if (upperPath.length > 5) add(side > 0 ? "rimR" : "rimL", "metal", sweep(
+        upperPath,
+        ellipseProfile(rimW, rimT, 8),
+        { closed: false },
+      ), { path: upperPath, sw: rimW });
+      if (lowerPath.length > 5) add(side > 0 ? "cordR" : "cordL", "metal", sweep(
+        lowerPath,
+        ellipseProfile(0.62, 0.62, 8),
+        { closed: false },
+      ));
     }
+
+    if (s.style === "rimless" && s.rimlessMounts !== false) {
+      const mountOffset = Math.max(1.6, s.lensW * 0.5 - 1.8);
+      for (const [kind, localX] of [["outer", side * mountOffset], ["inner", -side * mountOffset]]) {
+        const x = side * lensCX + localX;
+        const y = kind === "inner" ? -halfH * 0.28 : halfH * 0.02;
+        const z = -dome(localX, y) + 0.48;
+        const head = roundedBox(1.65, 2.2, 0.9, 0.42, x, y, z, 4);
+        add(`${kind}Mount${side > 0 ? "R" : "L"}`, "accent", head);
+      }
+    }
+    add(side > 0 ? "lensR" : "lensL", "lens", lensSurface(capPath, R, s));
   }
 
   // ── ۲. پل (bridge) ──────────────────────────────────────────────────
@@ -273,11 +375,11 @@ export function buildFrame(rawSpec = {}) {
       { x: innerX + rimW * 0.35, y: y0 + rimW * 0.18, z: zb + 0.25 },
     ];
     const path = cr3(pts, 14);
-    const bw = isMetal ? (s.bridgeStyle === "keyhole" ? 1.35 : 1.5) : rimW * (s.style === "rimless" ? 0.45 : 1.0);
-    const prof = isMetal
+    const bw = bridgeIsMetal ? (s.bridgeStyle === "keyhole" ? 1.35 : 1.5) : rimW * (s.style === "rimless" ? 0.45 : 1.0);
+    const prof = bridgeIsMetal
       ? ellipseProfile(bw, 2.5, 8)
       : roundedRectProfile(rimW * (s.style === "rimless" ? 0.8 : 1.05), rimT * 0.9, rimT * 0.32, 3);
-    add("bridge", isMetal || s.style === "rimless" ? "metal" : "frame", sweep(path, prof, { closed: false }), {
+    add("bridge", bridgeRole, sweep(path, prof, { closed: false }), {
       path,
       sw: Math.max(2.5, Math.min(rimW, 4)),
     });
@@ -294,7 +396,7 @@ export function buildFrame(rawSpec = {}) {
         ],
         10,
       );
-      add("topbar", "metal", sweep(top, ellipseProfile(1.5, 1.5, 8), { closed: false }));
+      add("topbar", bridgeIsMetal ? "metal" : "frame", sweep(top, ellipseProfile(1.5, 1.5, 8), { closed: false }));
     }
   }
 
@@ -318,12 +420,12 @@ export function buildFrame(rawSpec = {}) {
         roundedRectProfile(rimW * 0.92, rimT * 0.82, rimT * 0.3, 3),
         { closed: false },
       );
-      add(side > 0 ? "endR" : "endL", isMetal ? "metal" : "frame", ep);
+      add(side > 0 ? "endR" : "endL", endpieceRole, ep);
     }
 
     if (s.hinge) {
       const hx = ax + side * rimW * 1.02;
-      const hw = isMetal ? 1.7 : 2.5;
+      const hw = metalTemple ? 1.7 : 2.5;
       const hg = sweep(
         [
           { x: hx - side * 0.2, y: hinge.y, z: hinge.z - 0.2 },
@@ -372,7 +474,7 @@ export function buildFrame(rawSpec = {}) {
     ];
     const tp = cr3(pts, 16);
     const tipStart = 0.74;
-    const templeRole = isMetal ? "metal" : "frame";
+    const templeRole = metalTemple ? "metal" : "frame";
     // پروفیل دسته: x = ضخامت (در راستای سر)، y = ارتفاعِ دیده‌شده از روبه‌رو
     const profFrame = (t) => {
       const k = 1 - (1 - s.templeTaper) * t;
@@ -384,7 +486,7 @@ export function buildFrame(rawSpec = {}) {
     };
 
     const swT = Math.max(s.templeW, s.templeT);
-    if (isMetal) {
+    if (metalTemple) {
       const metalEnd = Math.floor(tp.length * tipStart) + 1;
       const metalPart = tp.slice(0, metalEnd);
       add(side > 0 ? "templeR" : "templeL", "metal", sweep(metalPart, profWire(0), { closed: false }), {
@@ -415,7 +517,7 @@ export function buildFrame(rawSpec = {}) {
     }
 
     // پد بینی (فریم فلزی) یا بالشتک یکپارچهٔ استات
-    if (s.nosePads || isMetal) {
+    if (s.nosePads || isMetal || s.style === "rimless") {
       const inX = s.dbn * 0.34 + 1.2;
       const topY = -halfH * (s.highBridge ? 0.35 : 0.52);
       const zTop = -dome(-s.dbn * 0.3, topY) + rimT * 0.25;

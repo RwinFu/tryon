@@ -3,7 +3,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { buildFrame, normalizeSpec } from "../src/frame/geometry.js";
 import { CATALOG, toEngineSpec } from "../src/frame/catalog.js";
-import { SHAPE_KEYS, lensOutline, offsetOutline } from "../src/frame/shapes.js";
+import { SHAPE_KEYS, lensOutline, offsetOutline, outlineBounds } from "../src/frame/shapes.js";
 
 const realBounds = { lensW: [36, 70], lensH: [22, 64], dbn: [11, 27], templeLen: [100, 165], totalWidth: [96, 170] };
 
@@ -29,6 +29,18 @@ test("catalog: همهٔ فریم‌ها سالم ساخته می‌شوند", ()
   }
 });
 
+test("کاتالوگ به مدل‌های نام‌گذاری‌شده و منبع قابل بازبینی وصل است", () => {
+  assert.equal(CATALOG.length, 28);
+  assert.equal(new Set(CATALOG.map((p) => p.id)).size, CATALOG.length, "شناسهٔ کاتالوگ تکراری است");
+  for (const p of CATALOG) {
+    assert.ok(p.modelCode, `${p.id}: کد مدل ثبت نشده`);
+    assert.match(p.sourceUrl || "", /^https:\/\//, `${p.id}: منبع امن/ثبت‌شده ندارد`);
+    assert.ok(["manufacturer", "retailer"].includes(p.sourceType), `${p.id}: نوع منبع نامعتبر است`);
+    assert.equal(p.modelAssetStatus, "procedural-preview", `${p.id}: نباید هندسهٔ تخمینی را مدل رسمی جا بزند`);
+    if (p.lensHSource !== "manufacturer") assert.match(p.lensHSource || "", /^(estimated|retailer)$/);
+  }
+});
+
 test("اندازه‌ها با سایز چاپی فروشنده یکی است", () => {
   for (const p of CATALOG.filter((x) => x.size)) {
     const spec = normalizeSpec(toEngineSpec(p));
@@ -45,6 +57,9 @@ test("خط لنز: بسته، بدون خودبرشِ فاحش، و قرینهٔ
     const R = lensOutline({ shape, lensW: 52, lensH: 44 }, 1, 160);
     const L = lensOutline({ shape, lensW: 52, lensH: 44 }, -1, 160);
     assert.equal(R.length, 160);
+    const dims = outlineBounds(R);
+    assert.ok(Math.abs(dims.w - 52) < 1e-8, `${shape}: lensW باید اندازهٔ چاپی بماند (${dims.w})`);
+    assert.ok(Math.abs(dims.h - 44) < 1e-8, `${shape}: lensH باید اندازهٔ چاپی بماند (${dims.h})`);
     for (let i = 0; i < R.length; i++) {
       assert.ok(Math.abs(-L[i].x - R[i].x) < 1e-6, shape + ": آینهٔ x");
       assert.ok(Math.abs(L[i].y - R[i].y) < 1e-6, shape + ": ارتفاع قرینه نیست");
@@ -61,6 +76,22 @@ test("خط لنز: بسته، بدون خودبرشِ فاحش، و قرینهٔ
     };
     assert.ok(area(inner) < area(R) * 0.95, shape + ": داخل‌بری اثر نکرد");
     assert.ok(area(inner) > area(R) * 0.15, shape + ": مسیر داخلی منفجر شد");
+    const outer = offsetOutline(R, -3.5);
+    assert.ok(area(outer) > area(R) * 1.05, shape + ": آفست منفی باید contour بیرونی را بزرگ کند");
+  }
+});
+
+test("شکل‌دهنده‌های سیلوئت اندازهٔ چاپیِ عدسی را تغییر نمی‌دهند", () => {
+  const cases = [
+    { shape: "aviator", topWide: 1.16, teardrop: 0.44, bottomNarrow: 0.22 },
+    { shape: "cateye", topWide: 1.12, catAmp: 0.42, catWidth: 0.4 },
+    { shape: "shield", topWide: 1.14, bottomShift: -0.04 },
+    { shape: "wayfarer", topWide: 1.1 },
+  ];
+  for (const spec of cases) {
+    const dims = outlineBounds(lensOutline({ lensW: 62, lensH: 54, ...spec }, 1, 220));
+    assert.ok(Math.abs(dims.w - 62) < 1e-8, `${spec.shape}: عرض خروجی ${dims.w}mm`);
+    assert.ok(Math.abs(dims.h - 54) < 1e-8, `${spec.shape}: ارتفاع خروجی ${dims.h}mm`);
   }
 });
 
@@ -77,12 +108,28 @@ test("قالب‌های مختلف واقعاً شکل‌های متفاوت م�
 test("سبک‌های half/brow/rimless واقعاً فرق دارند", () => {
   const names = (style) => buildFrame({ shape: "square", style, size: "52-18-145" }).parts.map((p) => p.name);
   const tris = (style) => buildFrame({ shape: "square", style, size: "52-18-145" }).meta.tris;
-  assert.ok(tris("half") < tris("full"), "نیم‌فریم باید سبک‌تر از تمام‌فریم باشد");
+  const solidFrontTris = (style) => buildFrame({ shape: "square", style, size: "52-18-145" }).roles.frame?.index.length / 3 || 0;
+  assert.ok(solidFrontTris("half") < solidFrontTris("full"), "نیم‌فریم باید سطح فریمِ جامدِ کمتری از تمام‌فریم داشته باشد");
   assert.ok(tris("rimless") < tris("half"), "فریم‌لس باید سبک‌ترین باشد");
   assert.ok(names("half").some((n) => n.startsWith("cord")), "نیم‌فریم بدون سیم زیر عدسی");
   assert.ok(names("brow").some((n) => n.startsWith("lowrim")), "ابرویی بدون رینگ زیرین");
   assert.ok(!names("rimless").some((n) => /^(rim|lowrim|cord|end)/.test(n)), "فریم‌لس نباید دور عدسی یا سرپل داشته باشد");
   assert.ok(names("rimless").some((n) => n.startsWith("hinge")), "فریم‌لس باید لولا داشته باشد");
+});
+
+test("مدل‌های ترکیبی، جنس پل/دسته/لولا را از هم مستقل نگه می‌دارند", () => {
+  const cartier = CATALOG.find((p) => p.id === "AR-123");
+  const cartierSpec = toEngineSpec(cartier);
+  assert.equal(cartierSpec.material, "metal");
+  assert.equal(cartierSpec.bridgeMaterial, "accent");
+  assert.equal(cartierSpec.templeMaterial, "acetate");
+  const built = buildFrame(cartierSpec);
+  assert.equal(built.parts.find((part) => part.name === "bridge")?.role, "accent");
+  assert.equal(built.parts.find((part) => part.name === "templeR")?.role, "frame");
+  assert.equal(built.parts.find((part) => part.name === "endR")?.role, "metal");
+
+  const police = buildFrame(toEngineSpec(CATALOG.find((p) => p.id === "AR-118")));
+  assert.equal(police.parts.find((part) => part.name === "templeR")?.role, "frame");
 });
 
 test("محدودهٔ فیزیکی پارامترها حفظ می‌شود", () => {

@@ -32,13 +32,26 @@ test("دموی فروشگاه کاتالوگ، دکمهٔ پرو کنار هر �
     const button = card.querySelector("[data-tryon-open][data-tryon-sku]");
     assert.ok(button, "برای یک فریم دکمهٔ پرو و SKU متناظر وجود ندارد");
     assert.match(button.getAttribute("aria-label"), /^پرو مجازی /, "دکمه نام دسترس‌پذیر ندارد");
+    const sourceLink = card.querySelector(".sourceLink");
+    assert.ok(sourceLink && /^https:\/\//.test(sourceLink.href), "لینک منبع محصول باید HTTPS باشد");
+    assert.equal(sourceLink.rel, "noopener noreferrer", "پیوند خارجی باید در برابر tabnabbing ایمن باشد");
+    assert.match(card.querySelector(".assetNote")?.textContent || "", /پیش‌نمایش/);
+    const sku = card.querySelector(".frameMark")?.textContent;
+    const product = products.find((item) => String(item.sku || item.id) === sku);
+    assert.ok(product, "کارت باید با رکورد مدل واقعی متناظر باشد");
+    assert.equal(card.querySelector(".material")?.textContent.trim(), product.composition);
   }
   assert.equal(cards[0].querySelector("[data-tryon-sku]").dataset.tryonSku, String(products[0].sku || products[0].id));
 
   const search = window.document.getElementById("productSearch");
   search.value = products[0].name;
   search.dispatchEvent(new window.Event("input", { bubbles: true }));
-  assert.equal(window.document.querySelectorAll(".pcard").length, 1, "جست‌وجوی محصول فیلتر نمی‌کند");
+  const variants = products.filter((product) => product.name === products[0].name);
+  assert.equal(window.document.querySelectorAll(".pcard").length, variants.length, "جست‌وجوی نام مدل، رنگ‌های همان مدل را نشان نمی‌دهد");
+
+  search.value = products[0].modelCode;
+  search.dispatchEvent(new window.Event("input", { bubbles: true }));
+  assert.equal(window.document.querySelectorAll(".pcard").length, 1, "جست‌وجوی کد رنگ/مدل فیلتر نمی‌کند");
   assert.equal(window.document.querySelector(".pcard [data-tryon-sku]").dataset.tryonSku, String(products[0].sku || products[0].id));
 
   const menu = window.document.getElementById("menuToggle");
