@@ -7,6 +7,7 @@ const number = new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 1 });
 const money = new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 0 });
 let catalog = [];
 let activeMaterial = "all";
+let activeBrand = "all";
 
 const framePaths = {
   round: '<circle cx="45" cy="39" r="24"/><circle cx="135" cy="39" r="24"/>',
@@ -67,9 +68,10 @@ function renderCards(items) {
       const size = String(product.size || "").replace(/[^0-9□×\-. ]/g, "");
       const escapedId = escapeHTML(id);
       const escapedName = escapeHTML(product.name || id);
-      return `<article class="pcard" data-material="${escapeHTML(product.material || "")}">
-        <div class="pcardTop"><span>${escapedId}</span><span class="material">${materialLabel(product.material)}</span></div>
-        <div class="shot">${icon(product.shape)}</div>
+      const brand = String(product.brand || "آروین");
+      return `<article class="pcard" data-material="${escapeHTML(product.material || "")}" data-brand="${escapeHTML(brand)}" style="--frame-color:${safeColor(colors[0]?.color)}">
+        <div class="pcardTop"><span class="brandName">${escapeHTML(brand)}</span><span class="material">${materialLabel(product.material)}</span></div>
+        <div class="shot">${icon(product.shape)}<span class="frameMark" aria-hidden="true">${escapeHTML(sku)}</span></div>
         <h3>${escapedName}</h3>
         <div class="pcardMeta"><span class="size">${escapeHTML(size || "سایز ثبت نشده")}</span><span class="price">${priceLabel(product.price)}</span></div>
         <div class="productFoot">
@@ -85,8 +87,9 @@ function applyFilters() {
   const query = (searchInput?.value || "").trim().toLocaleLowerCase("fa-IR");
   const filtered = catalog.filter((product) => {
     const materialOK = activeMaterial === "all" || product.material === activeMaterial;
+    const brandOK = activeBrand === "all" || product.brand === activeBrand;
     const haystack = `${product.name || ""} ${product.id || ""} ${product.sku || ""}`.toLocaleLowerCase("fa-IR");
-    return materialOK && (!query || haystack.includes(query));
+    return materialOK && brandOK && (!query || haystack.includes(query) || String(product.brand || "").toLocaleLowerCase("fa-IR").includes(query));
   });
   renderCards(filtered);
   if (countLabel) countLabel.textContent = `${number.format(filtered.length)} از ${number.format(catalog.length)} فریم`;
@@ -113,11 +116,24 @@ async function loadCatalog() {
 }
 
 searchInput?.addEventListener("input", applyFilters);
-filters?.addEventListener("click", (event) => {
-  const button = event.target.closest("[data-material]");
+const brandFilters = document.getElementById("brandFilters");
+brandFilters?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-brand]");
   if (!button) return;
-  activeMaterial = button.dataset.material || "all";
-  filters.querySelectorAll("[data-material]").forEach((filter) => {
+  activeBrand = button.dataset.brand || "all";
+  brandFilters.querySelectorAll("[data-brand]").forEach((filter) => {
+    const selected = filter === button;
+    filter.classList.toggle("is-active", selected);
+    filter.setAttribute("aria-pressed", String(selected));
+  });
+  applyFilters();
+});
+filters?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-material], [data-brand]");
+  if (!button) return;
+  if (button.hasAttribute("data-brand")) activeBrand = button.dataset.brand || "all";
+  else activeMaterial = button.dataset.material || "all";
+  filters.querySelectorAll("[data-material], [data-brand]").forEach((filter) => {
     const selected = filter === button;
     filter.classList.toggle("is-active", selected);
     filter.setAttribute("aria-pressed", String(selected));
