@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ساخت فریم از ۳ عکس — خط تولید خودکار</title>
+    <meta
+      name="description"
+      content="سه عکس (جلو + دو دسته) بده؛ پس‌زمینه حذف می‌شود، قطعات به هم می‌چسبند و فریمِ آمادهٔ پرو ساخته می‌شود."
+    />
+    <link rel="stylesheet" href="./site/fonts.css" />
+    <style>
+      :root {
+        --bg: #12161b;
+        --panel: #0d1115;
+        --line: rgba(255, 255, 255, 0.11);
+        --txt: #eef2f4;
+        --muted: rgba(238, 242, 244, 0.56);
+        --accent: #c4a574;
+        --ok: #41e0c8;
+        --warn: #ffb347;
+        --bad: #ff6b6b;
+        --font: Vazirmatn, system-ui, Tahoma, sans-serif;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+      }
+      body {
+        background: var(--bg);
+        color: var(--txt);
+        font-family: var(--font);
+        font-size: 13px;
+        display: grid;
+        grid-template-columns: 1fr 380px;
+        grid-template-rows: 1fr;
+      }
+      main {
+        position: relative;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+      }
+      #view {
+        flex: 1;
+        width: 100%;
+        display: block;
+        min-height: 0;
+      }
+      .stageTools {
+        position: absolute;
+        left: 12px;
+        bottom: 12px;
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .cuts {
+        display: flex;
+        gap: 10px;
+        padding: 10px 12px;
+        border-top: 1px solid var(--line);
+        background: var(--panel);
+        overflow: auto;
+      }
+      .cut {
+        flex: 1 1 0;
+        min-width: 120px;
+        text-align: center;
+      }
+      .cut canvas {
+        width: 100%;
+        height: 92px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background-color: #1b2027;
+        background-image: linear-gradient(45deg, #232a32 25%, transparent 25%),
+          linear-gradient(-45deg, #232a32 25%, transparent 25%),
+          linear-gradient(45deg, transparent 75%, #232a32 75%),
+          linear-gradient(-45deg, transparent 75%, #232a32 75%);
+        background-size: 14px 14px;
+        background-position: 0 0, 0 7px, 7px -7px, -7px 0;
+        object-fit: contain;
+      }
+      .cut span {
+        display: block;
+        color: var(--muted);
+        margin-top: 4px;
+        font-size: 11px;
+      }
+      aside {
+        border-right: 1px solid var(--line);
+        background: var(--panel);
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+      }
+      aside header {
+        padding: 14px 16px 10px;
+        border-bottom: 1px solid var(--line);
+      }
+      h1 {
+        margin: 0 0 4px;
+        font-size: 15px;
+      }
+      header p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 11.5px;
+        line-height: 1.7;
+      }
+      .scroller {
+        overflow: auto;
+        padding: 4px 16px 16px;
+        flex: 1;
+        min-height: 0;
+      }
+      h4 {
+        margin: 16px 0 8px;
+        font-size: 12px;
+        color: var(--accent);
+        letter-spacing: 0.2px;
+      }
+      .drop {
+        border: 1px dashed var(--line);
+        border-radius: 10px;
+        padding: 10px;
+        text-align: center;
+        color: var(--muted);
+        cursor: pointer;
+        transition: 0.15s;
+        font-size: 11.5px;
+      }
+      .drop:hover,
+      .drop.over {
+        border-color: var(--accent);
+        color: var(--txt);
+        background: rgba(196, 165, 116, 0.07);
+      }
+      .drop b {
+        color: var(--txt);
+        display: block;
+        margin-bottom: 2px;
+        font-size: 12.5px;
+      }
+      .grid3 {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin-top: 10px;
+      }
+      .inline {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-top: 8px;
+      }
+      label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--muted);
+        font-size: 11.5px;
+      }
+      input[type="number"],
+      input[type="text"] {
+        background: #171c22;
+        border: 1px solid var(--line);
+        color: var(--txt);
+        border-radius: 7px;
+        padding: 5px 8px;
+        width: 74px;
+        font-family: var(--font);
+        font-size: 12px;
+      }
+      input[type="text"] {
+        width: 100%;
+      }
+      input[type="range"] {
+        width: 100%;
+        accent-color: var(--accent);
+      }
+      input[type="file"] {
+        display: none;
+      }
+      .btn {
+        background: #1b2129;
+        border: 1px solid var(--line);
+        color: var(--txt);
+        border-radius: 8px;
+        padding: 7px 12px;
+        cursor: pointer;
+        font-family: var(--font);
+        font-size: 12px;
+      }
+      .btn:hover {
+        border-color: var(--accent);
+      }
+      .btn.gold {
+        background: linear-gradient(180deg, #d8b982, #b8935c);
+        border-color: #d8b982;
+        color: #1a1408;
+        font-weight: 600;
+      }
+      .btn[disabled] {
+        opacity: 0.45;
+        cursor: default;
+      }
+      .btnrow {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        padding: 10px 16px;
+        border-top: 1px solid var(--line);
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 11.5px;
+      }
+      td {
+        padding: 3px 0;
+        color: var(--muted);
+      }
+      td:last-child {
+        text-align: left;
+        color: var(--txt);
+        font-variant-numeric: tabular-nums;
+      }
+      .qa {
+        list-style: none;
+        margin: 8px 0 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .qa li {
+        border: 1px solid var(--line);
+        border-right: 3px solid var(--muted);
+        border-radius: 8px;
+        padding: 7px 10px;
+        background: #141920;
+        font-size: 11.5px;
+        line-height: 1.65;
+      }
+      .qa li.ok {
+        border-right-color: var(--ok);
+      }
+      .qa li.warn {
+        border-right-color: var(--warn);
+      }
+      .qa li.fail {
+        border-right-color: var(--bad);
+      }
+      .qa b {
+        display: block;
+        margin-bottom: 2px;
+        font-size: 12px;
+      }
+      .qa .fix {
+        margin-top: 6px;
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .sw {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--muted);
+        font-size: 11.5px;
+      }
+      .steps {
+        display: flex;
+        gap: 6px;
+        margin: 10px 0 0;
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .steps span {
+        flex: 1;
+        border-top: 2px solid var(--line);
+        padding-top: 4px;
+      }
+      .steps span.on {
+        border-top-color: var(--accent);
+        color: var(--txt);
+      }
+      .toast {
+        position: fixed;
+        bottom: 18px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(15, 20, 25, 0.95);
+        border: 1px solid var(--line);
+        color: var(--txt);
+        padding: 9px 16px;
+        border-radius: 10px;
+        z-index: 60;
+        font-size: 12px;
+      }
+      .empty {
+        color: var(--muted);
+        font-size: 11.5px;
+        line-height: 1.8;
+      }
+      @media (max-width: 900px) {
+        body {
+          grid-template-columns: 1fr;
+          grid-template-rows: 55vh 1fr;
+        }
+        aside {
+          border-right: 0;
+          border-top: 1px solid var(--line);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <canvas id="view"></canvas>
+      <div class="stageTools">
+        <button class="btn" id="btnFront">نمای جلو</button>
+        <button class="btn" id="btnSide">نمای نیمرخ</button>
+        <button class="btn" id="btnTop">نمای بالا</button>
+        <label class="sw"><input type="checkbox" id="turn" checked /> چرخش خودکار</label>
+        <label class="sw"><input type="checkbox" id="showDecals" checked /> نمایش بافت عکس</label>
+      </div>
+      <div class="cuts">
+        <div class="cut"><canvas id="cutFront"></canvas><span>برشِ جلو</span></div>
+        <div class="cut"><canvas id="cutTR"></canvas><span>برشِ دستهٔ راست</span></div>
+        <div class="cut"><canvas id="cutTL"></canvas><span>برشِ دستهٔ چپ</span></div>
+      </div>
+    </main>
+
+    <aside>
+      <header>
+        <h1>خط تولید: ۳ عکس → فریم آماده</h1>
+        <p>
+          عکسِ <b>تمام‌جبهه</b> و دو عکسِ <b>دستهٔ چپ و راست</b> را بده. برنامه پس‌زمینه را حذف می‌کند، قطعات را
+          به هم می‌چسباند و فریمِ آمادهٔ پرو می‌سازد. همه‌چیز در مرورگرِ خودت؛ هیچ عکسی آپلود نمی‌شود.
+        </p>
+        <div class="steps" id="steps">
+          <span data-step="1">۱ · عکس‌ها</span><span data-step="2">۲ · مات‌گیری</span
+          ><span data-step="3">۳ · اندازه</span><span data-step="4">۴ · آماده</span>
+        </div>
+      </header>
+
+      <div class="scroller">
+        <h4>۱) سه عکس</h4>
+        <div class="grid3">
+          <div class="drop" id="dropFront"><b>عکسِ جلو</b>تمام‌جبهه، صاف</div>
+          <div class="drop" id="dropTR"><b>دستهٔ راست</b>نمای جانبی</div>
+          <div class="drop" id="dropTL"><b>دستهٔ چپ</b>نمای جانبی</div>
+        </div>
+        <input type="file" id="fileFront" accept="image/*" capture="environment" />
+        <input type="file" id="fileTR" accept="image/*" capture="environment" />
+        <input type="file" id="fileTL" accept="image/*" capture="environment" />
+
+        <h4>۲) اندازه‌های چاپی (اختیاری اما طلایی)</h4>
+        <div class="inline">
+          <label>عرض عدسی<input type="number" id="lensW" min="34" max="70" step="0.5" placeholder="۵۲" /></label>
+          <label>پل<input type="number" id="dbn" min="10" max="26" step="0.5" placeholder="۱۸" /></label>
+          <label>طول دسته<input type="number" id="templeLen" min="105" max="170" step="1" placeholder="۱۴۵" /></label>
+        </div>
+        <div class="inline">
+          <label>نام فریم<input type="text" id="name" placeholder="مثلاً طبی اسپایدرمنی" /></label>
+        </div>
+        <div class="inline">
+          <button class="btn" id="btnSample">بارگذاریِ عکس‌های نمونه (همان اسپایدرمنی)</button>
+        </div>
+
+        <h4>۳) تنظیماتِ جداسازی</h4>
+        <div class="inline">
+          <label style="flex: 1"
+            >آستانهٔ حذف پس‌زمینه <span id="tolVal">خودکار</span><input type="range" id="tol" min="0" max="60" value="0" step="1" />
+          </label>
+        </div>
+        <div class="inline">
+          <label class="sw"><input type="checkbox" id="mirror" /> عکسِ جلو آینه‌ای است</label>
+          <label class="sw"><input type="checkbox" id="deskew" checked /> تراز خودکار</label>
+          <label class="sw"><input type="checkbox" id="shadow" checked /> حذف سایه</label>
+        </div>
+
+        <h4>۴) گزارش</h4>
+        <div id="report" class="empty">هنوز عکسی نیامده. با دادن تنها عکسِ جلو هم فریم ساخته می‌شود.</div>
+
+        <h4>۵) اصلاح دستی</h4>
+        <div id="fixes" class="empty">پس از ساخت، اصلاح‌ها اینجا می‌آیند.</div>
+      </div>
+
+      <div class="btnrow">
+        <button class="btn gold" id="btnTryOn" disabled>پرو روی صورت</button>
+        <button class="btn" id="btnJson" disabled>JSON فریم</button>
+        <button class="btn" id="btnPng" disabled>دانلود برش‌ها</button>
+        <button class="btn" id="btnGlb" disabled>GLB</button>
+        <button class="btn" id="btnSave" disabled>ذخیره در کاتالوگ</button>
+      </div>
+    </aside>
+
+    <script>
+      (function () {
+        var cv = document.getElementById("view");
+        var probe = null;
+        try {
+          probe = cv.getContext("webgl2") || cv.getContext("webgl");
+        } catch (e) {
+          probe = null;
+        }
+        if (probe) {
+          import("./dist/build.js").catch(function (e) {
+            var t = document.createElement("div");
+            t.className = "toast";
+            t.textContent = "خطا در بارگذاری: " + ((e && e.message) || e);
+            document.body.appendChild(t);
+          });
+        } else {
+          var t = document.createElement("div");
+          t.className = "toast";
+          t.textContent = "مرورگرت WebGL ندارد؛ پیش‌نمایش سه‌بعدی غیرفعال است (گزارش و خروجی هنوز کار می‌کنند).";
+          document.body.appendChild(t);
+        }
+      })();
+    </script>
+  </body>
+</html>

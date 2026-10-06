@@ -9,6 +9,7 @@ import { SHAPE_PRESETS, SHAPE_KEYS, lensOutline, resample, smoothPts } from "../
 import { CATALOG, toEngineSpec } from "../frame/catalog.js";
 import { exportGLB } from "../frame/glb.js";
 import { appearanceOf, frameFromImage, guessShape, templeFromSidePhoto, traceOverlay } from "../frame/photogram.js";
+import { buildFrameKit, applyFix, kitFixes } from "../frame/kit.js";
 import { buildStudioEnvironment, finishForLook } from "../frame/materials.js";
 
 const $ = (s) => document.querySelector(s);
@@ -38,6 +39,8 @@ const state = {
   turn: true,
   bg: "#12161b",
   traced: null,
+  decals: null,
+  kit: null,
 };
 
 /* ── صحنه ─────────────────────────────────────────────────────────── */
@@ -79,7 +82,7 @@ new ResizeObserver(resize).observe(canvas);
 
 let obj = null;
 let rebuildReq = 0;
-const currentProductSpec = () => ({ spec: effectiveSpec(), finish: state.finish, color: state.color, lens: state.lens, metalColor: state.metalColor });
+const currentProductSpec = () => ({ spec: effectiveSpec(), finish: state.finish, color: state.color, lens: state.lens, metalColor: state.metalColor, decals: state.decals });
 /** بازسازی هندسه — چند رویداد اسلایدر در یک فریم، یک بار ساخته می‌شود (کشیدن اسلایدر روان می‌ماند) */
 function rebuild() {
   if (rebuildReq) return;
@@ -656,3 +659,128 @@ void resample;
 void smoothPts;
 void lensOutline;
 void buildFrame;
+
+/* ── خط تولیدِ ۳ عکس (kit.js) — همان موتورِ build.html، در خودِ استودیو ──── */
+const kitPhotos = { front: null, templeR: null, templeL: null };
+async function kitLoad(input, key) {
+  const file = input.files?.[0];
+  if (!file) return;
+  try {
+    const { data } = await toImageData(file, 1600);
+    kitPhotos[key] = data;
+    $("#kitOut").innerHTML = `<div class="warnrow">• عکسِ «${key}» آمد. وقتی هر سه را دادی، «ساخت فریم» را بزن.</div>`;
+  } catch (e) {
+    toast("خطا در خواندن عکس: " + e.message);
+  }
+}
+for (const [sel, key] of [["#kitFront", "front"], ["#kitTR", "templeR"], ["#kitTL", "templeL"]]) {
+  const el = $(sel);
+  if (el) el.onchange = () => kitLoad(el, key);
+}
+
+function kitReportHtml(kit) {
+  const m = kit.report.measured;
+  const s = kit.spec;
+  const rows = [
+    ["اندازه", `${Math.round(s.lensW)}□${Math.round(s.dbn)}-${Math.round(s.templeLen)}`],
+    ["ارتفاع عدسی", m.lensH + " mm"],
+    ["ضخامت رینگ", m.rimW + " mm"],
+    ["پهنای کل", m.totalWidth + " mm"],
+    ["قالب", s.shape],
+    ["جنس / پرداخت", `${s.material} · ${s.finish}`],
+    ["طول دسته", s.templeLen + " mm"],
+    ["افتِ پشت گوش", s.earDrop + " mm"],
+  ];
+  const temples = [];
+  for (const [label, p] of [["راست", kit.report.temples.right], ["چپ", kit.report.temples.left]])
+    if (p) temples.push(`<tr><td>دستهٔ ${label}</td><td>${p.lengthMm}mm · اطمینان ${p.confidence}٪</td></tr>`);
+  const qa = kit.qa
+    .map((q) => `<div class="warnrow" style="border-color:${q.level === "fail" ? "#ff6b6b" : q.level === "warn" ? "#ffb347" : "#41e0c8"}">• ${esc(q.title)} — ${esc(q.detail)}</div>`)
+    .join("");
+  const fixes = kitFixes(kit)
+    .map((f) => {
+      if (f.kind === "action") return `<button class="btn mini" data-kfix="${f.id}">${esc(f.label)}</button>`;
+      if (f.kind === "select")
+        return `<label>${esc(f.label)}<select class="mini" data-kfix="${f.id}">${f.options
+          .map(([v, l]) => `<option value="${esc(v)}"${v === f.value ? " selected" : ""}>${esc(l)}</option>`)
+          .join("")}</select></label>`;
+      if (f.kind === "color")
+        return `<label>${esc(f.label)}<input type="color" class="mini" data-kfix="${f.id}" value="${esc(f.value)}" /></label>`;
+      return `<label>${esc(f.label)}<input type="number" class="mini" data-kfix="${f.id}" min="${f.min}" max="${f.max}" step="${f.step}" value="${f.value}" /></label>`;
+    })
+    .join("");
+  return (
+    `<table>${rows.map(([a, b]) => `<tr><td>${esc(a)}</td><td>${esc(b)}</td></tr>`).join("")}${temples.join("")}</table>` +
+    qa +
+    `<div class="inline" style="margin-top:8px">${fixes}</div>`
+  );
+}
+
+function runKit() {
+  if (!kitPhotos.front) return toast("اول عکسِ تمام‌جبهه را بده");
+  const kit = buildFrameKit(kitPhotos, {
+    lensW: +$("#sizeHint")?.value || undefined,
+    dbn: +$("#dbnHint")?.value || undefined,
+    name: state.name || undefined,
+    mirrorFront: $("#photoMirror")?.checked,
+    deskew: $("#photoDeskew")?.checked !== false,
+  });
+  if (!kit.ok) {
+    $("#kitOut").innerHTML = `<div class="warnrow">• ساخت ناموفق: ${esc(kit.reason || "؟")}</div>`;
+    return toast("ساخت ناموفق");
+  }
+  state.kit = kit;
+  state.traced = { lensPath: kit.spec.lensPath, lensPathL: kit.spec.lensPathL, lensPathR: kit.spec.lensPathR };
+  Object.assign(state.spec, {
+    shape: kit.spec.shape,
+    lensW: kit.spec.lensW,
+    lensH: kit.spec.lensH,
+    dbn: kit.spec.dbn,
+    rimW: kit.spec.rimW,
+    templeLen: kit.spec.templeLen,
+    templeW: kit.spec.templeW,
+    templeT: kit.spec.templeT,
+    templeTaper: kit.spec.templeTaper,
+    earDrop: kit.spec.earDrop,
+    earBendAt: kit.spec.earBendAt,
+    material: kit.spec.material,
+  });
+  state.color = kit.spec.color || state.color;
+  state.finish = kit.spec.finish || state.finish;
+  state.lens = kit.spec.lens || state.lens;
+  state.decals = $("#kitDecals")?.checked === false ? null : kit.decals;
+  renderControls();
+  rebuildNow();
+  $("#kitOut").innerHTML = kitReportHtml(kit);
+  for (const el of document.querySelectorAll("[data-kfix]")) {
+    const id = el.dataset.kfix;
+    const apply = () => {
+      const val = el.tagName === "BUTTON" ? true : el.tagName === "SELECT" || el.type === "color" ? el.value : +el.value;
+      applyFix(kit, { [id]: val });
+      state.kit = kit;
+      state.traced = { lensPath: kit.spec.lensPath, lensPathL: kit.spec.lensPathL, lensPathR: kit.spec.lensPathR };
+      Object.assign(state.spec, {
+        lensW: kit.spec.lensW,
+        dbn: kit.spec.dbn,
+        templeLen: kit.spec.templeLen,
+        templeW: kit.spec.templeW,
+        earDrop: kit.spec.earDrop,
+        rimW: kit.spec.rimW,
+      });
+      state.color = kit.spec.color || state.color;
+      state.finish = kit.spec.finish || state.finish;
+      rebuildNow();
+      $("#kitOut").innerHTML = kitReportHtml(kit);
+      toast("اصلاح اعمال شد");
+    };
+    if (el.tagName === "BUTTON") el.onclick = apply;
+    else el.onchange = apply;
+  }
+  toast("فریم از ۳ عکس ساخته شد");
+}
+if ($("#btnKit")) $("#btnKit").onclick = runKit;
+if ($("#kitDecals"))
+  $("#kitDecals").onchange = (e) => {
+    state.decals = e.target.checked ? state.kit?.decals || null : null;
+    rebuildNow();
+  };

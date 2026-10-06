@@ -1349,6 +1349,16 @@ export function frameFromImage(imageData, opts = {}) {
       gapPx: +gapPx.toFixed(1),
       bridge: gap.a ? { x: +gap.a.x.toFixed(1), y: +gap.a.y.toFixed(1) } : null,
       box,
+      /* مرکزِ قاب در پیکسلِ تصویرِ تراز‌شده: برای نشاندنِ بافتِ برش‌خورده روی هندسه
+         (kit.js) لازم است که بدانیم جعبهٔ عکس نسبت به مرکزِ دو عدسی کجاست. */
+      center: {
+        x: +((stR.cx + stL.cx) / 2).toFixed(2),
+        y: +((stR.cy + stL.cy) / 2).toFixed(2),
+      },
+      lensCenters: {
+        right: { x: +stR.cx.toFixed(2), y: +stR.cy.toFixed(2) },
+        left: { x: +stL.cx.toFixed(2), y: +stL.cy.toFixed(2) },
+      },
     },
   };
   // داده‌های داخلی برای estimateAppearance (به خروجی عمومی نشت نمی‌کنند)
