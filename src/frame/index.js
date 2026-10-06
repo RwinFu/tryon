@@ -7,6 +7,7 @@
 import { buildFrame, normalizeSpec } from "./geometry.js";
 import { toThreeGeometry } from "./sweep.js";
 import { buildMaterials } from "./materials.js";
+import { buildDecals, disposeDecals } from "./decals.js";
 import { applyHeadOccluder, createHeadOccluder, headOccluderParams } from "../engine/occluder.js";
 
 const geoCache = new Map();
@@ -36,7 +37,14 @@ export function frameGeometry(THREE, spec, opts = {}) {
       geo.computeBoundingSphere();
       roles[role] = geo;
     }
-    entry = { roles, meta: built.meta, spec: built.spec, tris: built.meta.tris };
+    // مسیرها را نگه می‌داریم تا بافت‌های عکسی (decals.js) روی همان هندسه بنشینند.
+    entry = {
+      roles,
+      meta: built.meta,
+      spec: built.spec,
+      tris: built.meta.tris,
+      paths: built.parts.filter((p) => p.path && p.path.length > 2).map((p) => ({ name: p.name, role: p.role, path: p.path, sw: p.sw })),
+    };
     geoCache.set(key, entry);
   }
   return entry;
@@ -51,7 +59,7 @@ export function frameGeometry(THREE, spec, opts = {}) {
 export function createFrameObject(THREE, product, opts = {}) {
   const spec = product.spec || product;
   const quality = opts.quality || "high";
-  const { roles, meta } = frameGeometry(THREE, spec, opts);
+  const { roles, meta, paths } = frameGeometry(THREE, spec, opts);
   const group = new THREE.Group();
   group.name = "frame";
   let mats = buildMaterials(THREE, {
@@ -81,6 +89,13 @@ export function createFrameObject(THREE, product, opts = {}) {
     group.add(mesh);
   }
 
+  // بافت‌های عکسی (خطِ تولیدِ kit.js): روی هندسهٔ واقعی می‌نشینند، پس از نیمرخ هم درست‌اند.
+  let decalMeshes = [];
+  if (product.decals && (product.decals.front || product.decals.templeL || product.decals.templeR)) {
+    decalMeshes = buildDecals(THREE, product.decals, { paths, spec, quality, meta });
+    for (const m of decalMeshes) group.add(m);
+  }
+
   // «سر نامرئی»: فقط عمق می‌نویسد تا بخشی از دسته‌ها که پشت گونه/شقیقه است پنهان شود.
   // جلویش همیشه پشت صفحهٔ چشم است، پس هرگز روی عدسی و حلقهٔ فریم نمی‌افتد.
   let occluder = null;
@@ -97,10 +112,12 @@ export function createFrameObject(THREE, product, opts = {}) {
     specs: meta,
     mats,
     key: frameKey(spec),
+    decals: decalMeshes,
     disposeAll() {
       for (const m of group.children) {
         if (m.isMesh && m.userData?.own) m.geometry.dispose();
       }
+      disposeDecals(decalMeshes);
     },
   };
   group.updateMatrix();
@@ -140,6 +157,8 @@ export function createFrameObject(THREE, product, opts = {}) {
     },
     dispose() {
       for (const m of new Set(Object.values(mats))) m.dispose?.();
+      disposeDecals(decalMeshes);
+      decalMeshes = [];
       // هندسهٔ فریم در کش است (برای تعویض آنی)؛ فقط سرِ نامرئی مالِ همین نمونه است
       if (occluder) {
         occluder.geometry.dispose();

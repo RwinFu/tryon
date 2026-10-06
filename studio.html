@@ -540,6 +540,32 @@
           <div id="photoOut"></div>
         </div>
 
+        <h4>خط تولید: ۳ عکس → فریم آماده</h4>
+        <div class="photo">
+          <p>
+            عکسِ <b>تمام‌جبهه</b> + عکسِ <b>دستهٔ راست</b> + عکسِ <b>دستهٔ چپ</b>: پس‌زمینه حذف می‌شود، قطعات به هم
+            می‌چسبند و فریمِ آمادهٔ پرو (با بافتِ همان عکس‌ها) ساخته می‌شود. صفحهٔ اختصاصیِ این خط:
+            <a href="./build.html">build.html</a>
+          </p>
+          <div class="inline">
+            <input type="file" id="kitFront" accept="image/*" capture="environment" />
+            <label>جلو</label>
+          </div>
+          <div class="inline">
+            <input type="file" id="kitTR" accept="image/*" capture="environment" />
+            <label>دستهٔ راست</label>
+          </div>
+          <div class="inline">
+            <input type="file" id="kitTL" accept="image/*" capture="environment" />
+            <label>دستهٔ چپ</label>
+          </div>
+          <div class="inline">
+            <button class="btn" id="btnKit">ساخت فریم از این عکس‌ها</button>
+            <label class="sw mini"><span>نمایش بافت عکس</span><input type="checkbox" id="kitDecals" checked /><i></i></label>
+          </div>
+          <div id="kitOut"></div>
+        </div>
+
         <h4>قالب‌های آماده</h4>
         <div id="presets"></div>
 
