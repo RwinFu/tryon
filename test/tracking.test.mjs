@@ -151,3 +151,17 @@ test("brief detector misses do not flicker, but a lost face is eventually hidden
     assert.equal(tr.process(100 + i * 33, true), pose);
   assert.equal(tr.process(400, true), null);
 });
+
+test("optical outliers are bounded in both directions by face width", () => {
+  const tiny = result();
+  tiny.faceLandmarks[0][468].x = 0.495;
+  tiny.faceLandmarks[0][473].x = 0.505;
+  const huge = result();
+  huge.faceLandmarks[0][468].x = 0.22;
+  huge.faceLandmarks[0][473].x = 0.78;
+  const a = tracker().solve(tiny, 100);
+  const b = tracker().solve(huge, 100);
+  assert.ok(a.scale >= 1.64 && a.scale <= 2.36, `tiny eye witness escaped envelope: ${a.scale}`);
+  assert.ok(b.scale >= 1.64 && b.scale <= 2.36, `huge eye witness escaped envelope: ${b.scale}`);
+  assert.equal(tracker().solve(result(), 100).quality.scaleConfidence, "high");
+});

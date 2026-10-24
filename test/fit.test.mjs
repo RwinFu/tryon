@@ -15,6 +15,10 @@ test("اصلاح نشستن پل محدود، جهت‌دار و در نبود �
   assert.ok(loose.yMm < 0, "پل آزادتر باید پایین‌تر بنشیند");
   assert.ok(Math.abs(narrow.yMm) <= 2.5 && Math.abs(loose.yMm) <= 2.5, "اصلاح باید محافظه‌کارانه بماند");
   assert.deepEqual(bridgeSeatAdjustment({}, { dbn: 18 }), { yMm: 0, zMm: 0, ratio: null, confidence: "unknown" });
+  const front = bridgeSeatAdjustment({ noseWmm: 30, pdLocked: true, quality: { yaw: 0 } }, { dbn: 14 });
+  const profile = bridgeSeatAdjustment({ noseWmm: 30, pdLocked: true, quality: { yaw: 0.7 } }, { dbn: 14 });
+  assert.ok(Math.abs(profile.yMm) <= Math.abs(front.yMm) * 0.25, "اندازهٔ کم‌اعتماد نیم‌رخ باید دست‌کم ۷۵٪ تضعیف شود");
+  assert.equal(profile.confidence, "low");
 });
 
 /* ── کاتالوگ ───────────────────────────────────────────────── */
