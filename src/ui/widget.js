@@ -104,6 +104,17 @@ export class VirtualTryOn extends Native {
     <canvas id="oc"></canvas>
     <canvas id="mesh"></canvas>
     <div class="scanline"></div>
+    <div class="tryControls" id="tryControls" aria-label="کنترل نمایش پرو">
+      <div class="lightToggle" role="group" aria-label="نمایش عدسی">
+        <button type="button" id="indoor" aria-pressed="true">داخل</button>
+        <button type="button" id="outdoor" aria-pressed="false">بیرون</button>
+      </div>
+      <div class="zoomControls" role="group" aria-label="اندازهٔ نمایش فریم">
+        <button type="button" id="zoomOut" aria-label="کوچک‌تر کردن فریم">−</button>
+        <output id="zoomValue" aria-live="polite">۱۰۰٪</output>
+        <button type="button" id="zoomIn" aria-label="بزرگ‌تر کردن فریم">+</button>
+      </div>
+    </div>
   </div>
   <header class="top">
     <div class="brand">${esc(c.brand.name || "")}<small>${esc(c.brand.tagline || "")}</small></div>
@@ -178,6 +189,10 @@ export class VirtualTryOn extends Native {
       camTools: this.$("camTools"),
       camSwitch: this.$("camSwitch"),
       camTorch: this.$("camTorch"),
+      tryControls: this.$("tryControls"),
+      indoor: this.$("indoor"),
+      outdoor: this.$("outdoor"),
+      zoomValue: this.$("zoomValue"),
     };
     this.ctx = {
       cv: this.el.cv.getContext("2d", { alpha: false }),
@@ -393,7 +408,7 @@ export class VirtualTryOn extends Native {
     }
     this.renderSwatches();
     this.renderMeta();
-    this.stage?.setProduct({ ...p, ...(this.variants?.[this.variant] || {}) });
+    this.stage?.setProduct(this.displayProduct());
     this.rebuildShadow();
     this.renderPhoto();
     if (!silent) this.emit("product", { id: p.id, product: p });
@@ -404,10 +419,42 @@ export class VirtualTryOn extends Native {
     this.variant = v;
     [...this.el.sw.children].forEach((b, k) => b.setAttribute("aria-pressed", k === v ? "true" : "false"));
     const p = { ...this.product, ...this.variants[v] };
-    this.stage?.setProduct(p);
+    this.stage?.setProduct(this.displayProduct());
     this.renderPhoto();
     this.renderMeta();
     this.emit("variant", { id: this.product.id, variant: this.variants[v], product: p });
+  }
+
+  /** محصول جاری با شبیه‌سازی رفتاری داخل/بیرون؛ asset خارجی استفاده نمی‌شود. */
+  displayProduct() {
+    const product = { ...(this.product || {}), ...(this.variants?.[this.variant] || {}) };
+    if (this.lightMode === "outdoor") {
+      product.lens = product.lens && product.lens !== "clear"
+        ? product.lens
+        : { type: "gradient", color: "#68737a", tint: 0.58 };
+    } else if (product.lens && product.lens !== "clear") {
+      const source = typeof product.lens === "object" ? product.lens : {};
+      product.lens = { type: "solid", color: source.color || "#b8c2c7", tint: 0.14 };
+    } else product.lens = "clear";
+    return product;
+  }
+
+  setLightMode(mode) {
+    this.lightMode = mode === "outdoor" ? "outdoor" : "indoor";
+    this.el.indoor?.setAttribute("aria-pressed", String(this.lightMode === "indoor"));
+    this.el.outdoor?.setAttribute("aria-pressed", String(this.lightMode === "outdoor"));
+    this.stage?.setProduct(this.displayProduct());
+    this.renderPhoto();
+    this.emit("view", { mode: this.lightMode, zoom: this.tryOnZoom || 1 });
+  }
+
+  changeTryOnZoom(delta) {
+    this.tryOnZoom = Math.max(0.86, Math.min(1.18, (this.tryOnZoom || 1) + delta));
+    this.tryOnZoom = Math.round(this.tryOnZoom * 100) / 100;
+    this.stage?.setTryOnZoom(this.tryOnZoom);
+    if (this.el.zoomValue) this.el.zoomValue.textContent = `${Math.round(this.tryOnZoom * 100)}٪`;
+    if (this.pose) this.stage?.place(this.pose);
+    this.emit("view", { mode: this.lightMode || "indoor", zoom: this.tryOnZoom });
   }
 
   renderSwatches() {
@@ -550,7 +597,8 @@ export class VirtualTryOn extends Native {
         vertexDistance: cfg.tracking.vertexDistance,
       });
       this.stage.onFrameError = (e) => this.hint(t(cfg.lang, "modelFailed") + " — " + (e?.message || ""), true);
-      this.stage.setProduct({ ...this.product, ...(this.variants?.[this.variant] || {}) }, { quality: this.quality });
+      this.stage.setProduct(this.displayProduct(), { quality: this.quality });
+      this.stage.setTryOnZoom(this.tryOnZoom || 1);
 
       // شروع دوربین با ماژول جدید - موازی با لود مدل
       const camOpts = { light: this.quality === "lite", portrait: this.portraitCamera(), facing: "user" };
@@ -788,7 +836,7 @@ export class VirtualTryOn extends Native {
         this.quality = "lite";
         this.el.stage.classList.add("lite");
         this.stage.quality = "lite";
-        this.stage.setProduct({ ...this.product, ...(this.variants?.[this.variant] || {}) }, { quality: "lite" });
+        this.stage.setProduct(this.displayProduct(), { quality: "lite" });
         this.tracker.segmenter?.close?.();
         this.tracker.segmenter = null;
         this.ctx.oc.clearRect(0, 0, this.el.oc.width, this.el.oc.height);
@@ -1111,6 +1159,10 @@ export class VirtualTryOn extends Native {
     this.$("photoStart")?.addEventListener("click", () => this.pickPhoto());
     this.$("camSwitch")?.addEventListener("click", () => this.handleCameraSwitch());
     this.$("camTorch")?.addEventListener("click", () => this.handleTorchToggle());
+    this.$("indoor")?.addEventListener("click", () => this.setLightMode("indoor"));
+    this.$("outdoor")?.addEventListener("click", () => this.setLightMode("outdoor"));
+    this.$("zoomOut")?.addEventListener("click", () => this.changeTryOnZoom(-0.04));
+    this.$("zoomIn")?.addEventListener("click", () => this.changeTryOnZoom(0.04));
     this.$("close")?.addEventListener("click", () => this.close());
     this.$("openFit").addEventListener("click", () => this.openSheet());
     this.$("sheetClose").addEventListener("click", () => this.openSheet(false));
@@ -1369,7 +1421,7 @@ export class VirtualTryOn extends Native {
       this.stage.buildEnv();
       this.stage.onFrame = () => this.renderPhoto();
       this.stage.onFrameError = e => this.hint(t(this.cfg.lang, "modelFailed") + " — " + e.message, true);
-      this.stage.setProduct({ ...this.product, ...(this.variants?.[this.variant] || {}) });
+      this.stage.setProduct(this.displayProduct());
       this.renderPhoto();
       this.el.gate.hidden = true;
       this.setStatus("live", t(this.cfg.lang, "photoOk"));

@@ -247,6 +247,62 @@ button {
   opacity: 1;
 }
 
+/* کنترل‌های clean-room پرو: مقایسهٔ عدسی و اندازهٔ بصری فریم */
+.tryControls {
+  position: absolute;
+  z-index: 9;
+  inset-inline: 12px;
+  bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  pointer-events: none;
+}
+.tryControls > * { pointer-events: auto; }
+.lightToggle,
+.zoomControls {
+  display: inline-flex;
+  align-items: center;
+  min-height: 42px;
+  padding: 4px;
+  border: 1px solid rgba(246, 243, 238, 0.22);
+  background: rgba(18, 17, 15, 0.82);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+.lightToggle { border-radius: 999px; }
+.lightToggle button {
+  min-width: 62px;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  color: rgba(255,255,255,.68);
+  font-size: 11px;
+  font-weight: 750;
+}
+.lightToggle button[aria-pressed="true"] {
+  color: #1c1916;
+  background: #f4efe6;
+}
+.zoomControls { gap: 2px; border-radius: 4px; }
+.zoomControls button {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 22px;
+  line-height: 1;
+}
+.zoomControls output {
+  min-width: 48px;
+  color: rgba(255,255,255,.72);
+  font-size: 10px;
+  text-align: center;
+  direction: ltr;
+}
+
 /* ── داک پایین ──────────────────────────────────────────────────── */
 .dock {
   position: relative;

@@ -9,6 +9,14 @@
 
 These are development reference skills, not browser/runtime dependencies. They were selected for this project's existing Three.js + MediaPipe stack, not as a claim of a universal "best" ranking. API examples must be verified against the pinned Three.js r169 source (some upstream examples target other releases).
 
+## REA clean-room workflow skill
+
+- Source: https://github.com/thisisntartificial/rea-agent-skill
+- Revision installed: `731ff8185c6b3b7b2cf23e216784c9826e4ec731`
+- Installed: 2026-10-24
+- Purpose: evidence-tagged, behavior-only analysis of the public Glasses.com try-on experience.
+- Note: upstream repository did not declare an SPDX license at install time; retained here as agent instructions/reference, not shipped as a runtime dependency.
+
 ## Camera best-practices skill
 - Sources:
   - https://github.com/Strangersknowme/react-camera-pro-with-torch (torch + facing switch)

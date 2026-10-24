@@ -60,6 +60,7 @@ export class Stage {
     this.camZ = 900;
     this.match = { exp: 1, tint: [1, 1, 1], dir: [-0.3, 0.6] };
     this._mirrored = true; // پیش‌فرض سلفی آینه‌ای
+    this.tryOnZoom = 1;
     this._cameraCanvas = null;
     this.cameraTexture = null;
   }
@@ -302,6 +303,12 @@ export class Stage {
     this.scene.background = this.cameraTexture;
   }
 
+  // زوم فقط اندازهٔ مدل را عوض می‌کند؛ anchor بینی و تصویر دوربین ثابت می‌مانند.
+  setTryOnZoom(value) {
+    this.tryOnZoom = clamp(Number(value) || 1, 0.86, 1.18);
+    return this.tryOnZoom;
+  }
+
   // ─── جای‌گذاری فریم ───
   place(pose) {
     if (!this.frame || !pose) return;
@@ -319,7 +326,7 @@ export class Stage {
     // فقط اگر mirrored نباشد، باید x را نسبت به مرکز معکوس نکنیم - اما pose از تصویر واقعی است
     // برای سادگی: pose.x را همان نگه می‌داریم، CSS mirror همه چیز را درست می‌کند
     g.position.set((pose.x - this.W / 2) * k, (this.H / 2 - pose.y) * k, pose.z);
-    g.scale.setScalar(pose.scale);
+    g.scale.setScalar(pose.scale * this.tryOnZoom);
     g.quaternion.set(pose.q[0], pose.q[1], pose.q[2], pose.q[3]);
     this.frame.fitHead?.(pose.faceWmm, this.opts.vertexDistance);
     g.visible = true;
