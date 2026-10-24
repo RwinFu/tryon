@@ -106,6 +106,9 @@ export class Camera {
     this._permissionState = "prompt"; // granted | denied | prompt
     this._wasActiveBeforeHide = false;
     this._initDone = false;
+    // هر start یک نسل دارد؛ نتیجهٔ درخواست قدیمی بعد از switch/stop نباید
+    // دوباره دوربین را فعال کند (روی Safari موبایل این race رایج است).
+    this._requestGeneration = 0;
   }
 
   // ─── رویدادها ───
@@ -346,6 +349,7 @@ export class Camera {
    */
   async start(opts = {}) {
     await this.init();
+    const generation = ++this._requestGeneration;
     const facing = opts.facing || this.preferredFacing || "user";
     const portrait = !!opts.portrait;
     const baseW = opts.width || (opts.light ? 640 : 960);
@@ -354,7 +358,7 @@ export class Camera {
     const frameRate = opts.frameRate || 30;
 
     this._setState("requesting", { facing });
-    this.stop(); // قبلی را ببند
+    this.stop(false); // قبلی را ببند، اما درخواست نسل جاری معتبر بماند
 
     let lastErr = null;
     // اگر deviceId ندادند ولی facing دادند، سعی کن بهترین دیوایس را پیدا کنی
@@ -373,8 +377,16 @@ export class Camera {
         if (attempt > 0) await new Promise(r => setTimeout(r, attempt === 1 ? 0 : 400));
         const constraints = this._buildConstraints(attempt, { facing, deviceId: attempt === 0 ? deviceId : undefined, width: want.w, height: want.h, frameRate });
         this.log("camera-try", `${attempt}:${JSON.stringify(constraints.video)}`);
-        this.stream = await navigator.mediaDevices.getUserMedia(constraints);
-        this.track = this.stream.getVideoTracks()[0] || null;
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        // ممکن است کاربر در زمان نمایش permission، دوربین را بسته یا عوض کرده باشد.
+        if (generation !== this._requestGeneration) {
+          stream.getTracks().forEach((track) => track.stop());
+          const stale = new Error("Superseded camera request");
+          stale.name = "AbortError";
+          throw stale;
+        }
+        this.stream = stream;
+        this.track = stream.getVideoTracks()[0] || null;
         if (!this.track) throw new Error("No video track");
 
         this.video.srcObject = this.stream;
@@ -412,14 +424,18 @@ export class Camera {
 
         this._setState("active", { facing: this.facing, deviceId: this.deviceId, w: this.W, h: this.H });
         this._updateSize();
-        this._startFrameLoop();
+        // loop جدا فقط وقتی مصرف‌کننده‌ای دارد؛ ویجت خودش با rVFC رندر می‌کند.
+        // این کار یک callback بی‌مصرف در هر فریم را روی موبایل حذف می‌کند.
+        if (this._frameCb || (this._listeners.get("frame") || []).length) this._startFrameLoop();
         this._emit("start", { stream: this.stream, facing: this.facing, deviceId: this.deviceId, capabilities: this.capabilities });
         return this.stream;
 
       } catch (e) {
         lastErr = e;
         this.log("camera-fail", `${attempt}:${e.name}:${e.message}`);
-        this.stop();
+        // درخواست جدیدتر مالک stream مشترک است؛ درخواست قدیمی حق stop/error کردن آن را ندارد.
+        if (generation !== this._requestGeneration) throw e;
+        this.stop(false);
         const fatal = ["NotAllowedError","PermissionDeniedError","SecurityError","NotFoundError"];
         if (fatal.includes(e.name)) break;
         // OverconstrainedError -> try next
@@ -551,7 +567,8 @@ export class Camera {
     }
   }
 
-  stop() {
+  stop(invalidateRequest = true) {
+    if (invalidateRequest) this._requestGeneration++;
     this._stopFrameLoop();
     if (this.stream) {
       try { this.stream.getTracks().forEach(t => t.stop()); } catch {}
