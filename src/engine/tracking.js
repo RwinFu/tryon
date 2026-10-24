@@ -153,7 +153,13 @@ export class FaceTracker {
 
     this.W = 0;
     this.H = 0;
-    this.f = { x: new OneEuro(), y: new OneEuro(), z: new OneEuro(), s: new OneEuro(1.5, 0.12), c: new OneEuro(0.18, 0.0006) };
+    this.f = {
+      x: new OneEuro(), y: new OneEuro(), z: new OneEuro(),
+      s: new OneEuro(1.5, 0.12), c: new OneEuro(0.18, 0.0006),
+      // شواهد شکل صورت کندتر از pose تغییر می‌کنند؛ فیلتر مستقل جلوی
+      // بالا/پایین پریدن پل و روشن/خاموش‌شدن mask نیم‌رخ را می‌گیرد.
+      noseW: new OneEuro(0.7, 0.015), visualYaw: new OneEuro(1.1, 0.025),
+    };
     this.q = null;
     this.samples = [];
     this.pdSamples = [];
@@ -340,7 +346,13 @@ export class FaceTracker {
       this.pdMm = this.o.pd || 63;
       this.pdLocked = false;
     }
-    this.f = { x: new OneEuro(), y: new OneEuro(), z: new OneEuro(), s: new OneEuro(1.5, 0.12), c: new OneEuro(0.18, 0.0006) };
+    this.f = {
+      x: new OneEuro(), y: new OneEuro(), z: new OneEuro(),
+      s: new OneEuro(1.5, 0.12), c: new OneEuro(0.18, 0.0006),
+      // شواهد شکل صورت کندتر از pose تغییر می‌کنند؛ فیلتر مستقل جلوی
+      // بالا/پایین پریدن پل و روشن/خاموش‌شدن mask نیم‌رخ را می‌گیرد.
+      noseW: new OneEuro(0.7, 0.015), visualYaw: new OneEuro(1.1, 0.025),
+    };
   }
 
   get size() { return { w: this.W, h: this.H }; }
@@ -427,9 +439,10 @@ export class FaceTracker {
 
     const focalPx = this.focalScale * Math.max(W, H);
     const opticalScale = iris / (pdMm * projectedEyeAxis);
-    // در نیم‌رخ شدید یک عنبیه یا مردمک می‌تواند ناپایدار شود و opticalScale را
-    // چند برابر کند. پهنای صورت یک سقف مستقل می‌دهد تا فریم هرگز غول‌آسا نشود.
-    const scale = Math.min(opticalScale, faceW / 115);
+    // دو شاهد مستقل: PD/عنبیه برای مقیاس میلی‌متری و پهنای صورت برای envelope.
+    // envelope دوطرفه است؛ خرابی عنبیه نباید فریم را نه غول‌آسا و نه مینیاتوری کند.
+    const faceScale = faceW / (140 * projectedEyeAxis);
+    const scale = clamp(opticalScale, faceScale * 0.82, faceScale * 1.18);
     const vgPx = this.vg * scale;
     const socketL = mid(lms[33], lms[133]);
     const socketR = mid(lms[362], lms[263]);
@@ -477,14 +490,20 @@ export class FaceTracker {
     const pitch = Math.asin(clamp(-smoothFront[1], -1, 1));
     // ماتریس بعضی نسخه‌های Android در نیم‌رخ yaw را نزدیک صفر گزارش می‌کند.
     // جابه‌جایی نوک بینی نسبت به مرکز چشم‌ها یک شاهد تصویری مستقل برای occlusion است.
-    const visualYaw = clamp(((tip.x - midEye.x) / Math.max(1, faceW)) * 2.4, -1, 1);
+    const rawVisualYaw = clamp(((tip.x - midEye.x) / Math.max(1, faceW)) * 2.4, -1, 1);
+    const visualYaw = this.f.visualYaw.filter(rawVisualYaw, t);
+    const rawNoseWmm = pairPx(lms, P.noseSideL, P.noseSideR, (p) => this.px(p)) / (scale * projectedEyeAxis);
+    const noseWmm = this.f.noseW.filter(rawNoseWmm, t);
+    const profileEvidence = Math.max(yaw, Math.abs(visualYaw));
+    const scaleConfidence = (this.pdLocked || !this.autoPd) && faceW / W >= 0.28 && profileEvidence < 0.35
+      ? "high" : faceW / W >= 0.22 && profileEvidence < 0.7 ? "estimated" : "low";
 
     const pose = {
       x, y, z, scale: s, q: this.q, front, camZ, focalPx,
       iris, irisDiaPx: irisDia, faceW,
       faceWmm: faceW / (scale * projectedEyeAxis),
       faceHmm: Math.hypot(chin.x - this.px(lms[10]).x, chin.y - this.px(lms[10]).y) / scale,
-      noseWmm: pairPx(lms, P.noseSideL, P.noseSideR, (p) => this.px(p)) / (scale * projectedEyeAxis),
+      noseWmm,
       chinPx: chin, pdMm, autoPd: this.autoPd, pdLocked: this.pdLocked,
       landmarkPx: (i) => this.px(lms[i]),
       landmarks: lms,
@@ -493,7 +512,7 @@ export class FaceTracker {
       chin: { x: chin.x, y: chin.y },
       tip: { x: tip.x, y: tip.y },
       quality: {
-        frontal: front[2], yaw, visualYaw, pitch, size: faceW / W,
+        frontal: front[2], yaw, visualYaw, pitch, size: faceW / W, scaleConfidence,
         hint: faceW / W < 0.28 ? "closer" : Math.max(yaw, Math.abs(visualYaw)) > 0.62 || front[2] < 0.55 ? "frontal" : Math.abs(pitch) > 0.42 ? "level" : bridgeY / Math.max(1, iris) > 0.9 ? "down" : null,
       },
       stable: !relock,
