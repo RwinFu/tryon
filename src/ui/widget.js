@@ -866,12 +866,18 @@ export class VirtualTryOn extends Native {
       }
       this.stage.updateBackground(this.el.cv, this.el.sh);
       this.stage.render();
+      // لایهٔ واقعی صورت بالای GL: در نیم‌رخ بینی لنز دورتر را می‌پوشاند و
+      // ماسک موی cacheشده بدون وابستگی به نرخ segmentation دوباره ترکیب می‌شود.
+      this.ctx.oc.clearRect(0, 0, this.el.oc.width, this.el.oc.height);
+      this.stage.drawFaceOcclusion(this.ctx.oc, pose);
+      if (this.cfg.features.hairLayer && this.hairCv?.width) this.stage.drawHairLayer(this.ctx.oc, this.hairCv);
       this.collect(pose);
       this.maybeHint(pose);
     } else {
       this.stage.hide();
       this.stage.renderer.clear();
       this.ctx.sh.clearRect(0, 0, this.el.sh.width, this.el.sh.height);
+      this.ctx.oc.clearRect(0, 0, this.el.oc.width, this.el.oc.height);
       this.setStatus("search", t(this.cfg.lang, "looking"));
     }
     if (pose) this.setStatus("live", t(this.cfg.lang, "live"));
@@ -879,8 +885,7 @@ export class VirtualTryOn extends Native {
     if (this.cfg.features.hairLayer && tr.segmenter && now - (this.lastSeg || 0) > (this.quality === "lite" ? 260 : 130)) {
       this.lastSeg = now;
       this.hairCv = this.hairCv || document.createElement("canvas");
-      if (tr.segmentHair(this.hairCv)) this.stage.drawHairLayer(this.ctx.oc, this.hairCv);
-      else this.ctx.oc.clearRect(0, 0, this.el.oc.width, this.el.oc.height);
+      tr.segmentHair(this.hairCv);
     }
     this.scan.draw(pose);
     // schedule next frame - use rVFC if available for better sync

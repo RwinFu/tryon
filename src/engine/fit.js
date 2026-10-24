@@ -124,6 +124,24 @@ export class ShapeScanner {
 }
 
 /**
+ * اصلاح محافظه‌کارانهٔ محل نشستن پل.
+ * ratio≈0.68 از داده‌های کاتالوگ/اسکن خود پروژه به‌عنوان نقطهٔ خنثی انتخاب شده؛
+ * خروجی محدود است تا نویز اندازه‌گیری بینی هرگز placement اصلی را خراب نکند.
+ */
+export function bridgeSeatAdjustment(pose, spec) {
+  const noseW = Number(pose?.noseWmm);
+  const dbn = Number(spec?.dbn);
+  if (!(noseW > 8) || !(dbn > 5)) return { yMm: 0, zMm: 0, ratio: null, confidence: "unknown" };
+  const ratio = dbn / noseW;
+  return {
+    yMm: clamp((0.68 - ratio) * 12, -2.5, 2.5),
+    zMm: clamp((ratio - 0.68) * 4, -1, 1),
+    ratio,
+    confidence: pose.pdLocked || pose.autoPd === false ? "high" : "estimated",
+  };
+}
+
+/**
  * امتیاز فیت: مقایسهٔ اعداد میلی‌متری فریم با اندازه‌گیریِ صورتِ همان مشتری.
  * @returns {{key:string,label:string,value:string,status:'good'|'warn'|'bad',hint:string}[]}
  */

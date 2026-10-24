@@ -3,10 +3,19 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { CATALOG, CATALOG_BY_ID, FACE_SHAPES, toEngineSpec, parseSize } from "../src/frame/catalog.js";
 import { SHAPE_KEYS } from "../src/frame/shapes.js";
-import { classifyShape, faceShapeMetrics, fitReport, fitScore, recommend, SHAPE_COPY } from "../src/engine/fit.js";
+import { bridgeSeatAdjustment, classifyShape, faceShapeMetrics, fitReport, fitScore, recommend, SHAPE_COPY } from "../src/engine/fit.js";
 
 const SHAPES = ["oval", "round", "square", "heart", "diamond", "triangle", "oblong"];
 const pose = (o = {}) => ({ pdMm: 64, faceWmm: 142, faceHmm: 108, noseWmm: 18, ...o });
+
+test("اصلاح نشستن پل محدود، جهت‌دار و در نبود اندازه خنثی است", () => {
+  const narrow = bridgeSeatAdjustment({ noseWmm: 30, pdLocked: true }, { dbn: 14 });
+  const loose = bridgeSeatAdjustment({ noseWmm: 20 }, { dbn: 20 });
+  assert.ok(narrow.yMm > 0, "پل باریک باید بالاتر بنشیند");
+  assert.ok(loose.yMm < 0, "پل آزادتر باید پایین‌تر بنشیند");
+  assert.ok(Math.abs(narrow.yMm) <= 2.5 && Math.abs(loose.yMm) <= 2.5, "اصلاح باید محافظه‌کارانه بماند");
+  assert.deepEqual(bridgeSeatAdjustment({}, { dbn: 18 }), { yMm: 0, zMm: 0, ratio: null, confidence: "unknown" });
+});
 
 /* ── کاتالوگ ───────────────────────────────────────────────── */
 test("کاتالوگ: schema کامل، id یکتا و دادهٔ قابل‌فروش", () => {

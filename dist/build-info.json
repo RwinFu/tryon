@@ -1,16 +1,16 @@
 {
   "version": "2.0.0",
-  "at": "2026-10-24T13:04:56.272Z",
+  "at": "2026-10-24T13:16:40.670Z",
   "rows": [
     {
       "file": "dist/tryon.js",
-      "raw": "960.1 KB",
-      "gzip": "264.6 KB"
+      "raw": "961.7 KB",
+      "gzip": "265.4 KB"
     },
     {
       "file": "dist/tryon.esm.js",
-      "raw": "960.6 KB",
-      "gzip": "264.8 KB"
+      "raw": "962.2 KB",
+      "gzip": "265.5 KB"
     },
     {
       "file": "dist/tryon-loader.js",
@@ -19,13 +19,13 @@
     },
     {
       "file": "dist/studio.js",
-      "raw": "1025.6 KB",
-      "gzip": "285.0 KB"
+      "raw": "1029.5 KB",
+      "gzip": "286.5 KB"
     },
     {
       "file": "dist/build.js",
-      "raw": "1006.7 KB",
-      "gzip": "280.0 KB"
+      "raw": "1008.3 KB",
+      "gzip": "280.9 KB"
     }
   ]
 }
