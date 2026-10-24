@@ -8,6 +8,7 @@
  */
 
 import { Camera, cameraErrorInfo } from "./camera.js";
+import { solveWearableScale } from "./seating.js";
 
 const MIRRORS = {
   vision: [
@@ -438,11 +439,10 @@ export class FaceTracker {
     const pdMm = this.pdMm;
 
     const focalPx = this.focalScale * Math.max(W, H);
-    const opticalScale = iris / (pdMm * projectedEyeAxis);
-    // دو شاهد مستقل: PD/عنبیه برای مقیاس میلی‌متری و پهنای صورت برای envelope.
-    // envelope دوطرفه است؛ خرابی عنبیه نباید فریم را نه غول‌آسا و نه مینیاتوری کند.
-    const faceScale = faceW / (140 * projectedEyeAxis);
-    const scale = clamp(opticalScale, faceScale * 0.82, faceScale * 1.18);
+    const scaleSolution = solveWearableScale({
+      eyeSpanPx: iris, pdMm, faceWidthPx: faceW, projectedAxis: projectedEyeAxis,
+    });
+    const scale = scaleSolution.scale;
     const vgPx = this.vg * scale;
     const socketL = mid(lms[33], lms[133]);
     const socketR = mid(lms[362], lms[263]);
@@ -495,8 +495,8 @@ export class FaceTracker {
     const rawNoseWmm = pairPx(lms, P.noseSideL, P.noseSideR, (p) => this.px(p)) / (scale * projectedEyeAxis);
     const noseWmm = this.f.noseW.filter(rawNoseWmm, t);
     const profileEvidence = Math.max(yaw, Math.abs(visualYaw));
-    const scaleConfidence = (this.pdLocked || !this.autoPd) && faceW / W >= 0.28 && profileEvidence < 0.35
-      ? "high" : faceW / W >= 0.22 && profileEvidence < 0.7 ? "estimated" : "low";
+    const scaleConfidence = (this.pdLocked || !this.autoPd) && faceW / W >= 0.28 && profileEvidence < 0.35 && scaleSolution.agreement > 0.86
+      ? "high" : faceW / W >= 0.22 && profileEvidence < 0.7 && scaleSolution.agreement > 0.62 ? "estimated" : "low";
 
     const pose = {
       x, y, z, scale: s, q: this.q, front, camZ, focalPx,
