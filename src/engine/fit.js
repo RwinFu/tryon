@@ -7,6 +7,8 @@
  *  - پهنای فریم نسبت به پهنای صورت، و پهنای پل نسبت به پل بینی
  */
 
+import { solveBridgeSeat } from "./seating.js";
+
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const median = (a) => {
   if (!a.length) return 0;
@@ -129,23 +131,10 @@ export class ShapeScanner {
  * خروجی محدود است تا نویز اندازه‌گیری بینی هرگز placement اصلی را خراب نکند.
  */
 export function bridgeSeatAdjustment(pose, spec) {
-  const noseW = Number(pose?.noseWmm);
-  const dbn = Number(spec?.dbn);
-  if (!(noseW > 8) || !(dbn > 5)) return { yMm: 0, zMm: 0, ratio: null, confidence: "unknown" };
-  const ratio = dbn / noseW;
-  // عرض بینی در تمام‌رخ قابل اتکاتر است. در نیم‌رخ اثر اندازه‌گیری را پیوسته
-  // کم می‌کنیم تا پل با چرخاندن سر بالا و پایین نپرد، اما ناگهان صفر هم نشود.
-  const profile = Math.max(Math.abs(Number(pose.quality?.yaw) || 0), Math.abs(Number(pose.quality?.visualYaw) || 0));
-  const frontalWeight = clamp(1 - profile / 0.72, 0.18, 1);
-  const calibrationWeight = pose.pdLocked || pose.autoPd === false ? 1 : 0.72;
-  const weight = frontalWeight * calibrationWeight;
-  return {
-    yMm: clamp((0.68 - ratio) * 12, -2.5, 2.5) * weight,
-    zMm: clamp((ratio - 0.68) * 4, -1, 1) * weight,
-    ratio,
-    weight,
-    confidence: weight > 0.84 ? "high" : weight > 0.35 ? "estimated" : "low",
-  };
+  const seat = solveBridgeSeat(pose, spec);
+  // شکل legacy خروجی ناشناخته برای مصرف‌کنندگان عمومی حفظ می‌شود.
+  if (seat.confidence === "unknown") return { yMm: 0, zMm: 0, ratio: null, confidence: "unknown" };
+  return seat;
 }
 
 /**

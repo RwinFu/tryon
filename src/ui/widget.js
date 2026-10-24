@@ -104,6 +104,7 @@ export class VirtualTryOn extends Native {
     <canvas id="oc"></canvas>
     <canvas id="mesh"></canvas>
     <div class="scanline"></div>
+    <div class="faceGuide" aria-hidden="true"><span></span></div>
     <div class="tryControls" id="tryControls" aria-label="کنترل نمایش پرو">
       <div class="lightToggle" role="group" aria-label="نمایش عدسی">
         <button type="button" id="indoor" aria-pressed="true">داخل</button>
@@ -151,6 +152,7 @@ export class VirtualTryOn extends Native {
   </section>
   <section class="gate" id="gate">
     <div class="card2">
+      <div class="gateKicker">VIRTUAL FIT STUDIO</div>
       <div class="mark">${ICONS.cateye}</div>
       <h2>${esc(c.brand.name || L("title"))}</h2>
       <p class="sub">${L("gateSub")}</p>
@@ -162,9 +164,11 @@ export class VirtualTryOn extends Native {
           <div><b>۳</b><span>${L("step3")}</span></div>
         </div>
         <div id="gateBusy"></div>
-        <button class="go" id="start">${L("start")}</button>
-        ${c.features.photo ? `<button class="btn" id="photoStart">${L("photoTry")}</button>` : ""}
-        <p class="priv">${L("privacy")}</p>
+        <div class="startChoices">
+          <button class="go" id="start"><span class="choiceIcon">●</span><span>${L("start")}<small>${L("live")}</small></span></button>
+          ${c.features.photo ? `<button class="btn photoChoice" id="photoStart"><span class="choiceIcon">▧</span><span>${L("photoTry")}<small>${L("backToCamera")}</small></span></button>` : ""}
+        </div>
+        <p class="priv"><span>✓</span>${L("privacy")}</p>
       </div>
     </div>
   </section>

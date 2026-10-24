@@ -1155,4 +1155,72 @@ table.scanTable td:last-child {
   font-size: 11px;
   border-radius: 11px;
 }
+
+/* ── VTO rebuild 2026: آرام، دوربین‌محور و بدون تزئینات مزاحم ── */
+:host {
+  --vt-radius: 24px;
+  --vt-panel: rgba(15, 17, 18, .88);
+  --vt-hairline: rgba(255,255,255,.12);
+}
+.wrap { background: #090a0a; }
+.stage { background: radial-gradient(circle at 50% 35%, #242727, #080909 72%); }
+.faceGuide {
+  position: absolute; z-index: 4; pointer-events: none;
+  width: min(56vw, 290px); aspect-ratio: .78; left: 50%; top: 47%;
+  transform: translate(-50%,-50%); border: 1px solid rgba(255,255,255,.22);
+  border-radius: 48% 48% 44% 44%; opacity: .45;
+  mask: linear-gradient(#0000 0 8%,#000 22% 78%,#0000 94%);
+}
+.faceGuide::before,.faceGuide::after { content:""; position:absolute; width:18px; height:18px; border-color:rgba(255,255,255,.7); }
+.faceGuide::before { inset:18% auto auto -1px; border-inline-start:2px solid; border-top:2px solid; }
+.faceGuide::after { inset:auto -1px 18% auto; border-inline-end:2px solid; border-bottom:2px solid; }
+.top { padding: max(16px,env(safe-area-inset-top)) 18px 46px; align-items:center; }
+.brand { font-size:13px; letter-spacing:-.1px; }
+.status { border-radius:999px; min-height:36px; padding-inline:12px; backdrop-filter:blur(18px); }
+.xbtn,.camBtn { border-radius:50%; backdrop-filter:blur(18px); }
+.hint { top:84px; border-radius:999px; padding:10px 16px; backdrop-filter:blur(18px); }
+.tryControls { inset-inline:16px; bottom:16px; }
+.lightToggle,.zoomControls { background:var(--vt-panel); border-color:var(--vt-hairline); box-shadow:0 10px 32px rgba(0,0,0,.22); }
+.zoomControls { border-radius:999px; }
+.dock { padding:12px 14px calc(14px + env(safe-area-inset-bottom)); gap:10px; background:#111313; }
+.pull { border:0; border-radius:14px; background:transparent; padding:4px 2px; }
+.pull b { font-size:15px; }
+.card { width:104px; border-radius:16px; background:#181a1a; padding:8px; }
+.card[aria-pressed="true"] { background:#f2f1ed; border-color:#f2f1ed; transform:translateY(-1px); }
+.card[aria-pressed="true"] em { color:#111; }
+.card img,.card svg { height:46px; }
+.dot { width:25px; height:25px; }
+.actions .btn { border-radius:999px; background:#1b1d1d; }
+.sheet { border-radius:28px 28px 0 0; background:#111313; }
+.gate { background:radial-gradient(circle at 50% 20%,#252827 0,#111313 50%,#090a0a 100%); }
+.gate .card2 { width:min(94%,440px); padding:32px 26px 24px; border-radius:28px; background:rgba(23,25,25,.88); backdrop-filter:blur(22px); box-shadow:0 30px 90px rgba(0,0,0,.42); }
+.gateKicker { margin-bottom:16px; color:rgba(255,255,255,.42); font:700 9px/1 var(--vt-font); letter-spacing:2.2px; direction:ltr; }
+.gate .mark { width:92px; height:48px; margin-bottom:16px; }
+.gate h2 { font-size:28px; letter-spacing:-.8px; }
+.gate .sub { max-width:330px; font-size:12px; }
+.steps { grid-template-columns:repeat(3,1fr); gap:8px; padding:0; border:0; background:transparent; text-align:center; }
+.steps div { display:grid; justify-items:center; align-content:start; gap:6px; padding:12px 6px; border:1px solid var(--vt-hairline)!important; border-radius:15px; line-height:1.55; }
+.steps b { display:grid; place-items:center; width:22px; height:22px; border-radius:50%; background:rgba(255,255,255,.08); color:#fff; }
+.startChoices { display:grid; grid-template-columns:1fr 1fr; gap:9px; }
+.startChoices .go,.startChoices .photoChoice { height:58px; border-radius:17px; display:flex; align-items:center; justify-content:center; gap:9px; }
+.startChoices .photoChoice { border-color:var(--vt-hairline); background:rgba(255,255,255,.05); }
+.startChoices span:not(.choiceIcon) { display:grid; gap:2px; text-align:start; font-size:12px; font-weight:800; }
+.startChoices small { font-size:8px; font-weight:500; opacity:.55; }
+.choiceIcon { font-size:13px; opacity:.75; }
+.priv { display:flex; justify-content:center; gap:6px; align-items:flex-start; }
+.priv span { color:#74c99a; }
+:host([theme="light"]) .faceGuide { border-color:rgba(255,255,255,.45); }
+:host([theme="light"]) .gate { background:#eeeae2; }
+:host([theme="light"]) .gateKicker { color:rgba(20,23,26,.42); }
+@media (max-width:520px) {
+  .dock { border-radius:22px 22px 0 0; }
+  .gate .card2 { padding:26px 18px 20px; }
+  .gate h2 { font-size:24px; }
+  .faceGuide { width:min(66vw,270px); }
+}
+@media (max-width:360px) {
+  .steps { grid-template-columns:1fr; }
+  .steps div { grid-template-columns:22px 1fr; justify-items:start; text-align:start; }
+  .startChoices { grid-template-columns:1fr; }
+}
 `;
