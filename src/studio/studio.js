@@ -91,6 +91,30 @@ function rebuild() {
     rebuildNow();
   });
 }
+function studioReadiness(spec) {
+  const checks = [
+    [spec.lensW >= 38 && spec.lensW <= 68, "عرض عدسی در محدودهٔ ۳۸ تا ۶۸ میلی‌متر است", "fail"],
+    [spec.dbn >= 12 && spec.dbn <= 26, "پل در محدودهٔ فیزیکی ۱۲ تا ۲۶ میلی‌متر است", "fail"],
+    [spec.templeLen >= 105 && spec.templeLen <= 160, "طول دسته قابل تولید است", "fail"],
+    [spec.lensH > 20 && spec.lensH < spec.lensW * 1.08, "نسبت ارتفاع به عرض عدسی معتبر است", "fail"],
+    [spec.rimW >= 1.2 && spec.rimW <= 8.5, "ضخامت نوار فریم معتبر است", "fail"],
+    [spec.templeW >= 2.5 && spec.templeT >= 1, "مقطع دسته برای مدل سه‌بعدی کافی است", "warn"],
+    [!!(state.traced || spec.shape), state.traced ? "خط عدسی از عکس ثبت شده است" : "قالب پارامتریک مشخص است", "warn"],
+  ];
+  const hard = checks.filter(([ok, , level]) => !ok && level === "fail").length;
+  const warn = checks.filter(([ok, , level]) => !ok && level === "warn").length;
+  return { checks, hard, warn, score: Math.max(0, 100 - hard * 25 - warn * 10), ready: hard === 0 };
+}
+
+function renderReadiness(spec) {
+  const box = $("#readiness"), list = $("#readinessList"), score = $("#readinessScore");
+  if (!box || !list || !score) return;
+  const qa = studioReadiness(spec);
+  box.dataset.state = qa.ready ? "ready" : "fail";
+  score.textContent = `${qa.score}% · ${qa.ready ? (qa.warn ? "نیاز به بازبینی" : "آماده انتشار") : "اصلاح لازم"}`;
+  list.innerHTML = qa.checks.map(([ok, text, level]) => `<li class="${ok ? "" : level}">${ok ? text : "اصلاح: " + text}</li>`).join("");
+}
+
 function rebuildNow() {
   const product = currentProductSpec();
   const spec = product.spec;
@@ -104,6 +128,7 @@ function rebuildNow() {
   holder.add(obj.group);
   $("#triCount").textContent = new Intl.NumberFormat("en").format(obj.group.userData.meta.tris);
   $("#sizeOut").textContent = `${(spec.lensW ?? 0)}□${spec.dbn} ${spec.templeLen} · کل ${Math.round(2 * (spec.lensW || 52) + spec.dbn)}mm`;
+  renderReadiness(spec);
 }
 /** فقط رنگ/عدسی: متریال عوض می‌شود، هندسه دست‌نخورده (پیش‌نمایش زندهٔ رنگ بدون مکث) */
 function recolor() {

@@ -8,6 +8,7 @@ import { buildFrame } from "../frame/geometry.js";
 import { buildStudioEnvironment } from "../frame/materials.js";
 import { createHeadOccluder, applyHeadOccluder, headOccluderParams } from "./occluder.js";
 import { applyQ } from "./tracking.js";
+import { bridgeSeatAdjustment } from "./fit.js";
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 
@@ -325,7 +326,14 @@ export class Stage {
     // اما CSS کل stage را mirror می‌کند، پس محاسبه همان می‌ماند
     // فقط اگر mirrored نباشد، باید x را نسبت به مرکز معکوس نکنیم - اما pose از تصویر واقعی است
     // برای سادگی: pose.x را همان نگه می‌داریم، CSS mirror همه چیز را درست می‌کند
-    g.position.set((pose.x - this.W / 2) * k, (this.H / 2 - pose.y) * k, pose.z);
+    const seat = bridgeSeatAdjustment(pose, this.product?.spec || this.product);
+    // پل باریک‌تر اندکی بالاتر می‌نشیند؛ اصلاح در فضای میلی‌متر است و همراه
+    // perspective به پیکسل تبدیل می‌شود. anchor اصلی چشم/بینی دست‌نخورده می‌ماند.
+    g.position.set(
+      (pose.x - this.W / 2) * k,
+      (this.H / 2 - pose.y) * k + seat.yMm * pose.scale * k,
+      pose.z + seat.zMm * pose.scale,
+    );
     g.scale.setScalar(pose.scale * this.tryOnZoom);
     g.quaternion.set(pose.q[0], pose.q[1], pose.q[2], pose.q[3]);
     this.frame.fitHead?.(pose.faceWmm, this.opts.vertexDistance);

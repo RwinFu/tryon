@@ -423,6 +423,23 @@
       #presets button:hover {
         border-color: rgba(216, 180, 120, 0.5);
       }
+      .readiness {
+        margin-top: 16px;
+        padding: 12px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: rgba(255,255,255,.035);
+      }
+      .readinessHead { display:flex; justify-content:space-between; gap:10px; align-items:center; margin-bottom:8px; }
+      .readinessHead b { font-size:12px; }
+      .readinessScore { direction:ltr; color:var(--accent); font-weight:800; font-size:13px; }
+      .readiness ul { list-style:none; padding:0; display:grid; gap:5px; }
+      .readiness li { display:flex; gap:7px; font-size:10.5px; color:var(--muted); line-height:1.6; }
+      .readiness li::before { content:"✓"; color:#77d5a5; font-weight:900; }
+      .readiness li.warn::before { content:"!"; color:#f0bb70; }
+      .readiness li.fail::before { content:"×"; color:#ef887a; }
+      .readiness[data-state="fail"] { border-color:rgba(239,136,122,.45); }
+      .readiness[data-state="ready"] { border-color:rgba(119,213,165,.4); }
       #presets em {
         display: block;
         font-style: normal;
@@ -570,6 +587,10 @@
         <div id="presets"></div>
 
         <div id="controls"></div>
+        <section class="readiness" id="readiness" data-state="checking" aria-live="polite">
+          <div class="readinessHead"><b>کنترل کیفیت پیش از انتشار</b><span class="readinessScore" id="readinessScore">—</span></div>
+          <ul id="readinessList"><li class="warn">در حال بررسی مدل…</li></ul>
+        </section>
       </div>
 
       <footer>
