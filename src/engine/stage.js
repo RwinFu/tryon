@@ -143,7 +143,7 @@ export class Stage {
     this.pending = product.glb;
     try {
       const { loadGLB, tintGLB, disposeGLB } = await import("../frame/loaders.js");
-      const total = product.widthMM || product.spec?.totalWidth || 138;
+      const total = product.widthMM || product.spec?.totalWidth || (product.spec?.lensW ? 2 * product.spec.lensW + (product.spec.dbn || 0) : 138);
       const bundle = await loadGLB(product.glb, THREE, {
         totalWidth: total,
         rotateDeg: product.glbRotation,

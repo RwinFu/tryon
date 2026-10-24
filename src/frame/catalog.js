@@ -169,6 +169,23 @@ for (const p of CATALOG) {
 
 export const CATALOG_BY_ID = new Map(CATALOG.map((p) => [String(p.id), p]));
 
+/**
+ * سطح صداقت asset: نام برند و ابعاد محصول، مدل سه‌بعدیِ همان SKU را اثبات نمی‌کند.
+ * exact فقط با asset مجاز و منبع/مجوز ثبت‌شده اعلام می‌شود.
+ */
+export function assetFidelity(product = {}) {
+  const exact = product.modelAssetStatus === "sku-exact" && !!product.glb &&
+    !!product.modelAssetSource && !!product.modelAssetLicense;
+  if (exact) return { level: "exact", sellable: true, label: "مدل سه‌بعدی دقیق محصول" };
+  if (product.source === "photo-kit" || product.modelAssetStatus === "photo-derived")
+    return { level: "derived", sellable: true, label: "مدل ساخته‌شده از تصاویر همین محصول" };
+  return {
+    level: "preview",
+    sellable: false,
+    label: "پیش‌نمایش تقریبی؛ مدل سه‌بعدی رسمی این محصول نیست",
+  };
+}
+
 /** نرمال‌سازی محصول → spec هندسه + متریال (فیلدهای اختصاصی محصول حفظ می‌شوند). */
 export function toEngineSpec(product) {
   const sizeParts = String(product.size || "")

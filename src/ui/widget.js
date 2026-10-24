@@ -10,7 +10,7 @@ import { FaceTracker } from "../engine/tracking.js";
 import { FaceMeshScan, SHAPE_COPY, classifyShape, fitReport, recommend } from "../engine/fit.js";
 import { FaceScan, headMeshFromLandmarks, suggestSize } from "../engine/face-scan.js";
 import { packGLB, GLB_MIME } from "../frame/glb.js";
-import { CATALOG, toEngineSpec } from "../frame/catalog.js";
+import { CATALOG, toEngineSpec, assetFidelity } from "../frame/catalog.js";
 import { renderThumbnails } from "../engine/thumbs.js";
 import { t } from "../ui/i18n.js";
 import cssText from "./styles.gen.js";
@@ -348,8 +348,9 @@ export class VirtualTryOn extends Native {
       b.className = "card";
       b.setAttribute("role", "option");
       b.setAttribute("aria-pressed", "false");
-      b.setAttribute("aria-label", p.name || String(p.id));
-      b.innerHTML = (ICONS[p.shape] || ICONS.square) + `<em>${esc(p.name || p.id)}</em>`;
+      b.setAttribute("aria-label", `${p.brand ? p.brand + " " : ""}${p.name || p.id}`);
+      b.dataset.fidelity = assetFidelity(p).level;
+      b.innerHTML = (ICONS[p.shape] || ICONS.square) + `<em>${esc(p.brand ? p.brand + " · " + p.name : p.name || p.id)}</em>`;
       b.addEventListener("click", () => this.select(i));
       rail.appendChild(b);
       return b;
@@ -487,12 +488,15 @@ export class VirtualTryOn extends Native {
     const p = this.product;
     if (!p) return;
     const v = this.variants?.[this.variant] || {};
-    this.$("pName").textContent = p.name + (v.name ? " · " + v.name : "");
+    const fidelity = assetFidelity(p);
+    this.$("pName").textContent = `${p.brand ? p.brand + " · " : ""}${p.name}${v.name ? " · " + v.name : ""}`;
+    this.$("openFit")?.setAttribute("data-fidelity", fidelity.level);
+    this.$("openFit")?.setAttribute("title", fidelity.label);
     const price = p.price;
     this.$("pPrice").innerHTML = price
       ? `${new Intl.NumberFormat(this.lang === "fa" ? "fa-IR" : "en-US").format(price)}<small> ${esc(p.currency || t(this.lang, "toman"))}</small>`
       : esc(p.size || "");
-    this.$("pFit").textContent = this.fitSummary || t(this.lang, "fitPending");
+    this.$("pFit").textContent = this.fitSummary || fidelity.label;
     const gp = this.$("gateProduct");
     if (gp) {
       gp.hidden = false;

@@ -1223,4 +1223,37 @@ table.scanTable td:last-child {
   .steps div { grid-template-columns:22px 1fr; justify-items:start; text-align:start; }
   .startChoices { grid-template-columns:1fr; }
 }
+
+/* صداقت مدل محصول: هندسهٔ عمومی هرگز به‌عنوان مدل دقیق برند نمایش داده نمی‌شود. */
+.pull[data-fidelity="preview"]::after {
+  content: "تقریبی";
+  grid-column: 1 / -1;
+  justify-self: start;
+  padding: 3px 7px;
+  border-radius: 999px;
+  color: #ffd99b;
+  background: rgba(190,124,32,.14);
+  border: 1px solid rgba(238,177,83,.3);
+  font-size: 8px;
+  font-weight: 800;
+}
+.pull[data-fidelity="exact"]::after,
+.pull[data-fidelity="derived"]::after {
+  content: "مدل محصول";
+  grid-column: 1 / -1;
+  justify-self: start;
+  color: #9fe6c4;
+  font-size: 8px;
+  font-weight: 800;
+}
+.card[data-fidelity="preview"]::before {
+  content: "~";
+  position: absolute;
+  top: 5px;
+  inset-inline-start: 7px;
+  color: rgba(255,255,255,.48);
+  font-size: 10px;
+  font-weight: 900;
+}
+:host([theme="light"]) .card[data-fidelity="preview"]::before { color: rgba(0,0,0,.45); }
 `;
