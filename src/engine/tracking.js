@@ -271,8 +271,10 @@ export class FaceTracker {
       const stream = await this.camera.start({
         facing,
         deviceId,
-        width: light ? 640 : 960,
-        height: light ? 480 : 720,
+        // ورودی 720p برای لبهٔ فریم و کالیبراسیون عنبیه؛ حالت lite هزینه را
+        // با نرخ رندر و افکت کمتر پایین می‌آورد، نه با تصویر تار 480p.
+        width: light ? 960 : 1280,
+        height: 720,
         portrait,
         torch,
         zoom,

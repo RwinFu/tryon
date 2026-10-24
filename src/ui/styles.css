@@ -947,6 +947,61 @@ button {
     min-height: 52px;
   }
 }
+/* موبایل باریک: داک نباید دو ردیف دکمه بسازد و تصویر صورت را له کند. */
+@media (max-width: 520px) {
+  :host(.mode-overlay) {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100dvh !important;
+    min-height: 0 !important;
+  }
+  .top {
+    padding-top: max(8px, env(safe-area-inset-top));
+  }
+  .brand {
+    max-width: 34vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .topR { gap: 5px; }
+  .status { padding-inline: 8px; }
+  .camBtn, .xbtn { width: 40px; height: 40px; }
+  .actions {
+    display: flex;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+  .actions::-webkit-scrollbar { display: none; }
+  .actions .btn {
+    flex: 0 0 max(88px, calc((100% - 12px) / 3));
+    scroll-snap-align: start;
+  }
+  .hint {
+    max-width: calc(100% - 24px);
+    white-space: normal;
+    line-height: 1.5;
+  }
+  .sheet {
+    max-height: min(86%, 620px);
+    overscroll-behavior: contain;
+  }
+}
+
+/* گوشی افقی/نمایشگر کوتاه: کنترل‌ها یک داک جمع‌وجور باقی می‌مانند. */
+@media (max-height: 560px) {
+  .dock { padding-block-start: 4px; gap: 4px; }
+  .pull { padding-block: 5px; }
+  .rail { display: none; }
+  .swatches { min-height: 22px; }
+  .actions .btn { height: 38px; }
+  .brand small { display: none; }
+  .sheet { max-height: 92%; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.001s !important;
