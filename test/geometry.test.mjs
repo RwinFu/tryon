@@ -155,3 +155,18 @@ test("عدسی در نیم‌رخ ضخامت فیزیکی و دیوارهٔ با
   const radialNormals = edge.normal.filter((_, i) => i % 3 !== 2);
   assert.ok(radialNormals.some((v) => Math.abs(v) > 0.5), "نرمال لبه باید افقی و مناسب Fresnel باشد");
 });
+
+test("مدل پارامتریک برند هرگز asset دقیق همان SKU اعلام نمی‌شود", async () => {
+  const { assetFidelity } = await import("../src/frame/catalog.js");
+  for (const product of CATALOG) {
+    const f = assetFidelity(product);
+    assert.equal(f.level, "preview", `${product.id} بدون GLB مجاز نباید exact باشد`);
+    assert.equal(f.sellable, false);
+  }
+  const exact = assetFidelity({
+    modelAssetStatus: "sku-exact", glb: "/model.glb",
+    modelAssetSource: "vendor", modelAssetLicense: "licensed",
+  });
+  assert.equal(exact.level, "exact");
+  assert.equal(exact.sellable, true);
+});
