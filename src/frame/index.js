@@ -75,7 +75,7 @@ export function createFrameObject(THREE, product, opts = {}) {
     translucent: product.translucent ?? spec.translucent,
   });
 
-  const order = { lens: 20, frame: 3, metal: 4, accent: 5, pad: 6, frameTip: 3 };
+  const order = { lens: 20, lensEdge: 21, frame: 3, metal: 4, accent: 5, pad: 6, frameTip: 3 };
   for (const [role, geo] of Object.entries(roles)) {
     const mat = mats[role] || mats.frame;
     const mesh = new THREE.Mesh(

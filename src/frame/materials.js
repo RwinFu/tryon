@@ -481,7 +481,9 @@ export function buildMaterials(THREE, opts = {}) {
   });
 
   const lens = buildLensMaterial(THREE, lensSpec, quality, envIntensity);
-  return { frame, metal, accent, lens, pad, frameTip: frame };
+  // لبهٔ عدسی همان پوشش اپتیکی را دارد اما هندسهٔ مستقل آن باعث می‌شود در
+  // نیم‌رخ یک خط Fresnel واقعی بگیرد، نه یک stroke مصنوعی روی تصویر.
+  return { frame, metal, accent, lens, lensEdge: lens, pad, frameTip: frame };
 }
 
 export function buildLensMaterial(THREE, spec = "clear", quality = "high", envIntensity = 1) {
