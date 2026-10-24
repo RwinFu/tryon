@@ -418,21 +418,34 @@ export class Stage {
    */
   drawFaceOcclusion(ctx, pose) {
     if (!ctx || !pose?.landmarkPx || !this.video || !this.W || !this.H) return false;
-    const yaw = Math.abs(pose.quality?.yaw || 0);
-    if (yaw < 0.14) return false;
-    // contour محافظه‌کارانهٔ بینی از نقاط عمومی FaceMesh؛ با yaw بزرگ‌تر کمی
-    // به سمت گونهٔ نزدیک باز می‌شود تا لبهٔ لنز دوردست پشت بینی نشت نکند.
-    const side = (pose.front?.[0] || 0) >= 0 ? 1 : -1;
-    const ids = side > 0
-      ? [168, 417, 351, 419, 248, 327, 2, 98, 114, 188, 122, 193]
-      : [168, 193, 122, 188, 114, 98, 2, 327, 248, 419, 351, 417];
-    const pts = ids.map((id) => pose.landmarkPx(id)).filter(Boolean);
-    if (pts.length < 6) return false;
-    const pad = clamp((yaw - 0.14) * 18, 0, 7);
+    const matrixYaw = pose.quality?.yaw || 0;
+    const visualYaw = pose.quality?.visualYaw || 0;
+    const yaw = Math.max(Math.abs(matrixYaw), Math.abs(visualYaw));
+    if (yaw < 0.09) return false;
+    const bridge = pose.landmarkPx(168);
+    const tip = pose.landmarkPx(4);
+    const base = pose.landmarkPx(2);
+    const noseL = pose.landmarkPx(98);
+    const noseR = pose.landmarkPx(327);
+    if (![bridge, tip, base, noseL, noseR].every(Boolean)) return false;
+    const midEyeX = (pose.eyes.l.x + pose.eyes.r.x) / 2;
+    // جهت را از خود تصویر می‌گیریم، نه ماتریس دستگاه: نوک بینی به هر سو رفته،
+    // چشم سوی مقابل «دور» است و در نیم‌رخ شدید باید پشت بینی/گونه برود.
+    const side = Math.sign(visualYaw || tip.x - midEyeX || pose.front?.[0] || 1);
+    const farEye = side > 0
+      ? (pose.eyes.l.x < pose.eyes.r.x ? pose.eyes.l : pose.eyes.r)
+      : (pose.eyes.l.x > pose.eyes.r.x ? pose.eyes.l : pose.eyes.r);
+    const farNose = side > 0 ? (noseL.x < noseR.x ? noseL : noseR) : (noseL.x > noseR.x ? noseL : noseR);
+    const nearNose = farNose === noseL ? noseR : noseL;
+    const strongProfile = Math.abs(visualYaw) > 0.18 || matrixYaw > 0.48;
+    const pts = strongProfile
+      ? [bridge, { x: farEye.x, y: farEye.y - pose.iris * 0.34 }, { x: farEye.x, y: farEye.y + pose.iris * 0.46 }, farNose, base, tip, nearNose]
+      : [bridge, farNose, base, tip, nearNose];
+    const pad = clamp((yaw - 0.09) * 12, 0, 6);
     ctx.save();
     ctx.beginPath();
     pts.forEach((p, i) => {
-      const x = p.x + (i > 1 && i < pts.length - 2 ? side * pad : 0);
+      const x = p.x + (i > 0 && i < pts.length - 1 ? -side * pad : 0);
       if (i) ctx.lineTo(x, p.y); else ctx.moveTo(x, p.y);
     });
     ctx.closePath();

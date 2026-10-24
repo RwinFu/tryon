@@ -20,13 +20,15 @@ test("نیم‌رخ، ویدیوی واقعی بینی را روی لنز دور
   };
   const stage = { W: 640, H: 480, video: {}, drawFaceOcclusion: Stage.prototype.drawFaceOcclusion };
   const pose = {
-    quality: { yaw: 0.42 }, front: [0.4, 0, 0.9],
+    quality: { yaw: 0.42, visualYaw: 0.36 }, front: [0.4, 0, 0.9], iris: 80,
+    eyes: { l: { x: 260, y: 205 }, r: { x: 380, y: 205 } },
     landmarkPx: (id) => ({ x: 300 + (id % 11), y: 200 + (id % 7) }),
   };
   assert.equal(stage.drawFaceOcclusion(ctx, pose), true);
   assert.equal(draws, 1);
   assert.equal(clips, 1);
   pose.quality.yaw = 0.05;
+  pose.quality.visualYaw = 0.02;
   assert.equal(stage.drawFaceOcclusion(ctx, pose), false, "تمام‌رخ نباید پل جلوی بینی را پاک کند");
 });
 

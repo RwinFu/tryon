@@ -426,7 +426,10 @@ export class FaceTracker {
     const pdMm = this.pdMm;
 
     const focalPx = this.focalScale * Math.max(W, H);
-    const scale = iris / (pdMm * projectedEyeAxis);
+    const opticalScale = iris / (pdMm * projectedEyeAxis);
+    // در نیم‌رخ شدید یک عنبیه یا مردمک می‌تواند ناپایدار شود و opticalScale را
+    // چند برابر کند. پهنای صورت یک سقف مستقل می‌دهد تا فریم هرگز غول‌آسا نشود.
+    const scale = Math.min(opticalScale, faceW / 115);
     const vgPx = this.vg * scale;
     const socketL = mid(lms[33], lms[133]);
     const socketR = mid(lms[362], lms[263]);
@@ -472,6 +475,9 @@ export class FaceTracker {
     const smoothFront = applyQ(this.q, [0, 0, 1]);
     const yaw = Math.abs(Math.atan2(smoothFront[0], smoothFront[2]));
     const pitch = Math.asin(clamp(-smoothFront[1], -1, 1));
+    // ماتریس بعضی نسخه‌های Android در نیم‌رخ yaw را نزدیک صفر گزارش می‌کند.
+    // جابه‌جایی نوک بینی نسبت به مرکز چشم‌ها یک شاهد تصویری مستقل برای occlusion است.
+    const visualYaw = clamp(((tip.x - midEye.x) / Math.max(1, faceW)) * 2.4, -1, 1);
 
     const pose = {
       x, y, z, scale: s, q: this.q, front, camZ, focalPx,
@@ -487,8 +493,8 @@ export class FaceTracker {
       chin: { x: chin.x, y: chin.y },
       tip: { x: tip.x, y: tip.y },
       quality: {
-        frontal: front[2], yaw, pitch, size: iris / W,
-        hint: iris / W < 0.13 ? "closer" : front[2] < 0.55 ? "frontal" : Math.abs(pitch) > 0.42 ? "level" : bridgeY / Math.max(1, iris) > 0.9 ? "down" : null,
+        frontal: front[2], yaw, visualYaw, pitch, size: faceW / W,
+        hint: faceW / W < 0.28 ? "closer" : Math.max(yaw, Math.abs(visualYaw)) > 0.62 || front[2] < 0.55 ? "frontal" : Math.abs(pitch) > 0.42 ? "level" : bridgeY / Math.max(1, iris) > 0.9 ? "down" : null,
       },
       stable: !relock,
       mirrored: this.camera.isMirrored,
