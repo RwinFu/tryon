@@ -357,6 +357,9 @@ export function buildFrame(rawSpec = {}) {
       }
     }
     add(side > 0 ? "lensR" : "lensL", "lens", lensSurface(capPath, R, s));
+    // ضخامت واقعی عدسی در profile: سطح شفافِ تک‌صفحه‌ای از کنار ناپدید می‌شود.
+    // دیوارهٔ صیقلی داخل شیار فریم، خط Fresnel و عمق واقعی عدسی را می‌سازد.
+    add(side > 0 ? "lensEdgeR" : "lensEdgeL", "lensEdge", lensEdgeWall(capPath, isMetal ? 0.85 : 1.15));
   }
 
   // ── ۲. پل (bridge) ──────────────────────────────────────────────────
@@ -625,6 +628,34 @@ function lensSurface(path, R, s) {
       tri(a + i, b + i, b + j);
       tri(a + i, b + j, a + j);
     }
+  }
+  return { position, normal, uv, index, vertexCount: position.length / 3 };
+}
+
+/** دیوارهٔ صیقلی عدسی؛ front contour را به سطح پشتی وصل می‌کند. */
+function lensEdgeWall(path, thickness = 1.1) {
+  const N = path.length;
+  const position = [], normal = [], uv = [], index = [];
+  const cx = path.reduce((a, p) => a + p.x, 0) / N;
+  const cy = path.reduce((a, p) => a + p.y, 0) / N;
+  for (let layer = 0; layer < 2; layer++) {
+    for (let i = 0; i < N; i++) {
+      const p = path[i];
+      position.push(p.x, p.y, p.z - layer * thickness);
+      const len = Math.hypot(p.x - cx, p.y - cy) || 1;
+      normal.push((p.x - cx) / len, (p.y - cy) / len, 0);
+      uv.push(i / N, layer);
+    }
+  }
+  for (let i = 0; i < N; i++) {
+    const j = (i + 1) % N;
+    const a = i, b = j, c = N + i, d = N + j;
+    // winding بیرونی برای بازتاب صحیح لبه در هر دو سمت فریم
+    const pa = path[i], pb = path[j];
+    const tx = pb.x - pa.x, ty = pb.y - pa.y;
+    const radialX = pa.x - cx, radialY = pa.y - cy;
+    if (ty * radialX - tx * radialY >= 0) index.push(a, c, b, b, c, d);
+    else index.push(a, b, c, b, d, c);
   }
   return { position, normal, uv, index, vertexCount: position.length / 3 };
 }

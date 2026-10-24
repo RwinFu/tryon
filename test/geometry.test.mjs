@@ -141,3 +141,17 @@ test("محدودهٔ فیزیکی پارامترها حفظ می‌شود", () =
     }
   }
 });
+
+test("عدسی در نیم‌رخ ضخامت فیزیکی و دیوارهٔ بازتابنده دارد", () => {
+  const built = buildFrame({ shape: "square", material: "acetate", lensW: 52, lensH: 42 });
+  const edge = built.roles.lensEdge;
+  assert.ok(edge && edge.vertexCount >= 300, "دیوارهٔ هر دو عدسی باید ساخته شود");
+  let minZ = Infinity, maxZ = -Infinity;
+  for (let i = 2; i < edge.position.length; i += 3) {
+    minZ = Math.min(minZ, edge.position[i]);
+    maxZ = Math.max(maxZ, edge.position[i]);
+  }
+  assert.ok(maxZ - minZ > 1, `ضخامت عدسی از نیم‌رخ کم است: ${maxZ - minZ}`);
+  const radialNormals = edge.normal.filter((_, i) => i % 3 !== 2);
+  assert.ok(radialNormals.some((v) => Math.abs(v) > 0.5), "نرمال لبه باید افقی و مناسب Fresnel باشد");
+});
