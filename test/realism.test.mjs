@@ -10,6 +10,25 @@ import {
 } from "../src/frame/index.js";
 import { buildLensMaterial } from "../src/frame/materials.js";
 import { toEngineSpec } from "../src/frame/catalog.js";
+import { Stage } from "../src/engine/stage.js";
+
+test("نیم‌رخ، ویدیوی واقعی بینی را روی لنز دوردست برمی‌گرداند", () => {
+  let draws = 0, clips = 0;
+  const ctx = {
+    save() {}, restore() {}, beginPath() {}, moveTo() {}, lineTo() {}, closePath() {},
+    clip() { clips++; }, drawImage() { draws++; }, set filter(_) {},
+  };
+  const stage = { W: 640, H: 480, video: {}, drawFaceOcclusion: Stage.prototype.drawFaceOcclusion };
+  const pose = {
+    quality: { yaw: 0.42 }, front: [0.4, 0, 0.9],
+    landmarkPx: (id) => ({ x: 300 + (id % 11), y: 200 + (id % 7) }),
+  };
+  assert.equal(stage.drawFaceOcclusion(ctx, pose), true);
+  assert.equal(draws, 1);
+  assert.equal(clips, 1);
+  pose.quality.yaw = 0.05;
+  assert.equal(stage.drawFaceOcclusion(ctx, pose), false, "تمام‌رخ نباید پل جلوی بینی را پاک کند");
+});
 
 const path = (rx = 26, ry = 20) =>
   Array.from({ length: 48 }, (_, i) => ({

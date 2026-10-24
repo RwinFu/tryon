@@ -349,8 +349,13 @@ export class Stage {
   }
 
   // ─── سایه تماسی ───
-  drawContactShadow(ctx, pose, { opacity = 0.18, blur = 4, offset = [1, 3] } = {}) {
+  drawContactShadow(ctx, pose, { opacity = 0.18, blur = 4, offset } = {}) {
     if (!this.shadowPath || !pose || ctx.__noShadow) return false;
+    // جهت سایه از نور تخمینی محیط و yaw صورت می‌آید؛ سایهٔ ثابت هنگام نیم‌رخ
+    // مثل برچسب دیده می‌شود. دامنه عمداً کوچک است چون فریم تقریباً روی پوست است.
+    const front = pose.front || [0, 0, 1];
+    const light = this.match?.dir || [-0.3, 0.6];
+    offset ||= [clamp(-light[0] * 2.2 + front[0] * 1.4, -4, 4), clamp(2.2 + light[1] * 1.8, 0.8, 4.5)];
     const W = this.W, H = this.H;
     const cv = this._shCv || (this._shCv = document.createElement("canvas"));
     if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
@@ -382,6 +387,15 @@ export class Stage {
       started && c.stroke();
     }
     c.filter = "none";
+    // سایهٔ تماس پل/پد روی دو سوی بینی؛ کوتاه و نرم تا روی پوست طبیعی بماند.
+    const noseX = pose.nose?.x ?? pose.x, noseY = pose.nose?.y ?? pose.y;
+    c.save();
+    c.filter = `blur(${Math.max(2, blur * 0.7)}px)`;
+    c.fillStyle = `rgba(18,11,8,${opacity * 0.72})`;
+    c.beginPath();
+    c.ellipse(noseX + offset[0], noseY + Math.max(2, offset[1]), Math.max(4, pose.iris * 0.13), Math.max(2, pose.iris * 0.045), 0, 0, Math.PI * 2);
+    c.fill();
+    c.restore();
     const faceR = Math.max(30, pose.faceW * 0.52), cx = (pose.eyes.l.x + pose.eyes.r.x) / 2, cy = pose.nose.y + faceR * 0.42;
     const grad = c.createRadialGradient(cx, cy - faceR * 0.35, faceR * 0.15, cx, cy, faceR * 1.5);
     c.globalCompositeOperation = "destination-in";
@@ -398,10 +412,40 @@ export class Stage {
     return true;
   }
 
+  /**
+   * بخشی از ویدیوی واقعی بینی را روی GL برمی‌گرداند. در نیم‌رخ، بینی باید لنز
+   * دورتر را بپوشاند؛ depth-only head برای دسته‌هاست و به جلوی عدسی نمی‌رسد.
+   */
+  drawFaceOcclusion(ctx, pose) {
+    if (!ctx || !pose?.landmarkPx || !this.video || !this.W || !this.H) return false;
+    const yaw = Math.abs(pose.quality?.yaw || 0);
+    if (yaw < 0.14) return false;
+    // contour محافظه‌کارانهٔ بینی از نقاط عمومی FaceMesh؛ با yaw بزرگ‌تر کمی
+    // به سمت گونهٔ نزدیک باز می‌شود تا لبهٔ لنز دوردست پشت بینی نشت نکند.
+    const side = (pose.front?.[0] || 0) >= 0 ? 1 : -1;
+    const ids = side > 0
+      ? [168, 417, 351, 419, 248, 327, 2, 98, 114, 188, 122, 193]
+      : [168, 193, 122, 188, 114, 98, 2, 327, 248, 419, 351, 417];
+    const pts = ids.map((id) => pose.landmarkPx(id)).filter(Boolean);
+    if (pts.length < 6) return false;
+    const pad = clamp((yaw - 0.14) * 18, 0, 7);
+    ctx.save();
+    ctx.beginPath();
+    pts.forEach((p, i) => {
+      const x = p.x + (i > 1 && i < pts.length - 2 ? side * pad : 0);
+      if (i) ctx.lineTo(x, p.y); else ctx.moveTo(x, p.y);
+    });
+    ctx.closePath();
+    ctx.clip();
+    ctx.filter = "blur(0.45px)";
+    try { ctx.drawImage(this.video, 0, 0, this.W, this.H); } catch { ctx.restore(); return false; }
+    ctx.restore();
+    return true;
+  }
+
   drawHairLayer(ctx, maskCv) {
     if (!maskCv || !maskCv.width) return false;
     ctx.save();
-    ctx.clearRect(0, 0, this.W, this.H);
     ctx.filter = "blur(2.6px)";
     ctx.drawImage(maskCv, 0, 0, this.W, this.H);
     ctx.filter = "none";
