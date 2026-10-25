@@ -16,7 +16,7 @@ const only = get("only", "").split(",").filter(Boolean);
 const KEYS = [
   "shape", "style", "material", "lensW", "lensH", "dbn", "templeLen", "rimW", "rimT", "bevel",
   "baseCurve", "pantoDeg", "splayDeg", "templeW", "templeT", "templeTaper", "earDrop", "bridgeDrop",
-  "bridgeArch", "doubleBridge", "highBridge", "nosePads", "hinge", "endpiece", "metalRimW", "metalRimT",
+  "bridgeArch", "doubleBridge", "highBridge", "nosePads", "hinge", "hingeBarrels", "endpiece", "endpieceReach", "metalRimW", "metalRimT",
   "catAmp", "catWidth", "teardrop", "nasalNotch", "topWide", "exp", "depth", "lensTiltDeg", "hexBlend",
   "hexSides", "lensPath", "lensPathL", "lensPathR", "bridgeStyle", "bridgeMaterial", "browMaterial",
   "templeMaterial", "endpieceMaterial", "rimlessMounts", "profile", "lensInset",

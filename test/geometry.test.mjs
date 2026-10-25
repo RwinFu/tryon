@@ -30,7 +30,7 @@ test("catalog: همهٔ فریم‌ها سالم ساخته می‌شوند", ()
 });
 
 test("کاتالوگ به مدل‌های نام‌گذاری‌شده و منبع قابل بازبینی وصل است", () => {
-  assert.equal(CATALOG.length, 28);
+  assert.equal(CATALOG.length, 29);
   assert.equal(new Set(CATALOG.map((p) => p.id)).size, CATALOG.length, "شناسهٔ کاتالوگ تکراری است");
   for (const p of CATALOG) {
     assert.ok(p.modelCode, `${p.id}: کد مدل ثبت نشده`);
@@ -169,4 +169,18 @@ test("مدل پارامتریک برند هرگز asset دقیق همان SKU ا
   });
   assert.equal(exact.level, "exact");
   assert.equal(exact.sellable, true);
+});
+
+test("محصول مرجع PH2126 ابعاد عمومی و جزئیات مکانیکی ثبت‌شده دارد", () => {
+  const p = CATALOG.find((x) => x.sku === "8053672393569");
+  assert.ok(p, "محصول مرجع Glasses.com در کاتالوگ نیست");
+  assert.equal(p.brand, "Polo Ralph Lauren");
+  assert.equal(p.size, "53□16-145");
+  assert.equal(p.lensH, 37.2);
+  assert.equal(p.material, "acetate");
+  const spec = toEngineSpec(p);
+  assert.equal(spec.hingeBarrels, 3);
+  assert.ok(spec.endpieceReach > 1);
+  const built = buildFrame(spec);
+  assert.ok(built.parts.filter((x) => /^hingeBarrel/.test(x.name)).length >= 6);
 });

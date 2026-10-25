@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "updated": "2026-09-29",
+  "updated": "2026-10-25",
   "products": [
     {
       "id": "AR-101",
@@ -1888,6 +1888,76 @@
         "pantoDeg": 2,
         "bridgeDrop": 0.4,
         "templeMaterial": "metal"
+      }
+    },
+    {
+      "id": "AR-129",
+      "sku": "8053672393569",
+      "name": "PH2126",
+      "brand": "Polo Ralph Lauren",
+      "modelCode": "PH2126 5534",
+      "modelFamily": "PH2126",
+      "size": "53□16-145",
+      "shape": "rectangle",
+      "style": "full",
+      "material": "acetate",
+      "composition": "Injected",
+      "lensH": 37.2,
+      "lensHSource": "manufacturer",
+      "finish": "matte-black",
+      "color": "#17191b",
+      "lens": "clear",
+      "gender": "unisex",
+      "tags": [
+        "polo-ralph-lauren",
+        "optical",
+        "narrow",
+        "reference",
+        "rectangle"
+      ],
+      "bestFor": [
+        "round",
+        "oval",
+        "heart"
+      ],
+      "sourceUrl": "https://www.glasses.com/gl-us/polo-ralph-lauren/8053672393569?rxcnav=treatments",
+      "url": "https://www.glasses.com/gl-us/polo-ralph-lauren/8053672393569?rxcnav=treatments",
+      "sourceName": "فروشندهٔ تخصصی",
+      "sourceType": "retailer",
+      "sourceNote": "ابعاد 53-16-145، ارتفاع 37.2mm، جنس Injected و رنگ Matte Black از صفحهٔ عمومی محصول؛ هندسه همچنان clean-room و تقریبی است.",
+      "sourceChecked": "2026-09-29",
+      "modelAssetStatus": "procedural-preview",
+      "modelAssetNote": "هندسهٔ پیش‌نمایش؛ مدل رسمی/اسکنِ همان SKU نیست.",
+      "colors": [
+        {
+          "name": "Matte Black",
+          "color": "#17191b",
+          "finish": "matte-black",
+          "lens": "clear"
+        }
+      ],
+      "spec": {
+        "shape": "rectangle",
+        "style": "full",
+        "material": "acetate",
+        "lensW": 53,
+        "lensH": 37.2,
+        "dbn": 16,
+        "templeLen": 145,
+        "rimW": 4.35,
+        "rimT": 3.35,
+        "bevel": 0.34,
+        "baseCurve": 4.5,
+        "pantoDeg": 6,
+        "splayDeg": 5,
+        "templeW": 5.2,
+        "templeT": 2.7,
+        "templeTaper": 0.66,
+        "earDrop": 8.5,
+        "bridgeDrop": 0.43,
+        "bridgeArch": 2.8,
+        "hingeBarrels": 3,
+        "endpieceReach": 1.22
       }
     }
   ]
