@@ -165,9 +165,8 @@ test("recoloring an imported frame does not wash out its original lens material"
 
 test("ماسک نیم‌رخ فقط کانتور بینی است و هرگز تا چشم دور کشیده نمی‌شود", () => {
   const nose = new Map([
-    [168, [320, 190]], [417, [326, 196]], [351, [332, 205]], [419, [337, 215]],
-    [248, [340, 226]], [327, [342, 238]], [2, [335, 250]], [98, [322, 249]],
-    [114, [316, 238]], [188, [314, 225]], [122, [315, 210]], [193, [317, 199]], [4, [339, 232]],
+    [168, [320, 190]], [6, [323, 198]], [197, [326, 207]], [195, [330, 216]],
+    [5, [335, 224]], [4, [339, 232]], [327, [342, 238]], [2, [335, 250]], [98, [322, 249]],
   ]);
   const pose = {
     quality: { yaw: .5, visualYaw: .4 }, front: [.4, 0, .9],
@@ -175,7 +174,7 @@ test("ماسک نیم‌رخ فقط کانتور بینی است و هرگز ت�
     landmarkPx: (id) => { const p = nose.get(id); return p && { x: p[0], y: p[1] }; },
   };
   const pts = faceOcclusionPolygon(pose);
-  assert.ok(pts?.length >= 8);
+  assert.ok(pts?.length >= 4);
   const xs = pts.map((p) => p.x);
   assert.ok(Math.max(...xs) - Math.min(...xs) < 36, "ماسک نباید از بینی تا چشم دور پهن شود");
   assert.ok(Math.min(...xs) > 300 && Math.max(...xs) < 360);

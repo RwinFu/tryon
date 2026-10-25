@@ -513,7 +513,7 @@ export class FaceTracker {
       tip: { x: tip.x, y: tip.y },
       quality: {
         frontal: front[2], yaw, visualYaw, pitch, size: faceW / W, scaleConfidence,
-        hint: faceW / W < 0.28 ? "closer" : Math.max(yaw, Math.abs(visualYaw)) > 0.62 || front[2] < 0.55 ? "frontal" : Math.abs(pitch) > 0.42 ? "level" : bridgeY / Math.max(1, iris) > 0.9 ? "down" : null,
+        hint: faceW / W < 0.28 ? "closer" : Math.max(yaw, Math.abs(visualYaw)) > 0.78 || front[2] < 0.42 ? "frontal" : Math.abs(pitch) > 0.42 ? "level" : bridgeY / Math.max(1, iris) > 0.9 ? "down" : null,
       },
       stable: !relock,
       mirrored: this.camera.isMirrored,
