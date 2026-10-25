@@ -165,3 +165,8 @@ test("optical outliers are bounded in both directions by face width", () => {
   assert.ok(b.scale >= 1.64 && b.scale <= 2.36, `huge eye witness escaped envelope: ${b.scale}`);
   assert.equal(tracker().solve(result(), 100).quality.scaleConfidence, "high");
 });
+
+test("چرخش معمول برای دیدن نیم‌رخ، هشدار روبه‌رو تولید نمی‌کند", () => {
+  const p = tracker().solve(result(0.6), 100);
+  assert.notEqual(p.quality.hint, "frontal");
+});

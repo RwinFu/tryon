@@ -12,6 +12,24 @@ import { bridgeSeatAdjustment } from "./fit.js";
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 
+function convexHull(points) {
+  const pts = [...points].sort((a, b) => a.x - b.x || a.y - b.y);
+  if (pts.length < 3) return pts;
+  const cross = (o, a, b) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+  const lower = [], upper = [];
+  for (const p of pts) {
+    while (lower.length >= 2 && cross(lower.at(-2), lower.at(-1), p) <= 0) lower.pop();
+    lower.push(p);
+  }
+  for (let i = pts.length - 1; i >= 0; i--) {
+    const p = pts[i];
+    while (upper.length >= 2 && cross(upper.at(-2), upper.at(-1), p) <= 0) upper.pop();
+    upper.push(p);
+  }
+  lower.pop(); upper.pop();
+  return lower.concat(upper);
+}
+
 /**
  * کانتور باریک بینی برای compositing نیم‌رخ. عمداً هرگز تا چشم دور امتداد
  * پیدا نمی‌کند؛ آن روش در موبایل تکهٔ بزرگی از گونه را روی عدسی paste می‌کرد.
@@ -25,17 +43,15 @@ export function faceOcclusionPolygon(pose) {
   const tip = pose.landmarkPx(4);
   const midEyeX = pose.eyes ? (pose.eyes.l.x + pose.eyes.r.x) / 2 : tip?.x || 0;
   const side = Math.sign(visualYaw || (tip?.x || 0) - midEyeX || pose.front?.[0] || 1);
-  // نقاط FaceMesh از پل، دیواره و پرهٔ بینی عبور می‌کنند؛ نه از مردمک/گونه.
-  const ids = side > 0
-    ? [168, 417, 351, 419, 248, 327, 2, 98, 114, 188, 122, 193]
-    : [168, 193, 122, 188, 114, 98, 2, 327, 248, 419, 351, 417];
-  const pts = ids.map((id) => pose.landmarkPx(id)).filter(Boolean);
-  if (pts.length < 8) return null;
+  // فقط نقاط خود بینی. ترتیب FaceMesh یک polygon معتبر نیست؛ hull محدب از
+  // self-intersection و مثلث‌های روشن/تیره‌ای که در اسکرین‌شات دیده شد جلوگیری می‌کند.
+  const ids = [168, 6, 197, 195, 5, 4, 2, 98, 327];
+  const raw = ids.map((id) => pose.landmarkPx(id)).filter(Boolean);
+  if (raw.length < 6) return null;
+  const pts = convexHull(raw);
+  if (pts.length < 4) return null;
   const pad = clamp((yaw - 0.16) * 4, 0, 1.8);
-  return pts.map((p, i) => ({
-    x: p.x + (i > 1 && i < pts.length - 2 ? -side * pad : 0),
-    y: p.y,
-  }));
+  return pts.map((p) => ({ x: p.x - side * pad, y: p.y }));
 }
 
 export class Stage {
