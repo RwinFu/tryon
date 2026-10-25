@@ -10,7 +10,7 @@ import {
 } from "../src/frame/index.js";
 import { buildLensMaterial } from "../src/frame/materials.js";
 import { toEngineSpec } from "../src/frame/catalog.js";
-import { Stage } from "../src/engine/stage.js";
+import { Stage, faceOcclusionPolygon } from "../src/engine/stage.js";
 
 test("نیم‌رخ، ویدیوی واقعی بینی را روی لنز دوردست برمی‌گرداند", () => {
   let draws = 0, clips = 0;
@@ -160,4 +160,25 @@ test("recoloring an imported frame does not wash out its original lens material"
   assert.equal(frame.color.getHexString(), "ff0000");
   lens.dispose();
   frame.dispose();
+});
+
+
+test("ماسک نیم‌رخ فقط کانتور بینی است و هرگز تا چشم دور کشیده نمی‌شود", () => {
+  const nose = new Map([
+    [168, [320, 190]], [417, [326, 196]], [351, [332, 205]], [419, [337, 215]],
+    [248, [340, 226]], [327, [342, 238]], [2, [335, 250]], [98, [322, 249]],
+    [114, [316, 238]], [188, [314, 225]], [122, [315, 210]], [193, [317, 199]], [4, [339, 232]],
+  ]);
+  const pose = {
+    quality: { yaw: .5, visualYaw: .4 }, front: [.4, 0, .9],
+    eyes: { l: { x: 235, y: 205 }, r: { x: 390, y: 205 } },
+    landmarkPx: (id) => { const p = nose.get(id); return p && { x: p[0], y: p[1] }; },
+  };
+  const pts = faceOcclusionPolygon(pose);
+  assert.ok(pts?.length >= 8);
+  const xs = pts.map((p) => p.x);
+  assert.ok(Math.max(...xs) - Math.min(...xs) < 36, "ماسک نباید از بینی تا چشم دور پهن شود");
+  assert.ok(Math.min(...xs) > 300 && Math.max(...xs) < 360);
+  pose.quality.yaw = .02; pose.quality.visualYaw = .02;
+  assert.equal(faceOcclusionPolygon(pose), null, "تمام‌رخ ماسک جلوی پل نمی‌خواهد");
 });

@@ -859,6 +859,7 @@ export class VirtualTryOn extends Native {
     this.ctx.cv.drawImage(v, 0, 0, this.el.cv.width, this.el.cv.height);
     const pose = tr.process(now, now - (this.lastInfer || 0) > 240);
     if (pose) {
+      this.el.stage.classList.add("tracked");
       this.pose = pose;
       if (now - (this.lastInfer || 0) > 700 && this.cfg.features.lightMatch) {
         this.lastInfer = now;
@@ -882,6 +883,7 @@ export class VirtualTryOn extends Native {
       this.collect(pose);
       this.maybeHint(pose);
     } else {
+      this.el.stage.classList.remove("tracked");
       this.stage.hide();
       this.stage.renderer.clear();
       this.ctx.sh.clearRect(0, 0, this.el.sh.width, this.el.sh.height);
