@@ -12,6 +12,32 @@ import { bridgeSeatAdjustment } from "./fit.js";
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 
+/**
+ * کانتور باریک بینی برای compositing نیم‌رخ. عمداً هرگز تا چشم دور امتداد
+ * پیدا نمی‌کند؛ آن روش در موبایل تکهٔ بزرگی از گونه را روی عدسی paste می‌کرد.
+ */
+export function faceOcclusionPolygon(pose) {
+  if (!pose?.landmarkPx) return null;
+  const matrixYaw = pose.quality?.yaw || 0;
+  const visualYaw = pose.quality?.visualYaw || 0;
+  const yaw = Math.max(Math.abs(matrixYaw), Math.abs(visualYaw));
+  if (yaw < 0.16) return null;
+  const tip = pose.landmarkPx(4);
+  const midEyeX = pose.eyes ? (pose.eyes.l.x + pose.eyes.r.x) / 2 : tip?.x || 0;
+  const side = Math.sign(visualYaw || (tip?.x || 0) - midEyeX || pose.front?.[0] || 1);
+  // نقاط FaceMesh از پل، دیواره و پرهٔ بینی عبور می‌کنند؛ نه از مردمک/گونه.
+  const ids = side > 0
+    ? [168, 417, 351, 419, 248, 327, 2, 98, 114, 188, 122, 193]
+    : [168, 193, 122, 188, 114, 98, 2, 327, 248, 419, 351, 417];
+  const pts = ids.map((id) => pose.landmarkPx(id)).filter(Boolean);
+  if (pts.length < 8) return null;
+  const pad = clamp((yaw - 0.16) * 4, 0, 1.8);
+  return pts.map((p, i) => ({
+    x: p.x + (i > 1 && i < pts.length - 2 ? -side * pad : 0),
+    y: p.y,
+  }));
+}
+
 export class Stage {
   /**
    * @param {{canvas:HTMLCanvasElement, THREE:any, quality?:string, lights?:boolean, shadow?:boolean, env?:boolean, video?:HTMLVideoElement, camera?:any, vertexDistance?:number}} opts
@@ -349,7 +375,7 @@ export class Stage {
   }
 
   // ─── سایه تماسی ───
-  drawContactShadow(ctx, pose, { opacity = 0.18, blur = 4, offset } = {}) {
+  drawContactShadow(ctx, pose, { opacity = 0.1, blur = 2.8, offset } = {}) {
     if (!this.shadowPath || !pose || ctx.__noShadow) return false;
     // جهت سایه از نور تخمینی محیط و yaw صورت می‌آید؛ سایهٔ ثابت هنگام نیم‌رخ
     // مثل برچسب دیده می‌شود. دامنه عمداً کوچک است چون فریم تقریباً روی پوست است.
@@ -369,7 +395,9 @@ export class Stage {
       px = (pose.x - W / 2) * k, py = (H / 2 - pose.y) * k, pz = pose.z;
     const strokes = this.shadowPath.filter((stroke) => /^(rim|brow|bridge|topbar)/.test(stroke.name || ""));
     for (const stroke of strokes) {
-      c.lineWidth = Math.max(1.5, stroke.sw * s * 1.5);
+      // سایه باید تماس فریم با پوست را القا کند، نه یک نسخهٔ قهوه‌ای و ضخیم
+      // از خود rim؛ در موبایل ضریب قبلی پایین عدسی را دو بار نمایش می‌داد.
+      c.lineWidth = Math.max(0.8, Math.min(4.5, stroke.sw * s * 0.72));
       c.beginPath();
       let started = false;
       for (let i = 0; i < stroke.path.length; i++) {
@@ -391,7 +419,7 @@ export class Stage {
     const noseX = pose.nose?.x ?? pose.x, noseY = pose.nose?.y ?? pose.y;
     c.save();
     c.filter = `blur(${Math.max(2, blur * 0.7)}px)`;
-    c.fillStyle = `rgba(18,11,8,${opacity * 0.72})`;
+    c.fillStyle = `rgba(18,11,8,${opacity * 0.52})`;
     c.beginPath();
     c.ellipse(noseX + offset[0], noseY + Math.max(2, offset[1]), Math.max(4, pose.iris * 0.13), Math.max(2, pose.iris * 0.045), 0, 0, Math.PI * 2);
     c.fill();
@@ -418,35 +446,12 @@ export class Stage {
    */
   drawFaceOcclusion(ctx, pose) {
     if (!ctx || !pose?.landmarkPx || !this.video || !this.W || !this.H) return false;
-    const matrixYaw = pose.quality?.yaw || 0;
-    const visualYaw = pose.quality?.visualYaw || 0;
-    const yaw = Math.max(Math.abs(matrixYaw), Math.abs(visualYaw));
-    if (yaw < 0.09) return false;
-    const bridge = pose.landmarkPx(168);
-    const tip = pose.landmarkPx(4);
-    const base = pose.landmarkPx(2);
-    const noseL = pose.landmarkPx(98);
-    const noseR = pose.landmarkPx(327);
-    if (![bridge, tip, base, noseL, noseR].every(Boolean)) return false;
-    const midEyeX = (pose.eyes.l.x + pose.eyes.r.x) / 2;
-    // جهت را از خود تصویر می‌گیریم، نه ماتریس دستگاه: نوک بینی به هر سو رفته،
-    // چشم سوی مقابل «دور» است و در نیم‌رخ شدید باید پشت بینی/گونه برود.
-    const side = Math.sign(visualYaw || tip.x - midEyeX || pose.front?.[0] || 1);
-    const farEye = side > 0
-      ? (pose.eyes.l.x < pose.eyes.r.x ? pose.eyes.l : pose.eyes.r)
-      : (pose.eyes.l.x > pose.eyes.r.x ? pose.eyes.l : pose.eyes.r);
-    const farNose = side > 0 ? (noseL.x < noseR.x ? noseL : noseR) : (noseL.x > noseR.x ? noseL : noseR);
-    const nearNose = farNose === noseL ? noseR : noseL;
-    const strongProfile = Math.abs(visualYaw) > 0.18 || matrixYaw > 0.48;
-    const pts = strongProfile
-      ? [bridge, { x: farEye.x, y: farEye.y - pose.iris * 0.34 }, { x: farEye.x, y: farEye.y + pose.iris * 0.46 }, farNose, base, tip, nearNose]
-      : [bridge, farNose, base, tip, nearNose];
-    const pad = clamp((yaw - 0.09) * 12, 0, 6);
+    const pts = faceOcclusionPolygon(pose);
+    if (!pts) return false;
     ctx.save();
     ctx.beginPath();
     pts.forEach((p, i) => {
-      const x = p.x + (i > 0 && i < pts.length - 1 ? -side * pad : 0);
-      if (i) ctx.lineTo(x, p.y); else ctx.moveTo(x, p.y);
+      if (i) ctx.lineTo(p.x, p.y); else ctx.moveTo(p.x, p.y);
     });
     ctx.closePath();
     ctx.clip();
