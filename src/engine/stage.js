@@ -21,7 +21,7 @@ export function faceOcclusionPolygon(pose) {
   const matrixYaw = pose.quality?.yaw || 0;
   const visualYaw = pose.quality?.visualYaw || 0;
   const yaw = Math.max(Math.abs(matrixYaw), Math.abs(visualYaw));
-  if (yaw < 0.11) return null;
+  if (yaw < 0.16) return null;
   const tip = pose.landmarkPx(4);
   const midEyeX = pose.eyes ? (pose.eyes.l.x + pose.eyes.r.x) / 2 : tip?.x || 0;
   const side = Math.sign(visualYaw || (tip?.x || 0) - midEyeX || pose.front?.[0] || 1);
@@ -31,7 +31,7 @@ export function faceOcclusionPolygon(pose) {
     : [168, 193, 122, 188, 114, 98, 2, 327, 248, 419, 351, 417];
   const pts = ids.map((id) => pose.landmarkPx(id)).filter(Boolean);
   if (pts.length < 8) return null;
-  const pad = clamp((yaw - 0.11) * 5, 0, 2.4);
+  const pad = clamp((yaw - 0.16) * 4, 0, 1.8);
   return pts.map((p, i) => ({
     x: p.x + (i > 1 && i < pts.length - 2 ? -side * pad : 0),
     y: p.y,
@@ -375,7 +375,7 @@ export class Stage {
   }
 
   // ─── سایه تماسی ───
-  drawContactShadow(ctx, pose, { opacity = 0.18, blur = 4, offset } = {}) {
+  drawContactShadow(ctx, pose, { opacity = 0.1, blur = 2.8, offset } = {}) {
     if (!this.shadowPath || !pose || ctx.__noShadow) return false;
     // جهت سایه از نور تخمینی محیط و yaw صورت می‌آید؛ سایهٔ ثابت هنگام نیم‌رخ
     // مثل برچسب دیده می‌شود. دامنه عمداً کوچک است چون فریم تقریباً روی پوست است.
@@ -395,7 +395,9 @@ export class Stage {
       px = (pose.x - W / 2) * k, py = (H / 2 - pose.y) * k, pz = pose.z;
     const strokes = this.shadowPath.filter((stroke) => /^(rim|brow|bridge|topbar)/.test(stroke.name || ""));
     for (const stroke of strokes) {
-      c.lineWidth = Math.max(1.5, stroke.sw * s * 1.5);
+      // سایه باید تماس فریم با پوست را القا کند، نه یک نسخهٔ قهوه‌ای و ضخیم
+      // از خود rim؛ در موبایل ضریب قبلی پایین عدسی را دو بار نمایش می‌داد.
+      c.lineWidth = Math.max(0.8, Math.min(4.5, stroke.sw * s * 0.72));
       c.beginPath();
       let started = false;
       for (let i = 0; i < stroke.path.length; i++) {
@@ -417,7 +419,7 @@ export class Stage {
     const noseX = pose.nose?.x ?? pose.x, noseY = pose.nose?.y ?? pose.y;
     c.save();
     c.filter = `blur(${Math.max(2, blur * 0.7)}px)`;
-    c.fillStyle = `rgba(18,11,8,${opacity * 0.72})`;
+    c.fillStyle = `rgba(18,11,8,${opacity * 0.52})`;
     c.beginPath();
     c.ellipse(noseX + offset[0], noseY + Math.max(2, offset[1]), Math.max(4, pose.iris * 0.13), Math.max(2, pose.iris * 0.045), 0, 0, Math.PI * 2);
     c.fill();
