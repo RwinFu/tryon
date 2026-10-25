@@ -39,7 +39,9 @@ export const DEFAULTS = {
   doubleBridge: false,
   highBridge: false,
   hinge: true,
+  hingeBarrels: 3,
   endpiece: true,
+  endpieceReach: 1,
   metalRimW: 2.0,
   metalRimT: 1.6,
   lensInset: 0.7,
@@ -414,11 +416,12 @@ export function buildFrame(rawSpec = {}) {
     hingeX = Math.max(hingeX, Math.abs(hinge.x));
 
     if (s.endpiece && s.style !== "rimless") {
+      const reach = Math.max(0.65, Math.min(1.55, s.endpieceReach || 1));
       const ep = sweep(
         [
           { x: ax - side * rimW * 0.15, y: anchor.y, z: hinge.z + 0.15 },
-          { x: ax + side * rimW * 0.55, y: anchor.y + 0.25, z: hinge.z - 0.35 },
-          { x: ax + side * rimW * 0.95, y: anchor.y + 0.2, z: hinge.z - 1.5 },
+          { x: ax + side * rimW * 0.55 * reach, y: anchor.y + 0.25, z: hinge.z - 0.35 },
+          { x: ax + side * rimW * 0.95 * reach, y: anchor.y + 0.2, z: hinge.z - 1.5 },
         ],
         roundedRectProfile(rimW * 0.92, rimT * 0.82, rimT * 0.3, 3),
         { closed: false },
@@ -438,6 +441,22 @@ export function buildFrame(rawSpec = {}) {
         { closed: false },
       );
       add(side > 0 ? "hingeR" : "hingeL", "metal", hg);
+      // بندهای استوانه‌ای واقعی لولا روی بدنهٔ اصلی؛ بلوک تنها در نیم‌رخ
+      // شبیه اتصال پلاستیکی دیده می‌شود و خط جدایش مکانیکی ندارد.
+      const barrels = Math.max(1, Math.min(5, Math.round(s.hingeBarrels || 3)));
+      const span = Math.max(1.6, rimT * 0.92);
+      for (let n = 0; n < barrels; n++) {
+        const y = hinge.y + ((n + 0.5) / barrels - 0.5) * span;
+        const barrel = sweep(
+          [
+            { x: hx + side * hw * 0.18, y, z: hinge.z - rimT * 0.48 },
+            { x: hx + side * hw * 0.82, y, z: hinge.z - rimT * 0.48 },
+          ],
+          ellipseProfile(Math.max(0.72, span / barrels * 0.72), Math.max(0.72, span / barrels * 0.72), 10),
+          { closed: false },
+        );
+        add(`hingeBarrel${side > 0 ? "R" : "L"}${n}`, "metal", barrel);
+      }
       // پیچ لولا (دو نقطهٔ ریز روی بیرون فریم)
       for (const dz of [-0.55, 0.55]) {
         const screw = sweep(
