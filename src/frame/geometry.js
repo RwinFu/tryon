@@ -27,7 +27,12 @@ export const DEFAULTS = {
   baseCurve: 6, // منحنی بیس لنز (diopter) → فریم چقدر دور سر می‌پیچد
   pantoDeg: 8,
   splayDeg: 4,
-  bridgeDrop: 0.55, // پایین‌تر بودن پل نسبت به مرکز لنز (نسبت به نیم‌ارتفاع)
+  // جای میلهٔ پل روی ارتفاع لنز: ۰ = لبهٔ بالا، ۰٫۵ = مرکز، ۱ = لبهٔ پایین.
+  // اگر `bridgeAt` داده نشود از `bridgeDrop` قدیمی (فاصلهٔ زیرِ مرکز) تبدیل
+  // می‌شود؛ مقادیرِ کاتالوگ با فرمولِ قدیمی نوشته شده‌اند و زیرِ مرکز لنز
+  // می‌نشستند، در حالی که پلِ واقعی بالای مرکز است (روی ریشهٔ بینی).
+  bridgeDrop: 0.55,
+  bridgeAt: null,
   bridgeArch: 3.2,
   templeLen: 145,
   templeW: 5.0,
@@ -58,6 +63,11 @@ function rotateXYZ(p, ang) {
 /** تبدیل مشخصهٔ محصول به پارامترهای هندسه (اختصارهای رایج کاتالوگ). */
 export function normalizeSpec(spec = {}) {
   const s = { ...DEFAULTS, ...spec };
+  // نگاشتِ سازگار: bridgeDrop قدیمی ⇒ جای پل از لبهٔ بالا
+  if (!Number.isFinite(s.bridgeAt)) {
+    const legacy = Number.isFinite(s.bridgeDrop) ? s.bridgeDrop : DEFAULTS.bridgeDrop;
+    s.bridgeAt = Math.max(0.12, Math.min(0.6, 0.5 - 0.28 * legacy));
+  }
   if (spec.size) {
     const [lens, bridge, temple] = String(spec.size)
       .split(/[^0-9.]+/)
@@ -275,6 +285,11 @@ export function buildFrame(rawSpec = {}) {
     return r2 < R * R ? R - Math.sqrt(R * R - r2) : R;
   };
 
+  /** yِ میلهٔ پل (نسبت به مرکزِ لنز): ۰ = لبهٔ بالا، ۱ = لبهٔ پایین */
+  const bridgeY0 = halfH * (1 - 2 * s.bridgeAt);
+  /** zِ میلهٔ پل: از لبهٔ رینگ، نه از امتدادِ خیالیِ dome بیرونِ عدسی */
+  const bridgeZb = -dome(Math.min(lensCX - innerX, s.lensW * 0.5 + rimW * 0.5), bridgeY0);
+
   // ── ۱. دور لنز: دهانه بر اساس سایز چاپی، بدنه رو به بیرون ─────────────
   // لنزِ ورودی همان اندازهٔ اسمیِ EYE است. در فریم استات، حلقه به بیرون
   // offset می‌شود؛ در مدل قبلی علامت offset برعکس بود و خود عدسی از فریم بزرگ‌تر.
@@ -366,15 +381,18 @@ export function buildFrame(rawSpec = {}) {
 
   // ── ۲. پل (bridge) ──────────────────────────────────────────────────
   {
-    const y0 = -halfH * s.bridgeDrop;
-    const zb = -dome(-(lensCX - innerX), y0);
-    const zHigh = zb - 1.1;
-    const archY = y0 + s.bridgeArch + (s.highBridge ? halfH * 0.62 : 0);
+    // y0 = جای «پاشنهٔ» پل روی لنز: bridgeDrop از لبهٔ بالا (۰) تا پایین (۱).
+    const y0 = bridgeY0;
+    // میلهٔ پل روی شکافِ بینی *صاف* می‌ماند؛ قبلاً وسطِ پل ۱٫۱mm عقب‌تر از دو
+    // سرش بود و همین فریم را مجبور می‌کرد روی بینی شناور بماند.
+    const zb = bridgeZb;
+    const zHigh = zb + 0.5;
+    const archY = y0 + s.bridgeArch + (s.highBridge ? Math.min(halfH * 0.22, 7) : 0);
     const pts = [
       { x: -innerX - rimW * 0.35, y: y0 + rimW * 0.18, z: zb + 0.25 },
       { x: -innerX * 0.86, y: y0 + 0.7, z: zb },
       { x: -innerX * 0.42, y: archY, z: zHigh },
-      { x: 0, y: archY + 0.6, z: zHigh - 0.35 },
+      { x: 0, y: archY + 0.6, z: zHigh + 0.35 },
       { x: innerX * 0.42, y: archY, z: zHigh },
       { x: innerX * 0.86, y: y0 + 0.7, z: zb },
       { x: innerX + rimW * 0.35, y: y0 + rimW * 0.18, z: zb + 0.25 },
@@ -540,23 +558,28 @@ export function buildFrame(rawSpec = {}) {
 
     // پد بینی (فریم فلزی) یا بالشتک یکپارچهٔ استات
     if (s.nosePads || isMetal || s.style === "rimless") {
-      const inX = s.dbn * 0.34 + 1.2;
-      const topY = -halfH * (s.highBridge ? 0.35 : 0.52);
-      const zTop = -dome(-s.dbn * 0.3, topY) + rimT * 0.25;
+      // بالشتک زیرِ پل و روی کنارهٔ بینی می‌نشیند: چند میلی‌متر پایین‌تر از پل و
+      // *عقب‌تر* از صفحهٔ آن. نسخهٔ قبلی بالشتک را ۱۲mm جلوتر و ~۱۴mm پایین‌تر
+      // می‌گذاشت؛ نتیجه این بود که فقط بالشتک با پوست تماس داشت و پل شناور
+      // می‌ماند، یا فریم برای رسیدنِ بالشتک به بینی بیش از حد جلو می‌رفت.
+      const padX = Math.max(3.2, s.dbn / 2 + 0.4);
+      const padY = bridgeY0 - 3.6;
+      const padZ = bridgeZb - Math.max(1.6, rimT * 0.9);
+      const armFrom = { x: side * Math.max(1.6, innerX * 0.55), y: bridgeY0 + 0.4, z: bridgeZb - 0.2 };
       const arm = cr3(
         [
-          { x: side * inX * 0.72, y: topY, z: zTop },
-          { x: side * (inX + 1.5), y: topY - 2.4, z: zTop + 1.9 },
-          { x: side * (inX + 2.6), y: topY - 4.9, z: zTop + 3.1 },
+          armFrom,
+          { x: side * (padX - 1.5), y: padY + 1.6, z: padZ + 1.4 },
+          { x: side * padX, y: padY + 0.6, z: padZ + 0.4 },
         ],
         8,
       );
-      add(side > 0 ? "padArmR" : "padArmL", "metal", sweep(arm, ellipseProfile(0.95, 0.95, 6), { closed: false }));
-      const padGeo = roundedBox(2.0, 6.4, 1.5, 0.72, 0, 0, 0, 3);
+      add(side > 0 ? "padArmR" : "padArmL", "metal", sweep(arm, ellipseProfile(0.85, 0.85, 6), { closed: false }));
+      const padGeo = roundedBox(1.7, 5.2, 1.5, 0.72, 0, 0, 0, 3);
       add(
         side > 0 ? "padR" : "padL",
         "pad",
-        moveGeo(padGeo, side * (inX + 3.3), topY - 5.6, zTop + 3.5, { ry: side * -0.34, rz: side * 0.1 }),
+        moveGeo(padGeo, side * padX, padY, padZ, { ry: side * 0.28, rz: side * -0.08 }),
       );
     }
   }
@@ -569,25 +592,45 @@ export function buildFrame(rawSpec = {}) {
     dbn: s.dbn,
     templeLen: s.templeLen,
     lensCenters: [lensCX, -lensCX],
-    // محلِ مرجع برای چسبیدن به بینی (ارتفاع مرکز لنز نسبت به پل)
-    bridgeY: -halfH * s.bridgeDrop,
+    // محلِ مرجع پل/بالشتک بعد از ساختِ مش پر می‌شود (پایین‌ترین نقطهٔ خودِ پل)
+    bridgeY: halfH * (1 - 2 * s.bridgeDrop),
+    bridgeZ: 0,
+    padZ: null,
     // نیم‌پهنای فریم تا بیرونِ لولا (mm) — مرز پهنای «سر نامرئی» که دسته‌ها را می‌بُرد
     hingeX: +hingeX.toFixed(2),
     height: 0,
     depth: 0,
   };
   let bbox = null;
+  // پل و بالشتک‌ها «نقاطِ تکیه‌گاه» فریم روی بینی‌اند؛ پایین‌ترین و عقب‌ترین
+  // نقطه‌شان را از خودِ مش اندازه می‌گیریم تا مهندسیِ نشستن به فرمولِ تقریبی
+  // وابسته نباشد.
+  let bridgeMinY = null, bridgeMinZ = null, padMinZ = null;
   for (const part of parts) {
     let g = part.geo;
     g = rotateX(g, panto);
     part.geo = g;
     if (part.path) part.path = part.path.map((p) => rotateXYZ(p, panto));
+    if (part.name === "bridge" || part.role === "pad") {
+      const b = bounds(g);
+      if (part.name === "bridge") {
+        bridgeMinY = bridgeMinY === null ? b.min[1] : Math.min(bridgeMinY, b.min[1]);
+        bridgeMinZ = bridgeMinZ === null ? b.min[2] : Math.min(bridgeMinZ, b.min[2]);
+      }
+      if (part.role === "pad") padMinZ = padMinZ === null ? b.min[2] : Math.min(padMinZ, b.min[2]);
+    }
     roles[part.role] = roles[part.role] ? mergeGeo(roles[part.role], g) : { ...g };
   }
   for (const k of Object.keys(roles)) {
     bbox = bbox ? unionBox(bbox, bounds(roles[k])) : bounds(roles[k]);
   }
   if (!bbox) bbox = { min: [0, 0, 0], max: [0, 0, 0], size: [0, 0, 0] };
+  // نقاطِ تکیه‌گاه: از خودِ مش اندازه‌گیری می‌شوند، نه از فرمولِ تقریبی
+  if (bridgeMinY !== null) {
+    meta.bridgeY = +bridgeMinY.toFixed(2);
+    meta.bridgeZ = +bridgeMinZ.toFixed(2);
+  }
+  if (padMinZ !== null) meta.padZ = +padMinZ.toFixed(2);
   meta.center = [(bbox.min[0] + bbox.max[0]) / 2, (bbox.min[1] + bbox.max[1]) / 2, (bbox.min[2] + bbox.max[2]) / 2];
   meta.min = bbox.min;
   meta.max = bbox.max;

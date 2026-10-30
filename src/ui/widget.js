@@ -7,6 +7,7 @@
  */
 import { Stage } from "../engine/stage.js";
 import { FaceTracker } from "../engine/tracking.js";
+import { seatRows } from "../engine/seating.js";
 import { FaceMeshScan, SHAPE_COPY, classifyShape, fitReport, recommend } from "../engine/fit.js";
 import { FaceScan, headMeshFromLandmarks, suggestSize } from "../engine/face-scan.js";
 import { packGLB, GLB_MIME } from "../frame/glb.js";
@@ -939,6 +940,9 @@ export class VirtualTryOn extends Native {
           { ...pose, pdMm: measurements.pd, faceWmm: measurements.faceW, faceHmm: measurements.faceH, noseWmm: measurements.nose },
           this.spec,
         );
+        // ردیف‌های فیزیکِ نشستن (پل/مردمک/فاصلهٔ رأس) از خودِ مدلِ روی‌صورت
+        const seatSelf = this.stage?.seat?.report;
+        if (seatSelf) rows.push(...seatRows(seatSelf, this.cfg.lang));
         const statuses = rows.map((row) => row.status);
         const summary = statuses.every((status) => status === "good")
           ? t(this.cfg.lang, "fitGreat")

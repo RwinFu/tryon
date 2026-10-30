@@ -211,7 +211,7 @@ export function toEngineSpec(product) {
   };
   for (const k of [
     "rimW", "rimT", "bevel", "pantoDeg", "splayDeg", "templeW", "templeT", "templeTaper",
-    "earDrop", "metalRimW", "metalRimT", "doubleBridge", "highBridge", "nosePads", "bridgeDrop",
+    "earDrop", "metalRimW", "metalRimT", "doubleBridge", "highBridge", "nosePads", "bridgeDrop", "bridgeAt",
     "bridgeArch", "baseCurve", "catAmp", "catWidth", "teardrop", "exp", "depth", "topFlatten",
     "nasalNotch", "topWide", "hexBlend", "hexSides", "lensTiltDeg", "lensPath", "lensPathL", "lensPathR",
     "hinge", "hingeBarrels", "endpiece", "endpieceReach", "endpieceMaterial", "earBendAt", "lensInset", "bridgeStyle", "bridgeMaterial", "browMaterial",
