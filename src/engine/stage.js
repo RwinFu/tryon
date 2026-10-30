@@ -235,7 +235,7 @@ export class Stage {
     });
     this.frame = obj;
     this.group.add(obj.group);
-    this.shadowPath = buildFrame(spec).meta.silhouette;
+    this.shadowPath = buildFrame(spec, { origin: this.frame?.group?.userData?.origin }).meta.silhouette;
     this.frameMeta = obj.group.userData.meta;
     this.onFrame?.(this.frameMeta);
     return obj;

@@ -13,7 +13,8 @@ import sharp from "sharp";
 import * as THREE from "three";
 import { FaceTracker } from "../src/engine/tracking.js";
 import { buildFrame } from "../src/frame/geometry.js";
-import { buildSeat, seatOffsetsFor, seatToPose } from "../src/engine/seating.js";
+import { createHeadOccluder, headOccluderParams } from "../src/engine/occluder.js";
+import { buildSeat, seatOffsetsFor, seatToPose, specHeadOrigin } from "../src/engine/seating.js";
 import { fitCanonicalHead, headToPx, EYE } from "../src/engine/head-fit.js";
 import { toEngineSpec, CATALOG } from "../src/frame/catalog.js";
 import { FACE_TRIS, CANONICAL_MM } from "../src/engine/face-topology.js";
@@ -78,7 +79,7 @@ const pose = tracker.solve(
 
 const product = sku ? CATALOG.find((p) => p.id === sku || p.sku === sku) || CATALOG[0] : CATALOG.find((p) => p.shape === arg("shape", "wayfarer")) || CATALOG[0];
 const spec = toEngineSpec(product);
-const built = buildFrame(spec);
+const built = buildFrame(spec, { origin: specHeadOrigin(spec) });
 const meta = built.meta;
 
 // ── دوربینِ همان Stage
@@ -251,9 +252,42 @@ function shadeFor(role) {
   };
 }
 
+// «سرِ نامرئی» — همان مشِ فقط‌عمقی که Stage پیش از فریم می‌کشد (دیوارهٔ سر +
+// لالهٔ گوش). بدونِ این، پیش‌نمایش دسته‌هایی را نشان می‌دهد که در محصول پنهان‌اند.
+if (mode === "new") {
+  const occ = createHeadOccluder(
+    THREE,
+    headOccluderParams({ vertexDistance: seat?.report?.vd ?? 13, origin: specHeadOrigin(spec) }),
+  );
+  const host = new THREE.Group();
+  host.matrixAutoUpdate = false;
+  host.matrixWorld.copy(group.matrixWorld);
+  host.add(occ);
+  occ.updateMatrixWorld(true);
+  const tmpV = new THREE.Vector3();
+  for (const m of occ.children) {
+    const g = m.geometry;
+    const pos = g.attributes.position;
+    const idx = g.index;
+    const S = [];
+    for (let i = 0; i < pos.count; i++) {
+      tmpV.fromBufferAttribute(pos, i).applyMatrix4(m.matrixWorld);
+      S.push(project(tmpV));
+    }
+    for (let t = 0; t < idx.count; t += 3) {
+      const a = S[idx.getX(t)], b = S[idx.getX(t + 1)], c = S[idx.getX(t + 2)];
+      // فقط عمق می‌نویسد، مثلِ خودِ محصول
+      if (a && b && c) fillTri(a, b, c, zbuf, () => (process.env.OCC_DEBUG ? [255, 0, 0] : null), process.env.OCC_DEBUG ? { alpha: 0.4 } : null);
+    }
+  }
+}
+
 const eye = new THREE.Vector3(0, 0, camZ);
-for (const [role, geo] of Object.entries(built.roles)) {
+const ONLY = process.env.ONLY_ROLE;
+const PART = process.env.ONLY_PART;
+for (const [role, geo] of Object.entries(PART ? {} : built.roles)) {
   if (!MATS[role]) continue;
+  if (ONLY && role !== ONLY) continue;
   const mat = MATS[role];
   const world = [];
   for (let i = 0; i < geo.position.length; i += 3) {
@@ -270,6 +304,20 @@ for (const [role, geo] of Object.entries(built.roles)) {
     if (n.dot(view) < 0) n.negate();
     const col = shader(n, view);
     fillTri(S[ia], S[ib], S[ic], zbuf, () => col, mat);
+  }
+}
+
+if (PART) {
+  for (const part of built.parts.filter((p) => p.name === PART)) {
+    const geo = part.geo;
+    const world = [];
+    for (let i = 0; i < geo.position.length; i += 3)
+      world.push(new THREE.Vector3(geo.position[i], geo.position[i + 1], geo.position[i + 2]).applyMatrix4(group.matrixWorld));
+    const S = world.map(project);
+    for (let t = 0; t < geo.index.length; t += 3) {
+      const a = S[geo.index[t]], b = S[geo.index[t + 1]], c = S[geo.index[t + 2]];
+      if (a && b && c) fillTri(a, b, c, zbuf, () => [255, 80, 80], { alpha: 1 });
+    }
   }
 }
 

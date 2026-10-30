@@ -5,6 +5,8 @@
  * فقط متریال را عوض می‌کند (بدون بازسازی مش) → تعویض رنگ آنی است.
  */
 import { buildFrame, normalizeSpec } from "./geometry.js";
+import { specHeadOrigin } from "../engine/seating.js";
+import { headOrigin } from "../engine/ear-fit.js";
 import { toThreeGeometry } from "./sweep.js";
 import { buildMaterials } from "./materials.js";
 import { buildDecals, disposeDecals } from "./decals.js";
@@ -27,10 +29,13 @@ export function frameKey(spec) {
 
 /** هندسهٔ کش‌شده (بدون متریال) */
 export function frameGeometry(THREE, spec, opts = {}) {
-  const key = frameKey(spec) + (opts.debug ? "#d" : "");
+  // مبدأِ فریم روی سر از همان نشستنِ فیزیکی می‌آید؛ مسیرِ دسته (و لالهٔ گوشِ
+  // سرِ نامرئی) به آن بسته است. صفر/NaN هرگز به هندسه نمی‌رسد.
+  const origin = opts.origin || specHeadOrigin(spec) || headOrigin();
+  const key = frameKey(spec) + "@" + origin.oz.toFixed(1) + (opts.debug ? "#d" : "");
   let entry = geoCache.get(key);
   if (!entry) {
-    const built = buildFrame(spec);
+    const built = buildFrame(spec, { origin });
     const roles = {};
     for (const [role, g] of Object.entries(built.roles)) {
       const geo = toThreeGeometry(g, THREE);
@@ -43,6 +48,7 @@ export function frameGeometry(THREE, spec, opts = {}) {
       meta: built.meta,
       spec: built.spec,
       tris: built.meta.tris,
+      origin,
       paths: built.parts.filter((p) => p.path && p.path.length > 2).map((p) => ({ name: p.name, role: p.role, path: p.path, sw: p.sw })),
     };
     geoCache.set(key, entry);
@@ -59,7 +65,7 @@ export function frameGeometry(THREE, spec, opts = {}) {
 export function createFrameObject(THREE, product, opts = {}) {
   const spec = product.spec || product;
   const quality = opts.quality || "high";
-  const { roles, meta, paths } = frameGeometry(THREE, spec, opts);
+  const { roles, meta, paths, origin } = frameGeometry(THREE, spec, opts);
   const group = new THREE.Group();
   group.name = "frame";
   let mats = buildMaterials(THREE, {
@@ -102,7 +108,12 @@ export function createFrameObject(THREE, product, opts = {}) {
   if (opts.occluder !== false) {
     occluder = createHeadOccluder(
       THREE,
-      headOccluderParams({ frameHalfWidth: meta.hingeX || meta.size[0] / 2, faceWmm: opts.faceWmm, vertexDistance: opts.vertexDistance }),
+      headOccluderParams({
+        frameHalfWidth: meta.hingeX || meta.size[0] / 2,
+        faceWmm: opts.faceWmm,
+        vertexDistance: opts.vertexDistance,
+        origin,
+      }),
     );
     group.add(occluder);
   }
@@ -151,7 +162,7 @@ export function createFrameObject(THREE, product, opts = {}) {
     /** «سر نامرئی» را با پهنای صورتِ اندازه‌گیری‌شده (mm) هم‌اندازه می‌کند */
     fitHead(faceWmm, vertexDistance) {
       if (!occluder) return null;
-      const p = headOccluderParams({ frameHalfWidth: meta.hingeX || meta.size[0] / 2, faceWmm, vertexDistance });
+      const p = headOccluderParams({ frameHalfWidth: meta.hingeX || meta.size[0] / 2, faceWmm, vertexDistance, origin });
       applyHeadOccluder(occluder, p);
       return p;
     },
@@ -161,8 +172,10 @@ export function createFrameObject(THREE, product, opts = {}) {
       decalMeshes = [];
       // هندسهٔ فریم در کش است (برای تعویض آنی)؛ فقط سرِ نامرئی مالِ همین نمونه است
       if (occluder) {
-        occluder.geometry.dispose();
-        occluder.material.dispose();
+        for (const child of occluder.children || [occluder]) {
+          child.geometry?.dispose();
+        }
+        (occluder.children?.[0] || occluder).material?.dispose();
       }
     },
   };

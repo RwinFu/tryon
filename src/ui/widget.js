@@ -167,7 +167,7 @@ export class VirtualTryOn extends Native {
         <div id="gateBusy"></div>
         <div class="startChoices">
           <button class="go" id="start"><span class="choiceIcon">●</span><span>${L("start")}<small>${L("live")}</small></span></button>
-          ${c.features.photo ? `<button class="btn photoChoice" id="photoStart"><span class="choiceIcon">▧</span><span>${L("photoTry")}<small>${L("backToCamera")}</small></span></button>` : ""}
+          ${c.features.photo ? `<button class="btn photoChoice" id="photoStart"><span class="choiceIcon">▧</span><span>${L("photoTry")}<small>${L("photoSub")}</small></span></button>` : ""}
         </div>
         <p class="priv"><span>✓</span>${L("privacy")}</p>
       </div>
