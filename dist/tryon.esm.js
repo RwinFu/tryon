@@ -3902,7 +3902,7 @@ button {
   flex: 1 1 auto;
   min-height: 0;
   width: 100%;
-  background: #070808;
+  background: radial-gradient(120% 90% at 50% 30%, #1c1f1f 0, #0c0d0d 62%, #070808 100%);
   overflow: hidden;
   isolation: isolate;
 }
@@ -3995,7 +3995,7 @@ button {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: max(10px, env(safe-area-inset-top)) 12px 30px;
+  padding: max(8px, env(safe-area-inset-top)) 12px 34px;
   background: linear-gradient(180deg, rgba(5, 7, 7, 0.55), rgba(5, 7, 7, 0));
   pointer-events: none;
 }
@@ -4016,8 +4016,8 @@ button {
   max-width: 46%;
 }
 .ghost {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   flex: 0 0 auto;
   display: grid;
   place-items: center;
@@ -4252,8 +4252,8 @@ button {
   min-height: 0;
 }
 .dot {
-  width: 22px;
-  height: 22px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   border: 2px solid rgba(255, 255, 255, 0.2);
   transition: transform 0.16s, border-color 0.16s;
