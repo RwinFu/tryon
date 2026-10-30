@@ -87,7 +87,7 @@ virtual-tryon {
   border: 1px solid #e5e5e5;
 }
 virtual-tryon::part(stage) { background: #fff; }
-virtual-tryon::part(dock) { backdrop-filter: none; }
+virtual-tryon::part(shelf) { background: #fff; }
 ```
 
 ---
