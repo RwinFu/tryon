@@ -98,7 +98,7 @@
 
     <script type="module">
       const PHOTO = "./test/fixtures/astronaut.jpg";
-      const mk = (mount) =>
+      const mk = (mount, extra = {}) =>
         window.TryOn.init({
           mount,
           mode: "inline",
@@ -107,10 +107,12 @@
           quality: "high",
           products: "./products.json",
           cart: { mode: "event" },
+          ...extra,
         });
 
       // ۱ و ۳: فقط صفحهٔ خوش‌آمد (دوربین روشن نمی‌شود تا پیش‌نمایش خراب نشود)
-      const gateOnly = (mount) => mk(mount);
+      // در قاب‌های خوش‌آمد، قفسه پشتِ گیت است؛ تامبنیلِ سه‌بعدی لازم ندارد.
+      const gateOnly = (mount) => mk(mount, { features: { thumbnails: false } });
 
       async function photoPanel(mount) {
         const api = mk(mount);
@@ -122,6 +124,7 @@
         return api;
       }
 
+      const whenReady = (fn) => (window.TryOn ? fn() : setTimeout(() => whenReady(fn), 60));
       const boot = async () => {
         gateOnly(document.getElementById("p1"));
         gateOnly(document.getElementById("p3"));

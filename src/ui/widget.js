@@ -123,7 +123,7 @@ export class VirtualTryOn extends Native {
 
   <div class="shelf" part="shelf">
     <div class="shelfHead">
-      <span class="prod" id="pName"></span>
+      <span class="prod" id="pName">${L("selectFrame")}</span>
       <span class="price" id="pPrice"></span>
     </div>
     <span class="fitline" id="pFit" data-state="idle"><i></i><em></em></span>
