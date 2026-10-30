@@ -8,6 +8,7 @@
  */
 
 import { Camera, cameraErrorInfo } from "./camera.js";
+import { fitCanonicalHead } from "./head-fit.js";
 import { solveWearableScale } from "./seating.js";
 
 const MIRRORS = {
@@ -410,7 +411,26 @@ export class FaceTracker {
     const faceL = this.px(lms[P.faceL]), faceR = this.px(lms[P.faceR]);
     const faceW = Math.max(1, Math.hypot(faceR.x - faceL.x, faceR.y - faceL.y));
 
-    const q = quatFrom(res, lms, { midEye, nose, tip, faceW, H, W }, (v) => this.px(v));
+    // ── برازشِ چگالِ سرِ کانونیک روی همهٔ ۴۶۸ نقطه ──────────────────────
+    // چرخش و مقیاسِ متریک از دلِ همین برازش می‌آید (نه از ماتریسِ MediaPipe که
+    // در نیم‌رخ اشتباه است، و نه از حدسِ PD). برای هزینهٔ کم، زوایای فریمِ قبل
+    // به‌عنوان seed داده می‌شود (۴ms در برابر ۲۲ms).
+    let headFit = null;
+    try {
+      headFit = fitCanonicalHead(lms, { W, H, seed: this._fitSeed || undefined });
+    } catch { headFit = null; }
+    const trustFit = !!(
+      headFit && headFit.ok &&
+      headFit.rmsPx < 6.5 && headFit.rmsMm < 14 &&
+      headFit.scale > 0.15 && headFit.scale < 3 &&
+      headFit.inlierRatio > 0.42 && headFit.confidence > 0.2
+    );
+    if (trustFit) {
+      this._fitSeed = { yaw: headFit.yaw * 57.2957795, pitch: headFit.pitch * 57.2957795, roll: headFit.roll * 57.2957795 };
+    }
+    const q = trustFit
+      ? headFit.q.slice()
+      : quatFrom(res, lms, { midEye, nose, tip, faceW, H, W }, (v) => this.px(v));
     const front = applyQ(q, [0, 0, 1]);
     const eyeAxis = applyQ(q, [1, 0, 0]);
     const projectedEyeAxis = Math.max(0.45, Math.hypot(eyeAxis[0], eyeAxis[1]));
@@ -442,7 +462,9 @@ export class FaceTracker {
     const scaleSolution = solveWearableScale({
       eyeSpanPx: iris, pdMm, faceWidthPx: faceW, projectedAxis: projectedEyeAxis,
     });
-    const scale = scaleSolution.scale;
+    // مقیاسِ متریک: برازشِ چگال مستقیم px/mm را می‌دهد (خطای اندازه‌گیری‌شدهٔ
+    // روشِ PD روی عکسِ آزمون ۶ تا ۹ درصد بود). PD فقط بازگشتِ امن است.
+    const scale = trustFit ? headFit.scale : scaleSolution.scale;
     const vgPx = this.vg * scale;
     const socketL = mid(lms[33], lms[133]);
     const socketR = mid(lms[362], lms[263]);
@@ -506,6 +528,7 @@ export class FaceTracker {
       noseWmm,
       chinPx: chin, pdMm, autoPd: this.autoPd, pdLocked: this.pdLocked,
       landmarkPx: (i) => this.px(lms[i]),
+      vgMm: this.vg,
       landmarks: lms,
       eyes: { l: eyeL, r: eyeR },
       nose: { x: nose.x, y: nose.y },
@@ -515,6 +538,9 @@ export class FaceTracker {
         frontal: front[2], yaw, visualYaw, pitch, size: faceW / W, scaleConfidence,
         hint: faceW / W < 0.28 ? "closer" : Math.max(yaw, Math.abs(visualYaw)) > 0.78 || front[2] < 0.42 ? "frontal" : Math.abs(pitch) > 0.42 ? "level" : bridgeY / Math.max(1, iris) > 0.9 ? "down" : null,
       },
+      // برازشِ چگال برای موتورِ نشستن (Stage/seating) — شامل چرخش، مقیاس و کیفیت
+      headFit: trustFit ? headFit : null,
+      seatSource: trustFit ? "dense-468" : "pd-fallback",
       stable: !relock,
       mirrored: this.camera.isMirrored,
       facing: this.camera.facing,

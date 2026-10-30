@@ -26,6 +26,9 @@ const median = (a) => {
 const dist2 = (a, b) => (a.x - b.x) ** 2 + (a.y - b.y) ** 2 + ((a.z || 0) - (b.z || 0)) ** 2;
 
 /** ایندکس‌های لندمارک MediaPipe که به آن‌ها نیاز داریم */
+import { fitCanonicalHead } from "./head-fit.js";
+import { noseGripWidth } from "./face-surface.js";
+
 export const LM = {
   irisL: 468, // مردمکِ چپِ تصویر (چشمِ راستِ فرد)
   irisR: 473,
@@ -72,6 +75,35 @@ export function irisCentre(lms, side) {
   return mid(lms[side === "l" ? LM.eyeOuterL : LM.eyeOuterR], lms[side === "l" ? LM.eyeInnerL : LM.eyeInnerR]);
 }
 
+/**
+ * قطرِ افقیِ عنبیه در پیکسل، از چهار نقطهٔ لبهٔ عنبیه (۴۶۹–۴۷۲ و ۴۷۴–۴۷۷).
+ * اگر مدلِ ریز-عنبیه نبود، از نسبتِ فیزیولوژیکِ عنبیه/PD استفاده می‌شود؛
+ * عددِ ثابتِ «۰٫۴۲»ی قبلی در واقع نصفِ PD را می‌داد و مقیاس را ۲٫۴ برابر
+ * بزرگ می‌کرد (همان خطای اندازه‌ای که نشستنِ عینک را خراب می‌کرد).
+ */
+export function irisDiameterPx(lms, W = 1) {
+  const eyes = [
+    [468, [469, 470, 471, 472]],
+    [473, [474, 475, 476, 477]],
+  ];
+  const ds = [];
+  for (const [c, ring] of eyes) {
+    const C = lms[c];
+    if (!C) continue;
+    const r = ring
+      .filter((i) => lms[i])
+      .map((i) => Math.hypot(lms[i].x - C.x, lms[i].y - C.y) * W);
+    if (r.length >= 3) ds.push((2 * (r.reduce((a, b) => a + b, 0) / r.length)));
+  }
+  const pd = interpupillaryPx(lms) * W;
+  if (ds.length) {
+    const d = median(ds);
+    // نگهبان: قطرِ عنبیه باید بین ۰٫۰۹ و ۰٫۳۲ فاصلهٔ مردمک‌ها باشد
+    if (pd > 0 && d > pd * 0.09 && d < pd * 0.32) return d;
+  }
+  return pd * (IRIS_MM / 63);
+}
+
 /** فاصلهٔ چشمِ چپ تا چشمِ راست در واحدِ تصویر */
 export function interpupillaryPx(lms) {
   const a = irisCentre(lms, "l"),
@@ -104,14 +136,18 @@ export function frameQuality(lms, ctx = {}) {
     b = irisCentre(lms, "r");
   const roll = Math.abs(Math.atan2(b.y - a.y, b.x - a.x));
   const midE = mid(a, b);
-  const nose = lms[LM.noseTip] || lms[4];
+  const nose = lms[LM.noseTip] || lms[4] || { x: midE.x, y: midE.y + 0.05 };
   const tilt = Math.abs(Math.atan2(nose.x - midE.x, Math.max(1e-4, Math.abs(nose.y - midE.y))));
   // چرخشِ سر حول محور عمودی: نوکِ بینی باید روی خطِ دو چشم بماند
   const ipd = Math.max(1e-4, interpupillaryPx(lms));
   const nb = lms[LM.noseBridgeTop] || lms[168];
   // چرخشِ سر: هم انحرافِ پل از خطِ چشم‌ها، هم نامتقارنیِ دو نیمهٔ صورت
-  const yawNose = Math.abs(nb.x - midE.x) / ipd;
-  const yawAsym = Math.abs(Math.abs(nb.x - lms[LM.cheekL].x) - Math.abs(nb.x - lms[LM.cheekR].x)) / ipd;
+  const yawNose = Math.abs((nb?.x ?? midE.x) - midE.x) / ipd;
+  // نگهبان: چند نسخهٔ مدل این نقاط را ندارند؛ قبلاً خواندنِ بی‌قید، اسکن را
+  // با TypeError در وسطِ ویدیو می‌شکست.
+  const yawAsym = lms[LM.cheekL] && lms[LM.cheekR]
+    ? Math.abs(Math.abs(nb.x - lms[LM.cheekL].x) - Math.abs(nb.x - lms[LM.cheekR].x)) / ipd
+    : 0;
   const yawCue = Math.max(yawAsym, yawNose * 1.5);
   const frontality = clamp(1 - Math.max(0, yawCue - 0.08) / 0.4, 0, 1);
   if (roll > 0.18) reasons.push("level");
@@ -119,7 +155,11 @@ export function frameQuality(lms, ctx = {}) {
   if (yawCue > 0.22) reasons.push("frontal");
 
   // ۳) پلک‌ها باز (نسبتِ قدِ شکاف)
-  const ear = (up, lo) => Math.hypot(lms[up].x - lms[lo].x, lms[up].y - lms[lo].y);
+  const ear = (up, lo) => {
+    const A = lms[up], B = lms[lo];
+    if (!A || !B) return 0.1; // نامعلوم ⇒ پلک‌زدن فرض نمی‌شود
+    return Math.hypot(A.x - B.x, A.y - B.y);
+  };
   const eyeL = ear(159, 145) / Math.max(1e-4, interpupillaryPx(lms));
   const eyeR = ear(386, 374) / Math.max(1e-4, interpupillaryPx(lms));
   if (eyeL < 0.055 || eyeR < 0.055) reasons.push("eyes");
@@ -144,28 +184,53 @@ export function frameQuality(lms, ctx = {}) {
 /** یک نمونهٔ اندازه‌گیری از یک فریمِ خوب (واحد: تصویر) */
 export function measureFrame(lms, ctx = {}) {
   const W = Math.max(1, ctx.W || 640);
+  const H0 = Math.max(1, ctx.H || Math.round((W * 3) / 4));
   const iris = Math.max(1e-4, interpupillaryPx(lms) * W);
-  const irisDia = ctx.irisDiaPx || iris * 0.42; // قطرِ عنبیه از چهار نقطه، اگر نبود تخمین
-  const scale = irisDia / IRIS_MM; // px per mm
+  // مقیاسِ متریک: اگر برازشِ چگال در دسترس باشد (پیش‌فرض)، از آن می‌آید؛
+  // وگرنه قطرِ عنبیه (که با ۴ نقطه سنجیده می‌شود، نه یک عددِ ثابتِ حدسی).
+  let fit = ctx.fit || null;
+  if (!fit && lms && lms.length >= 468) {
+    try { fit = fitCanonicalHead(lms, { W, H: H0, seed: ctx.seed }); } catch { fit = null; }
+  }
+  const irisDia = ctx.irisDiaPx || irisDiameterPx(lms, W); // پهنای عنبیه در تصویر
+  const irisScale = irisDia / IRIS_MM;
+  // برازشِ چگال فقط وقتی پذیرفته می‌شود که «واقعاً» روی این صورت بنشیند:
+  // خطای بازتصویرِ کوچک و مقیاسی نزدیک به مقیاسِ عنبیه. (سرِ آزمایشیِ مصنوعی،
+  // که شکلِ مدلِ رسمی را ندارد، خودبه‌خود رد می‌شود و مسیرِ عنبیه می‌ماند.)
+  const fitOk = !!(
+    fit && fit.ok && fit.scale > 0.15 && fit.scale < 3 &&
+    fit.rmsPx < Math.max(1.6, iris * 0.09) &&
+    fit.inlierRatio > 0.55 &&
+    irisScale > 0 && fit.scale / irisScale > 0.72 && fit.scale / irisScale < 1.4
+  );
+  const usable = fitOk;
+  const scale = usable ? fit.scale : irisScale; // px per mm
   const mm = (v) => v / scale;
   const a = irisCentre(lms, "l");
   const b = irisCentre(lms, "r");
   const midE = mid(a, b);
   const pdPx = Math.hypot(a.x - b.x, a.y - b.y) * W;
   // خطِ وسطِ صورت: از نوک بینی به چانه (در تصویرِ روبه‌رو عمودی است)
-  const chin = lms[LM.chin];
-  const midChin = { x: (lms[61].x + lms[291].x) / 2, y: (lms[61].y + lms[291].y) / 2 };
+  const chin = lms[LM.chin] || lms[152] || { x: midE.x, y: midE.y + 0.2 };
+  const midChin = lms[61] && lms[291]
+    ? { x: (lms[61].x + lms[291].x) / 2, y: (lms[61].y + lms[291].y) / 2 }
+    : chin;
   const dx = midChin.x - midE.x,
     dy = midChin.y - midE.y;
   const L = Math.hypot(dx, dy) || 1;
   const ux = dx / L,
     uy = dy / L; // یکهٔ عمود بر محورِ صورت (رو به پایین)
   const perpDist = (p) => Math.abs(ux * (p.y - midE.y) - uy * (p.x - midE.x)) * W;
-  const cheek = Math.hypot(lms[LM.cheekR].x - lms[LM.cheekL].x, lms[LM.cheekR].y - lms[LM.cheekL].y) * W;
-  const temple = Math.hypot(lms[LM.templeR].x - lms[LM.templeL].x, lms[LM.templeR].y - lms[LM.templeL].y) * W;
-  const height = Math.hypot(chin.x - lms[LM.top].x, chin.y - lms[LM.top].y) * W;
-  const jaw = Math.hypot(lms[LM.jawR].x - lms[LM.jawL].x, lms[LM.jawR].y - lms[LM.jawL].y) * W;
-  const canthi = Math.hypot(lms[LM.eyeInnerL].x - lms[LM.eyeInnerR].x, lms[LM.eyeInnerL].y - lms[LM.eyeInnerR].y) * W;
+  const dist = (ia, ib, fallback = 0) => {
+    const A = lms[ia], B = lms[ib];
+    if (!A || !B) return fallback;
+    return Math.hypot(A.x - B.x, A.y - B.y) * W;
+  };
+  const cheek = dist(LM.cheekR, LM.cheekL, 0.42 * W);
+  const temple = dist(LM.templeR, LM.templeL, 0.44 * W);
+  const height = lms[LM.top] ? Math.hypot(chin.x - lms[LM.top].x, chin.y - lms[LM.top].y) * W : 0.24 * W;
+  const jaw = dist(LM.jawR, LM.jawL, 0.3 * W);
+  const canthi = dist(LM.eyeInnerL, LM.eyeInnerR, iris);
   // عرضِ پل بینی: فاصلهٔ دو سوی پل در سه ارتفاع (نه فاصلهٔ گوشه‌های چشم)
   const sides = [[LM.noseBridgeL, LM.noseBridgeR], [LM.bridgeLoL, LM.bridgeLoR]];
   const bridgePx = median(
@@ -173,7 +238,7 @@ export function measureFrame(lms, ctx = {}) {
       .filter(([a2, b2]) => lms[a2] && lms[b2])
       .map(([a2, b2]) => Math.hypot(lms[a2].x - lms[b2].x, lms[a2].y - lms[b2].y) * W),
   );
-  const noseW = Math.hypot(lms[LM.noseAlarR].x - lms[LM.noseAlarL].x, lms[LM.noseAlarR].y - lms[LM.noseAlarL].y) * W;
+  const noseW = dist(LM.noseAlarR, LM.noseAlarL, iris * 0.5);
   return {
     // PD تک‌چشمی: فاصلهٔ هر مردمک تا خطِ وسطِ صورت (نصفِ PD در صورتِ متقارن)
     pdMono: { l: mm(perpDist(a)), r: mm(perpDist(b)) },
@@ -188,6 +253,23 @@ export function measureFrame(lms, ctx = {}) {
     roll: +(Math.atan2(b.y - a.y, b.x - a.x) * 57.2958).toFixed(2),
     scale,
     irisDiaPx: irisDia,
+    // ── سنجه‌های چگال (۴۶۸ نقطه) ──────────────────────────────────────────
+    dense: usable
+      ? {
+          ok: true,
+          faceW: +(fit.metrics.faceWidth).toFixed(1),
+          faceH: +(fit.metrics.faceHeight).toFixed(1),
+          noseW: +fit.metrics.noseBridge.toFixed(1),
+          bridgeGrip: +noseGripWidth(fit.canonical[6 * 3 + 1] - 6, fit.canonical[6 * 3 + 1] + 4).toFixed(1),
+          yawDeg: +(fit.euler.yaw * 57.2958).toFixed(1),
+          pitchDeg: +(fit.euler.pitch * 57.2958).toFixed(1),
+          rollDeg: +(fit.euler.roll * 57.2958).toFixed(1),
+          rmsPx: +fit.rmsPx.toFixed(2),
+          rmsMm: +fit.rmsMm.toFixed(2),
+          inliers: +fit.inlierRatio.toFixed(3),
+          confidence: fit.confidence,
+        }
+      : null,
   };
 }
 
@@ -244,6 +326,7 @@ export class FaceScan {
     this.quality = { score: 0, reasons: ["noface"], ok: false, frontality: 0, size: 0, motion: 0 };
     this.lastGood = null;
     this.report = null;
+    this._seed = null;
     this.progress = 0;
     return this;
   }
@@ -297,7 +380,10 @@ export class FaceScan {
     // مرحلهٔ ۳: جمع‌آوریِ نمونه‌های باکیفیت
     if (this.stage === "measure") {
       if (q.ok) {
-        this.samples.push(measureFrame(lms, ctx));
+        const m = measureFrame(lms, { ...ctx, seed: this._seed });
+        this.samples.push(m);
+        // زوایای همین نمونه، seedِ برازشِ فریمِ بعد می‌شود (هزینهٔ ۴ms در برابر ۲۲ms)
+        if (m.dense && m.dense.ok) this._seed = { yaw: m.dense.yawDeg, pitch: m.dense.pitchDeg, roll: m.dense.rollDeg };
         this.lastGood = lms.map((p) => ({ x: p.x, y: p.y, z: p.z || 0 }));
       }
       this.progress = 0.2 + clamp(this.samples.length / this.need, 0, 1) * 0.8;
@@ -323,6 +409,24 @@ export class FaceScan {
     const noseW = robust(S.map((s) => s.noseW));
     const height = robust(S.map((s) => s.height));
     const roll = robust(S.map((s) => Math.abs(s.roll)));
+    // سنجه‌های چگال: میانهٔ نتایجِ برازشِ ۴۶۸ نقطه‌ای روی نمونه‌های باکیفیت
+    const denseSamples = S.map((s) => s.dense).filter((d) => d && d.ok);
+    const dense = denseSamples.length
+      ? {
+          samples: denseSamples.length,
+          faceW: +median(denseSamples.map((d) => d.faceW)).toFixed(1),
+          faceH: +median(denseSamples.map((d) => d.faceH)).toFixed(1),
+          noseW: +median(denseSamples.map((d) => d.noseW)).toFixed(1),
+          bridgeGrip: +median(denseSamples.map((d) => d.bridgeGrip)).toFixed(1),
+          yawSpread: +(Math.max(...denseSamples.map((d) => d.yawDeg)) - Math.min(...denseSamples.map((d) => d.yawDeg))).toFixed(2),
+          pitchSpread: +(Math.max(...denseSamples.map((d) => d.pitchDeg)) - Math.min(...denseSamples.map((d) => d.pitchDeg))).toFixed(2),
+          rmsPx: +median(denseSamples.map((d) => d.rmsPx)).toFixed(2),
+          rmsMm: +median(denseSamples.map((d) => d.rmsMm)).toFixed(2),
+          inliers: +median(denseSamples.map((d) => d.inliers)).toFixed(3),
+          confidence: +median(denseSamples.map((d) => d.confidence)).toFixed(3),
+          source: "dense-468",
+        }
+      : null;
     const ratio = (v) => v / Math.max(1, cheek.value);
     const metrics = { length: ratio(height.value), jaw: ratio(jaw.value), forehead: ratio(temple.value) };
     let shape = null;
@@ -353,6 +457,9 @@ export class FaceScan {
       height: height.value,
       roll: +roll.value.toFixed(2),
       shape,
+      dense,
+      // مسیرِ اندازه‌گیری: «۴۶۸ نقطه» یا «عنبیه» — برای نمایشِ اطمینان به کاربر
+      metricSource: dense ? "dense-468" : "iris",
       ratios: {
         length: +metrics.length.toFixed(3),
         jaw: +metrics.jaw.toFixed(3),
@@ -479,13 +586,18 @@ export function headMeshFromLandmarks(lms, ctx = {}) {
 /** پیشنهادِ اندازهٔ فریم بر پایهٔ اسکن حرفه‌ای (اندازهٔ استاندارد اپتومتری) */
 export function suggestSize(report, catalogSizes) {
   if (!report) return null;
-  const frameW = report.temple * 1.06; // فریم باید کمی پهن‌تر از عرض شقیقه باشد
+  // پهنای کلِ فریم باید کمی از پهنای شقیقه بیشتر باشد؛ و آن پهنای کل =
+  // ۲×پهنای عدسی + فاصلهٔ بینیِ فریم.
+  const frameW = report.temple * 1.06;
   const dbn = report.bridge * 0.96;
   const lensW = (frameW - dbn) / 2;
   let best = null;
+  // کاتالوگ «پهنای عدسی» را برحسبِ میلی‌متر می‌دهد (۵۲□۱۸-۱۴۵) — قبلاً همین
+  // عدد با پهنای کلِ فریم مقایسه می‌شد و همیشه بزرگ‌ترین سایز انتخاب می‌شد.
   for (const s of catalogSizes || ["48", "50", "52", "54", "56"]) {
     const v = parseFloat(s);
-    const d = Math.abs(v - frameW);
+    if (!Number.isFinite(v)) continue;
+    const d = Math.abs(v - lensW);
     if (!best || d < best.d) best = { size: s, d };
   }
   return {

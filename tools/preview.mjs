@@ -214,5 +214,7 @@ if (process.argv[1] && process.argv[1].endsWith("preview.mjs")) {
   const specs = JSON.parse(get("specs", "null")) || [JSON.parse(get("spec", "{}"))];
   const out = get("out", "/tmp/tryon-preview.png");
   const res = await previewFrame(specs, out.replace(/\.png$/, ""), { views: +get("views", 4) });
-  console.log(JSON.stringify(res.metas || res.meta), res.files.join(" "));
+  // قراردادِ قدیمی `files` بود؛ خروجیِ فعلی `file` تک‌فایل است.
+  const files = res.files || (res.file ? [res.file] : []);
+  console.log(JSON.stringify(res.metas || res.meta), files.join(" "));
 }

@@ -9,6 +9,7 @@ import { buildStudioEnvironment } from "../frame/materials.js";
 import { createHeadOccluder, applyHeadOccluder, headOccluderParams } from "./occluder.js";
 import { applyQ } from "./tracking.js";
 import { bridgeSeatAdjustment } from "./fit.js";
+import { seatOffsetsFor, seatToPose } from "./seating.js";
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 
@@ -98,6 +99,7 @@ export class Stage {
     this.frame = null;
     this.frameKey = "";
     this.product = null;
+    this.seat = null; // آخرین نشستنِ محاسبه‌شده (برای سایهٔ تماسی و گزارش)
     this.W = 0;
     this.H = 0;
     this.camZ = 900;
@@ -353,6 +355,28 @@ export class Stage {
   }
 
   // ─── جای‌گذاری فریم ───
+  /** آفستِ نشستن (کش‌شده) + تبدیل به مختصاتِ صحنه برای همین pose */
+  seatFor(pose) {
+    const spec = this.product?.spec || this.product;
+    if (!spec || !pose) return null;
+    if (this._seatSpec !== spec) {
+      this._seatSpec = spec;
+      this._seatOffsets = seatOffsetsFor(spec);
+    }
+    if (!this._seatOffsets) return null;
+    try {
+      return seatToPose(this._seatOffsets, pose, this.W, this.H, {
+        camZ: this.camZ,
+        vgMm: pose.vgMm,
+        q: pose.q,
+        // مقیاسِ صاف‌شدهٔ tracker (نه scaleِ خامِ برازش) تا اندازهٔ فریم نلرزد
+        scale: pose.scale,
+      });
+    } catch {
+      return null;
+    }
+  }
+
   place(pose) {
     if (!this.frame || !pose) return;
     this.camZ = pose.camZ || this.camZ;
@@ -368,16 +392,27 @@ export class Stage {
     // اما CSS کل stage را mirror می‌کند، پس محاسبه همان می‌ماند
     // فقط اگر mirrored نباشد، باید x را نسبت به مرکز معکوس نکنیم - اما pose از تصویر واقعی است
     // برای سادگی: pose.x را همان نگه می‌داریم، CSS mirror همه چیز را درست می‌کند
-    const seat = bridgeSeatAdjustment(pose, this.product?.spec || this.product);
-    // پل باریک‌تر اندکی بالاتر می‌نشیند؛ اصلاح در فضای میلی‌متر است و همراه
-    // perspective به پیکسل تبدیل می‌شود. anchor اصلی چشم/بینی دست‌نخورده می‌ماند.
-    g.position.set(
-      (pose.x - this.W / 2) * k,
-      (this.H / 2 - pose.y) * k + seat.yMm * pose.scale * k,
-      pose.z + seat.zMm * pose.scale,
-    );
-    g.scale.setScalar(pose.scale * this.tryOnZoom);
-    g.quaternion.set(pose.q[0], pose.q[1], pose.q[2], pose.q[3]);
+    // ── نشستنِ فریم ─────────────────────────────────────────────────────
+    // مسیرِ نو: آفستِ نشستن (پل/بالشتک روی بینی) یک‌بار از هندسهٔ خودِ فریم و
+    // مدلِ کاملِ صورت حساب می‌شود، سپس با چرخش/مقیاسِ همان pose به صحنه می‌آید.
+    // مسیرِ قدیمی (اصلاحِ سادهٔ پل) فقط بازگشتِ امن است.
+    const seat = this.seatFor(pose);
+    if (seat) {
+      g.position.set(seat.x, seat.y, seat.z);
+      g.scale.setScalar(seat.scale * this.tryOnZoom);
+      g.quaternion.set(seat.q[0], seat.q[1], seat.q[2], seat.q[3]);
+      this.seat = seat;
+    } else {
+      const adjust = bridgeSeatAdjustment(pose, this.product?.spec || this.product);
+      g.position.set(
+        (pose.x - this.W / 2) * k,
+        (this.H / 2 - pose.y) * k + adjust.yMm * pose.scale * k,
+        pose.z + adjust.zMm * pose.scale,
+      );
+      g.scale.setScalar(pose.scale * this.tryOnZoom);
+      g.quaternion.set(pose.q[0], pose.q[1], pose.q[2], pose.q[3]);
+      this.seat = null;
+    }
     this.frame.fitHead?.(pose.faceWmm, this.opts.vertexDistance);
     g.visible = true;
   }
@@ -407,8 +442,15 @@ export class Stage {
     c.lineCap = "round"; c.lineJoin = "round";
     c.strokeStyle = `rgba(12,8,6,${opacity})`;
     c.filter = `blur(${blur}px)`;
-    const q = pose.q, s = pose.scale, k = (this.camZ - pose.z) / this.camZ,
-      px = (pose.x - W / 2) * k, py = (H / 2 - pose.y) * k, pz = pose.z;
+    // سایه باید دقیقاً از همان جای فریم بیاید؛ اگر نشستنِ نو حساب شده باشد،
+    // همان مبدأ/مقیاس/چرخش استفاده می‌شود تا سایه یک‌پیکسل هم جدا نیفتد.
+    const seated = this.seat;
+    const q = seated ? seated.q : pose.q;
+    const s = seated ? seated.scale : pose.scale;
+    const k = (this.camZ - pose.z) / this.camZ;
+    const px = seated ? seated.x : (pose.x - W / 2) * k;
+    const py = seated ? seated.y : (H / 2 - pose.y) * k;
+    const pz = seated ? seated.z : pose.z;
     const strokes = this.shadowPath.filter((stroke) => /^(rim|brow|bridge|topbar)/.test(stroke.name || ""));
     for (const stroke of strokes) {
       // سایه باید تماس فریم با پوست را القا کند، نه یک نسخهٔ قهوه‌ای و ضخیم
