@@ -143,6 +143,9 @@ export function bridgeSeatAdjustment(pose, spec) {
  */
 export function fitReport(product, pose, spec) {
   if (!pose || !spec) return [];
+  // اگر سر خیلی چرخیده باشد (نیم‌رخ)، پهنای صورت از لندمارکِ گونهٔ پنهان
+  // ساختگی می‌شود. در آن حالت عدد نشان نمی‌دهیم؛ یک ردیفِ صریح می‌گذاریم.
+  const unreliable = pose.quality && pose.quality.faceWidthReliable === false;
   const faceW = pose.faceWmm ?? pose.faceW / pose.scale; // mm
   const lensCenterDist = spec.lensW + spec.dbn; // mm (فاصلهٔ مرکز تا مرکز عدسی‌ها)
   const total = 2 * spec.lensW + spec.dbn;
@@ -151,18 +154,28 @@ export function fitReport(product, pose, spec) {
   const out = [];
 
   const widthRatio = total / Math.max(60, faceW);
-  out.push({
-    key: "width",
-    label: "پهنای فریم",
-    value: `${Math.round(total)} / ${Math.round(faceW)} mm`,
-    status: widthRatio > 1.1 || widthRatio < 0.86 ? "warn" : "good",
-    hint:
-      widthRatio > 1.1
-        ? "فریم از عرض صورت بزرگ‌تر است؛ روی شقیقه فشار می‌آورد و می‌لغزد."
-        : widthRatio < 0.86
-          ? "فریم کوچک‌تر از صورت است و گوشه‌های صورت را پهن‌تر نشان می‌دهد."
-          : "پهنای فریم با عرض صورت هم‌خوان است.",
-  });
+  out.push(
+    unreliable
+      ? {
+          key: "width",
+          label: "پهنای فریم",
+          value: `${Math.round(total)} mm`,
+          status: "warn",
+          hint: "سر چرخیده بود؛ برای سنجشِ پهنای صورت روبه‌رو نگاه کن (تصویر تازه بگیر).",
+        }
+      : {
+          key: "width",
+          label: "پهنای فریم",
+          value: `${Math.round(total)} / ${Math.round(faceW)} mm`,
+          status: widthRatio > 1.1 || widthRatio < 0.86 ? "warn" : "good",
+          hint:
+            widthRatio > 1.1
+              ? "فریم از عرض صورت بزرگ‌تر است؛ روی شقیقه فشار می‌آورد و می‌لغزد."
+              : widthRatio < 0.86
+                ? "فریم کوچک‌تر از صورت است و گوشه‌های صورت را پهن‌تر نشان می‌دهد."
+                : "پهنای فریم با عرض صورت هم‌خوان است.",
+        },
+  );
 
   out.push({
     key: "decentration",

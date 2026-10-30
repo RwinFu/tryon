@@ -8,8 +8,9 @@
  */
 
 import { Camera, cameraErrorInfo } from "./camera.js";
-import { fitCanonicalHead } from "./head-fit.js";
+import { fitCanonicalHead, headToPx } from "./head-fit.js";
 import { solveWearableScale } from "./seating.js";
+import { CANONICAL_MM } from "./face-topology.js";
 
 const MIRRORS = {
   vision: [
@@ -419,10 +420,16 @@ export class FaceTracker {
     try {
       headFit = fitCanonicalHead(lms, { W, H, seed: this._fitSeed || undefined });
     } catch { headFit = null; }
+    // اعتماد به برازش: همهٔ آستانه‌ها باید *بدونِ واحدِ پیکسل* باشند.
+    //   • rmsPx به رزولوشنِ عکس وابسته است (آپلودِ ۱۲۵۰px خطای ۱۰px می‌دهد،
+    //     همان صورت در ۵۱۲px خطای ۴px) ⇒ فقط rmsMm معیار است.
+    //   • سقفِ ثابتِ ۳px/mm هر عکسِ نزدیک را رد می‌کرد و به مقیاسِ PD سقوط
+    //     می‌کرد؛ در نیم‌رخ همین سقوط، فریم را ۴۷٪ کوچک‌تر می‌کرد.
+    //     اعتبارِ مقیاس را خودِ head-fit با اندازهٔ دیده‌شدهٔ صورت می‌سنجد.
     const trustFit = !!(
       headFit && headFit.ok &&
-      headFit.rmsPx < 6.5 && headFit.rmsMm < 14 &&
-      headFit.scale > 0.15 && headFit.scale < 3 &&
+      headFit.rmsMm < 14 &&
+      Number.isFinite(headFit.scale) && headFit.scale > 0.05 && headFit.scale < 40 &&
       headFit.inlierRatio > 0.42 && headFit.confidence > 0.2
     );
     if (trustFit) {
@@ -465,6 +472,35 @@ export class FaceTracker {
     // مقیاسِ متریک: برازشِ چگال مستقیم px/mm را می‌دهد (خطای اندازه‌گیری‌شدهٔ
     // روشِ PD روی عکسِ آزمون ۶ تا ۹ درصد بود). PD فقط بازگشتِ امن است.
     const scale = trustFit ? headFit.scale : scaleSolution.scale;
+    // پهنای صورت به میلی‌متر: نسبتِ پهنای *دیده‌شده* به پهنای همان دو لندمارک
+    // در مدلِ برازش‌شده (با همان چرخش) × پهنای کانونیک. تقسیمِ ساده بر
+    // `scale·projectedEyeAxis` در نیم‌رخ دوبار تصحیح می‌کرد و ۱۵٪ باد می‌داد.
+    const canonFaceW = Math.abs(CANONICAL_MM[P.faceL * 3] - CANONICAL_MM[P.faceR * 3]);
+    let modelFaceW = 0;
+    if (trustFit) {
+      const a = headToPx(headFit, [CANONICAL_MM[P.faceL * 3], CANONICAL_MM[P.faceL * 3 + 1], CANONICAL_MM[P.faceL * 3 + 2]]);
+      const b = headToPx(headFit, [CANONICAL_MM[P.faceR * 3], CANONICAL_MM[P.faceR * 3 + 1], CANONICAL_MM[P.faceR * 3 + 2]]);
+      modelFaceW = Math.hypot(a[0] - b[0], a[1] - b[1]);
+    }
+    // پهنای صورت فقط در حالتِ تقریباً روبه‌رو اندازه‌گیری می‌شود. در نیم‌رخ،
+    // لندمارکِ گونهٔ دور پنهان است و MediaPipe آن را «کشیده» تخمین می‌زند؛ عددِ
+    // حاصل (۱۵۴mm به‌جای ۱۳۷mm) هم فیت را خراب می‌کند هم اندازهٔ فریم را.
+    // پس: اندازه‌گیریِ تازه فقط وقتی |yaw|<۳۰°، وگرنه آخرین عددِ سالم می‌ماند.
+    const rawFaceWmm = trustFit && modelFaceW > 1
+      ? (canonFaceW * faceW) / modelFaceW
+      : faceW / (scale * projectedEyeAxis);
+    // yaw و visualYaw پایین‌تر (پس از فیلترِ زمانی) ساخته می‌شوند؛ این‌جا همان
+    // زاویهٔ خامِ خودِ برازش کافی است و ترتیبِ کد را نمی‌شکند.
+    const fitYaw = trustFit ? Math.abs(headFit.yaw) : Math.PI;
+    const frontalEnough = fitYaw < 0.52; // ~۳۰°
+    if (frontalEnough && rawFaceWmm > 105 && rawFaceWmm < 175) {
+      this.faceWLock = this.faceWLock == null ? rawFaceWmm : this.faceWLock * 0.82 + rawFaceWmm * 0.18;
+    }
+    // بدونِ قفل (مثلاً یک عکسِ نیم‌رخ)، عدد را به بازهٔ آنتروپومتریکِ پهنای
+    // صورتِ بزرگسال (۱۲۰ تا ۱۶۰mm) نگه می‌داریم تا فیت‌شیت ۱۶۸mm نشان ندهد.
+    const faceWmmClamped = clamp(rawFaceWmm, 120, 160);
+    const faceWmmEst = this.faceWLock != null ? this.faceWLock : faceWmmClamped;
+    this.faceWidthReliable = frontalEnough || this.faceWLock != null;
     const vgPx = this.vg * scale;
     const socketL = mid(lms[33], lms[133]);
     const socketR = mid(lms[362], lms[263]);
@@ -514,7 +550,11 @@ export class FaceTracker {
     // جابه‌جایی نوک بینی نسبت به مرکز چشم‌ها یک شاهد تصویری مستقل برای occlusion است.
     const rawVisualYaw = clamp(((tip.x - midEye.x) / Math.max(1, faceW)) * 2.4, -1, 1);
     const visualYaw = this.f.visualYaw.filter(rawVisualYaw, t);
-    const rawNoseWmm = pairPx(lms, P.noseSideL, P.noseSideR, (p) => this.px(p)) / (scale * projectedEyeAxis);
+    // پهنای پل بینی: همان تلهٔ پهنای صورت — تقسیم بر projectedEyeAxis در نیم‌رخ
+    // دوباره تصحیح می‌کند و عدد را باد می‌دهد. برابرسازی با مدلِ برازش‌شده را
+    // هم استفاده نمی‌کنیم چون پلِ بینی باریک است و خطای لندمارک سهمِ بزرگی دارد؛
+    // فقط مقیاسِ متریک و همان بندِ frontalEnough که پایین‌تر می‌آید.
+    const rawNoseWmm = pairPx(lms, P.noseSideL, P.noseSideR, (p) => this.px(p)) / scale;
     const noseWmm = this.f.noseW.filter(rawNoseWmm, t);
     const profileEvidence = Math.max(yaw, Math.abs(visualYaw));
     const scaleConfidence = (this.pdLocked || !this.autoPd) && faceW / W >= 0.28 && profileEvidence < 0.35 && scaleSolution.agreement > 0.86
@@ -523,7 +563,7 @@ export class FaceTracker {
     const pose = {
       x, y, z, scale: s, q: this.q, front, camZ, focalPx,
       iris, irisDiaPx: irisDia, faceW,
-      faceWmm: faceW / (scale * projectedEyeAxis),
+      faceWmm: faceWmmEst,
       faceHmm: Math.hypot(chin.x - this.px(lms[10]).x, chin.y - this.px(lms[10]).y) / scale,
       noseWmm,
       chinPx: chin, pdMm, autoPd: this.autoPd, pdLocked: this.pdLocked,
@@ -536,6 +576,7 @@ export class FaceTracker {
       tip: { x: tip.x, y: tip.y },
       quality: {
         frontal: front[2], yaw, visualYaw, pitch, size: faceW / W, scaleConfidence,
+        faceWidthReliable: !!this.faceWidthReliable,
         hint: faceW / W < 0.28 ? "closer" : Math.max(yaw, Math.abs(visualYaw)) > 0.78 || front[2] < 0.42 ? "frontal" : Math.abs(pitch) > 0.42 ? "level" : bridgeY / Math.max(1, iris) > 0.9 ? "down" : null,
       },
       // برازشِ چگال برای موتورِ نشستن (Stage/seating) — شامل چرخش، مقیاس و کیفیت

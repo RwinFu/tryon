@@ -489,9 +489,23 @@ export function fitCanonicalHead(lms, opts = {}) {
 
   // نگهبانِ مقیاس: اگر مدل «فروپاشیده» باشد (چند لندمارکِ هم‌مکان)، مقیاس به
   // نزدیکِ صفر می‌رود؛ چنین برازشی برای نشستن بی‌معناست و باید رد شود.
+  //
+  // سقفِ ثابت (px/mm) غلط بود: عکسِ نزدیک/پرتفکیک (یا آپلودِ ۴K) رمزی ۴–۶ برابر
+  // می‌دهد و برازشِ سالم رد می‌شد. به‌جایش مقیاس را با *اندازهٔ دیده‌شدهٔ صورت*
+  // می‌سنجیم: فاصلهٔ پیشانی→چانه در پیکسل تقسیم بر همان فاصله در مدل (mm).
+  const spanPx = Math.hypot(obs[10 * 3] - obs[152 * 3], obs[10 * 3 + 1] - obs[152 * 3 + 1]);
+  const spanMm = Math.hypot(
+    CANONICAL_MM[10 * 3] - CANONICAL_MM[152 * 3],
+    CANONICAL_MM[10 * 3 + 1] - CANONICAL_MM[152 * 3 + 1],
+  );
+  const expectedScale = spanPx / Math.max(1e-6, spanMm); // px بر mm، از خودِ مشاهده
   const scalePxPerMm = final.scale;
-  if (!(scalePxPerMm > 0.15 && scalePxPerMm < 3)) {
-    return { ...fail, reason: "implausible-scale", scale: scalePxPerMm };
+  const scaleOk =
+    Number.isFinite(scalePxPerMm) &&
+    scalePxPerMm > Math.max(0.05, expectedScale * 0.35) &&
+    scalePxPerMm < Math.max(0.6, expectedScale * 2.6);
+  if (!scaleOk) {
+    return { ...fail, reason: "implausible-scale", scale: scalePxPerMm, expectedScale };
   }
 
   const R = matFromQuat(final.q);

@@ -95,6 +95,19 @@ export function seatAnchors(spec) {
   const lensH = Number(meta.lensW ? spec.lensH || 42 : 42);
   const noseReach = halfW + 6.5;
   const topLimit = lensH * 0.22; // پایین‌ترین ارتفاعِ مجازِ تکیه‌گاه (نسبت به مرکز لنز)
+  // «باندِ تکیه‌گاه»: فقط ارتفاعی از حلقه که واقعاً می‌تواند وزنِ فریم را ببرد.
+  // بالاتر از این باند، لبهٔ بالاییِ حلقه جلوی ابرو می‌رسد (فشار نمی‌آورد، فقط
+  // نزدیک است) و پایین‌تر، حلقه روی پرهٔ گوشتیِ بینی می‌افتد. اگر این دو را
+  // تکیه‌گاه بگیریم، حلِ نشستن کلِ فریم را ۶ تا ۹mm جلو می‌برد تا از ابرو/پره
+  // فاصله بگیرد ⇒ «عینکِ شناور» با فاصلهٔ رأس ۲۰–۲۶mm (باگِ دیداریِ بزرگ).
+  const bandHi = Math.max(5, lensH * 0.14);
+  const bandLo = -Math.max(4.5, lensH * 0.11);
+  // «گوشهٔ داخلیِ حلقه» تکیه‌گاه نیست: آن ناحیه لبهٔ عدسی است که کنارِ پرهٔ
+  // بینی می‌ایستد و وزنی برنمی‌دارد. اگر آن را تکیه‌گاه بگیریم، چون بینی در
+  // آن ارتفاع عمیق‌ترین نقطه است، حلِ نشستن کلِ فریم را ۵ تا ۱۰mm جلو می‌برد و
+  // فریم «شناور» دیده می‌شود (فاصلهٔ رأس ۲۱ تا ۲۷mm). بارِ فریم فقط روی پل،
+  // بالشتک و باندِ بالایی/کناریِ حلقه است.
+  const innerLimit = innerCornerLimit(meta);
   const CELL = 1.6;
   const cells = new Map();
   let bridgeCells = 0;
@@ -110,11 +123,16 @@ export function seatAnchors(spec) {
     for (let i = 0; i < pos.length; i += 3) {
       const x = pos[i], y = pos[i + 1], z = pos[i + 2];
       if (Math.abs(x) > noseReach || y < -topLimit) continue;
+      // حلقه/فلز فقط در باندِ تکیه‌گاه و بیرون از گوشهٔ داخلی وزن می‌برد؛
+      // پل و بالشتک هر جا باشند.
+      if (!isBridge && !isPad && (y > bandHi || y < bandLo)) continue;
       const k = Math.round(x / CELL) + "," + Math.round(y / CELL);
       const c = cells.get(k);
       // پل و بالشتک باید *لمس* کنند؛ لبهٔ داخلیِ حلقه اجازه دارد چند میلی‌متر
       // در بافتِ نرمِ کنارهٔ بینی فرو برود (همان چیزی که در عینکِ تنگ دیده می‌شود).
-      const allow = isBridge || isPad ? 0 : 2.4;
+      // لبهٔ داخلیِ حلقه روی شیبِ نرمِ کنارِ بینی می‌نشیند و چند میلی‌متر در بافت
+      // فرو می‌رود؛ همان مقدار را «تماس» می‌شماریم نه «فرورفتگی».
+      const allow = tissueAllow(part, x, innerLimit);
       if (!c || z < c.z) cells.set(k, { x, y, z, bridge: isBridge, pad: isPad, allow });
     }
   }
@@ -126,6 +144,30 @@ export function seatAnchors(spec) {
   const entry = { built, meta, support, bridgeCells, padCells, all: built.parts };
   FIT_CACHE.set(spec, entry);
   return entry;
+}
+
+/**
+ * «گوشهٔ داخلیِ حلقه»: از این عرض به داخل، لبهٔ عدسی کنارِ پرهٔ گوشتیِ بینی
+ * می‌نشیند، نه روی پلِ استخوانی. تنها مرجعِ این هندسه — هر جای دیگر که لازم شد
+ * از همین تابع گرفته می‌شود تا دوباره دو عددِ ناهمخوان پیش نیاید.
+ */
+export function innerCornerLimit(meta) {
+  const halfW = (Number(meta?.dbn) || 18) / 2;
+  return Math.max(2, halfW - 1.2);
+}
+
+/**
+ * حدِ مجازِ فرورفتنِ یک رأسِ فریم در پوست (mm) — تنها منبعِ حقیقت.
+ *
+ * پل و بالشتک باید *لمس* کنند (۰)؛ لبهٔ حلقه روی گوشتِ نرمِ کنارِ بینی
+ * ۳٫۴mm و روی گونه/ابرو ۲٫۴mm اجازهٔ فرورفتن دارد (بافت آن‌جا فشرده می‌شود و
+ * همان چیزی است که در عینکِ تنگ دیده می‌شود). اگر حلِ نشستن و حسابرسی این
+ * عدد را از دو جا بخوانند، یک پاس سخت‌گیرتر فریم را ۱۰mm جلو می‌برد — همان
+ * باگِ «فریمِ شناور».
+ */
+export function tissueAllow(part, x, innerLimit) {
+  if (part && (part.name === "bridge" || part.role === "pad")) return 0;
+  return Math.abs(x) < innerLimit ? 3.4 : 2.4;
 }
 
 /** سطحِ بینی/صورت در فضایِ سر: بزرگ‌ترین z از دو نیمه (بینی متقارن فرض می‌شود) */
@@ -238,13 +280,24 @@ export function seatOnHead(o) {
 
   // ── پاسِ «بدونِ فرورفتگی»: تا وقتی نقطه‌ای بیش از ۰٫۶mm داخلِ پوست است،
   // فریم را کمی جلو می‌بریم. این تضمین می‌کند نتیجه هرگز «توی صورت» نباشد.
+  const CLIP_MAX = Number(typeof process !== "undefined" && process.env?.VT_CLIP_MAX) || 4;
   let clipFixed = 0;
+  let clipCapped = false;
   for (let i = 0; i < 4; i++) {
     const w = worstPenetration(anchors, oy, oz, 0);
     if (!w || w.clear > -0.6) break;
-    const push = -w.clear - 0.6 + 0.25;
-    oz += push;
-    clipFixed += push;
+    const need = -w.clear - 0.6 + 0.25;
+    if (clipFixed + need > CLIP_MAX) {
+      // فریمِ بزرگ‌تر از پلِ این صورت: به‌جای ۱۰mm شناوری، همان تداخلِ
+      // میلی‌متریِ طبیعی را می‌پذیریم و گزارش می‌دهیم (اپتومتریست هم همین
+      // می‌گوید «پل تنگ است»، نه «عینک را جلو نگه دار»).
+      oz += Math.max(0, CLIP_MAX - clipFixed);
+      clipFixed = CLIP_MAX;
+      clipCapped = true;
+      break;
+    }
+    oz += need;
+    clipFixed += need;
   }
 
   // ── جانبی: انحرافِ خطِ وسطِ بینی از مدل (باقی‌ماندهٔ لندمارک‌های میانی) ──
@@ -282,10 +335,12 @@ export function seatOnHead(o) {
   const dbn = Number(anchors.meta.dbn) || 18;
   const warnings = [];
   const vdOut = oz - corneaZ;
-  if (audit.worst && audit.worst.clear < -1.2) warnings.push("rim-pressure");
+  if (audit.minMargin !== null && audit.minMargin < -1.2) warnings.push("rim-pressure");
   if (vdOut > 19) warnings.push("vertex-distance");
   if (bridgeGap !== null && bridgeGap > 4) warnings.push("bridge-float");
   if (fit.confidence < 0.45) warnings.push("low-confidence");
+  if (clipCapped) warnings.push("narrow-bridge"); // پلِ فریم به پلِ بینی تنگ است
+  if (audit.minMargin !== null && audit.minMargin < -1.5) warnings.push("nose-pressure");
   void dbn;
   return {
     ox: oxSeat, oy, oz, q: fit.q, scale: fit.scale,
@@ -305,6 +360,7 @@ export function seatOnHead(o) {
       noseWidth: +noseWidth.toFixed(1),
       warnings,
       minClearance: audit.minClearance,
+      minMargin: audit.minMargin,
       samples: audit.samples,
       confidence: fit.confidence,
       rmsMm: +fit.rmsMm.toFixed(2),
@@ -317,6 +373,7 @@ export function seatOnHead(o) {
 function worstPenetration(anchors, oy, oz, ox) {
   let worst = null;
   const seen = new Set();
+  const innerLim = innerCornerLimit(anchors.meta);
   for (const part of anchors.all) {
     if (!part.geo || !part.geo.position) continue;
     if (part.role === "pad") continue;
@@ -330,8 +387,10 @@ function worstPenetration(anchors, oy, oz, ox) {
       seen.add(key);
       const skin = headSurfaceZ(x, y);
       if (Number.isNaN(skin)) continue;
-      const clear = z - skin;
-      if (!worst || clear < worst.clear) worst = { x: +x.toFixed(1), y: +y.toFixed(1), clear: +clear.toFixed(2) };
+      // همان حدی که contactOffset برای همین نقطه‌ها مجاز می‌داند.
+      const allow = tissueAllow(part, x, innerLim);
+      const clear = z - skin + allow;
+      if (!worst || clear < worst.clear) worst = { x: +x.toFixed(1), y: +y.toFixed(1), clear: +clear.toFixed(2), part: part.name, z: +z.toFixed(1), skin: +skin.toFixed(1) };
     }
   }
   return worst;
@@ -342,9 +401,10 @@ function worstPenetration(anchors, oy, oz, ox) {
  * بررسی می‌کند آیا داخلِ پوست رفته‌اند یا نه.
  */
 export function auditSeat(anchors, oy, oz, ox = 0) {
-  if (!anchors) return { samples: 0, penetration: 0, minClearance: null, worst: null };
-  let samples = 0, penetration = 0, minClearance = Infinity, worst = null;
+  if (!anchors) return { samples: 0, penetration: 0, minClearance: null, minMargin: null, worst: null };
+  let samples = 0, penetration = 0, minClearance = Infinity, minMargin = Infinity, worst = null;
   const seen = new Set();
+  const innerLim = innerCornerLimit(anchors.meta);
   for (const part of anchors.all) {
     if (!part.geo || !part.geo.position) continue;
     if (part.role === "pad") continue; // بالشتک باید روی پوست باشد
@@ -361,14 +421,20 @@ export function auditSeat(anchors, oy, oz, ox = 0) {
       if (Number.isNaN(s)) continue;
       samples++;
       const clear = z - s;
-      if (clear < minClearance) { minClearance = clear; worst = { x: +x.toFixed(1), y: +y.toFixed(1), clear: +clear.toFixed(2) }; }
-      if (clear < -1.0) penetration++;
+      // «حاشیه» = فاصله منهای حدِ مجازِ همان نقطه؛ منفی یعنی فراتر از فشارِ
+      // قابلِ قبول رفته. `minClearance` خام می‌ماند تا اگر کسی خواست عددِ
+      // بدونِ تخفیف را ببیند.
+      const margin = clear + tissueAllow(part, x, innerLim);
+      if (margin < minMargin) { minMargin = margin; worst = { x: +x.toFixed(1), y: +y.toFixed(1), clear: +clear.toFixed(2), margin: +margin.toFixed(2), part: part.name }; }
+      if (clear < minClearance) minClearance = clear;
+      if (margin < -1.0) penetration++; // بیش از ۱mm فراتر از فشارِ قابلِ قبول
     }
   }
   return {
     samples,
     penetration,
     minClearance: Number.isFinite(minClearance) ? +minClearance.toFixed(2) : null,
+    minMargin: Number.isFinite(minMargin) ? +minMargin.toFixed(2) : null,
     worst,
   };
 }
@@ -419,9 +485,7 @@ export function seatToPose(seat, pose, W, H, opts = {}) {
   if (!seat || !pose) return null;
   const camZ = Number(opts.camZ || pose.camZ) || 900;
   const z0 = Number(pose.z) || 0;
-  const k = clamp2((camZ - z0) / camZ, 0.4, 1.4);
   const faceScale = Number(opts.scale || pose.headFit?.scale || pose.scale) || 4;
-  const S = faceScale * k;
   const vg = Number(opts.vgMm ?? pose.vgMm ?? 13);
   const d = [
     seat.ox - POSE_ANCHOR[0],
@@ -430,10 +494,23 @@ export function seatToPose(seat, pose, W, H, opts = {}) {
   ];
   const q = (opts.q || pose.q || [0, 0, 0, 1]).slice();
   const r = quatRotate(q, d);
+
+  // ── مقیاسِ درست با در نظر گرفتنِ عمقِ *خودِ فریم* ─────────────────────
+  // `faceScale` پیکسل‌برمیلی‌متر روی صفحهٔ صورت است (همان چیزی که tracker
+  // اندازه گرفته). گروهِ فریم d[2] میلی‌متر جلوتر از آن صفحه می‌نشیند، و
+  // دوربینِ پرسپکتیو در همان عمق بزرگ‌نمایی می‌کند:
+  //     اندازهٔ دیده‌شده = S · camZ/(camZ − zf)
+  // قبلاً S با ضریبِ صفحهٔ *صورت* ساخته می‌شد در حالی که فریم در عمقِ دیگری
+  // می‌ایستاد ⇒ فریم ۵ تا ۷ درصد بزرگ‌تر از صورت رندر می‌شد (چشم‌ها داخلِ
+  // پنجرهٔ عدسی جابه‌جا دیده می‌شدند).
+  // zf = z0 + S·d[2] ⇒ حلِ بسته: S = faceScale·(camZ−z0)/(camZ + faceScale·d[2])
+  const S = Math.max(1e-4, (faceScale * (camZ - z0)) / (camZ + faceScale * r[2]));
+  const zf = z0 + S * r[2];
+  const kz = clamp2((camZ - zf) / camZ, 0.4, 1.4); // برای x/y همان ضریبِ عمقِ فریم
   return {
-    x: ((Number(pose.x) || W / 2) - W / 2) * k + S * r[0],
-    y: (H / 2 - (Number(pose.y) || H / 2)) * k + S * r[1],
-    z: z0 + S * r[2],
+    x: ((Number(pose.x) || W / 2) - W / 2) * kz + S * r[0],
+    y: (H / 2 - (Number(pose.y) || H / 2)) * kz + S * r[1],
+    z: zf,
     q,
     scale: S,
     report: { ...(seat.report || {}), offsetMm: d.map((v) => +v.toFixed(2)) },
@@ -515,14 +592,18 @@ export function seatRows(report, lang = "fa") {
       status: status(Math.abs(report.pupilOffset) <= 5, Math.abs(report.pupilOffset) <= 8),
     });
   }
-  if (Number.isFinite(report.minClearance)) {
+  // «فشارِ حلقه» با *حاشیه* سنجیده می‌شود (فاصله منهای فشارِ مجازِ همان نقطه)،
+  // نه با فاصلهٔ خام؛ وگرنه هر فریمی که لبه‌اش چند میلی‌متر روی گوشتِ کنارِ
+  // بینی می‌نشیند — یعنی رفتارِ طبیعیِ عینک — «فشار» گزارش می‌شد.
+  const pressureMm = Number.isFinite(report.minMargin) ? report.minMargin : report.minClearance;
+  if (Number.isFinite(pressureMm)) {
     rows.push({
       label: fa ? "فشارِ حلقه" : "Rim pressure",
-      value: `${report.minClearance.toFixed(1)} mm`,
+      value: `${pressureMm.toFixed(1)} mm`,
       hint: fa
-        ? report.minClearance < -1.5 ? "لبهٔ حلقه روی گونه/بینی فشار می‌آورد" : "بدونِ فشارِ محسوس"
-        : report.minClearance < -1.5 ? "Rim presses on the nose/cheek" : "No noticeable pressure",
-      status: status(report.minClearance > -1.5, report.minClearance > -2.5),
+        ? pressureMm < -1.5 ? "لبهٔ حلقه روی گونه/بینی فشار می‌آورد" : "بدونِ فشارِ محسوس"
+        : pressureMm < -1.5 ? "Rim presses on the nose/cheek" : "No noticeable pressure",
+      status: status(pressureMm > -1.5, pressureMm > -2.5),
     });
   }
   return rows;
