@@ -395,6 +395,19 @@ export function seatOffsetsFor(spec) {
 }
 
 /**
+ * مبدأِ فریم روی سر (mm) برای همین فریم — همان جایی که `seatOnHead` می‌نشاند.
+ * مسیرِ دسته (`ear-fit`) با همین مبدأ ساخته می‌شود تا نوکِ دسته پشتِ گوشِ
+ * همان سر بیفتد، نه چند میلی‌متر جلوتر.
+ * @param {object} spec
+ * @returns {{ox:number, oy:number, oz:number}|null}
+ */
+export function specHeadOrigin(spec) {
+  const seat = seatOffsetsFor(spec);
+  if (!seat) return null;
+  return { ox: seat.ox || 0, oy: seat.oy, oz: seat.oz };
+}
+
+/**
  * آفستِ فضایِ سر → مختصاتِ صحنهٔ Stage (پیکسلِ مرکز‌مبدأ، y بالا).
  *
  * قرارداد: `pose.x/y` جای «میانهٔ گوشه‌های چشم، ۱۳mm جلوتر» است (همان لنگرِ

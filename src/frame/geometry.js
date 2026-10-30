@@ -10,6 +10,8 @@
  */
 import { lensOutline, offsetOutline, resample, smoothPts, SHAPE_PRESETS } from "./shapes.js";
 import { sweep, roundedRectProfile, ellipseProfile, roundedBox, mergeGeo, bounds } from "./sweep.js";
+import { templePath, headOrigin } from "../engine/ear-fit.js";
+import { EYE } from "../engine/head-fit.js";
 
 const D2R = Math.PI / 180;
 const rimWEarly = (s) => (s.metal ? s.metalRimW : s.rimW) || 4;
@@ -260,12 +262,17 @@ function annularRim(innerInput, outerInput, { side, lensCX, depth, rimWidth, dom
  * @param {object} spec  پارامترها (بیشترها اختیاری‌اند)
  * @returns {{roles:Object, bbox:Object, meta:Object, parts:Array}}
  */
-export function buildFrame(rawSpec = {}) {
+export function buildFrame(rawSpec = {}, opts = {}) {
   const s = normalizeSpec(rawSpec);
   const parts = [];
   /** @param {{path?:Array<{x:number,y:number,z:number}>,sw?:number}} [extra] مسیرِ سایه و ضخامت خطی‌اش (میلی‌متر) */
-  const add = (name, role, geo, extra) => geo && parts.push({ name, role, geo, path: extra?.path, sw: extra?.sw });
+  const add = (name, role, geo, extra) =>
+    geo && parts.push({ name, role, geo, path: extra?.path, sw: extra?.sw, temple: !!extra?.temple });
 
+  const hingeQueue = [];
+  // مبدأِ فریم روی سر (mm). اگر نشستنِ واقعی داده شده باشد همان را می‌گیریم؛
+  // وگرنه تخمینِ اپتومتری (فاصلهٔ رأسِ هدف). مسیرِ دسته به همین مبدأ بسته است.
+  const origin = opts.origin || headOrigin();
   const halfH = s.lensH / 2;
   const lensCX = s.lensW / 2 + s.dbn / 2;
   const R = wrapRadius(s.baseCurve);
@@ -489,72 +496,9 @@ export function buildFrame(rawSpec = {}) {
       }
     }
 
-    // مسیر دسته: از لولا به عقب، با پاشش بیرون و خم پشت گوش
-    const L = s.templeLen;
-    const sp = Math.tan(s.splayDeg * D2R);
-    const yStart = hinge.y;
-    const bendAt = Math.max(0.5, Math.min(0.95, s.earBendAt));
-    const pts = [
-      { x: hinge.x + side * 0.4, y: yStart, z: hinge.z - 0.6 },
-      { x: hinge.x + side * (1.6 + sp * 8), y: yStart - 0.3, z: hinge.z - 12 },
-      { x: hinge.x + side * (2.6 + sp * 34), y: yStart - 1.1, z: hinge.z - 46 },
-      { x: hinge.x + side * (3.4 + sp * 58), y: yStart - 2.2, z: hinge.z - 78 },
-      { x: hinge.x + side * (3.9 + sp * L * 0.78), y: yStart - 3.4, z: hinge.z - L * bendAt },
-      {
-        x: hinge.x + side * (4.1 + sp * L * 0.82),
-        y: yStart - 3.9 - s.earDrop * 0.25,
-        z: hinge.z - (L * bendAt + (L - L * bendAt) * 0.42),
-      },
-      {
-        x: hinge.x + side * (3.9 + sp * L * 0.8),
-        y: yStart - 3.9 - s.earDrop,
-        z: hinge.z - L * 0.985,
-      },
-      { x: hinge.x + side * (3.5 + sp * L * 0.72), y: yStart - 4.6 - s.earDrop * 1.35, z: hinge.z - L },
-    ];
-    const tp = cr3(pts, 16);
-    const tipStart = 0.74;
-    const templeRole = metalTemple ? "metal" : "frame";
-    // پروفیل دسته: x = ضخامت (در راستای سر)، y = ارتفاعِ دیده‌شده از روبه‌رو
-    const profFrame = (t) => {
-      const k = 1 - (1 - s.templeTaper) * t;
-      return roundedRectProfile(s.templeT * k, s.templeW * k, s.templeT * 0.42 * k, 3);
-    };
-    const profWire = (t) => {
-      const k = 1 - (1 - s.templeTaper) * t;
-      return ellipseProfile(1.7 * k + 0.4, 1.45 * k + 0.35, 8);
-    };
-
-    const swT = Math.max(s.templeW, s.templeT);
-    if (metalTemple) {
-      const metalEnd = Math.floor(tp.length * tipStart) + 1;
-      const metalPart = tp.slice(0, metalEnd);
-      add(side > 0 ? "templeR" : "templeL", "metal", sweep(metalPart, profWire(0), { closed: false }), {
-        path: metalPart,
-        sw: 1.8,
-      });
-      const tipPart = tp.slice(metalEnd - 1);
-      if (tipPart.length > 3)
-        add(side > 0 ? "tipR" : "tipL", "frame", sweep(tipPart, profFrame(0.8), { closed: false }), {
-          path: tipPart,
-          sw: s.templeW,
-        });
-    } else {
-      const mainEnd = Math.floor(tp.length * tipStart) + 1;
-      const main = tp.slice(0, mainEnd);
-      add(side > 0 ? "templeR" : "templeL", templeRole, sweep(main, profFrame(0), { closed: false }), {
-        path: main,
-        sw: swT,
-      });
-      const tipPart = tp.slice(mainEnd - 1);
-      if (tipPart.length > 3)
-        add(
-          side > 0 ? "tipR" : "tipL",
-          "frameTip",
-          sweep(tipPart, roundedRectProfile(s.templeT * 1.42, s.templeW * 1.08, s.templeT * 0.6, 3), { closed: false }),
-          { path: tipPart, sw: swT * 1.15 },
-        );
-    }
+    // دسته در پاسِ دوم ساخته می‌شود (بعد از پل/بالشتک): مسیرش به گوشِ
+    // همان سر بسته است و مبدأِ نشستن از همین نقاطِ تکیه‌گاه می‌آید.
+    hingeQueue.push({ side, hinge });
 
     // پد بینی (فریم فلزی) یا بالشتک یکپارچهٔ استات
     if (s.nosePads || isMetal || s.style === "rimless") {
@@ -584,6 +528,60 @@ export function buildFrame(rawSpec = {}) {
     }
   }
 
+  // ── ۳٫۵. دسته‌ها: از لولا تا پشتِ گوش ────────────────────────────────
+  // مسیر از «سر» می‌آید (ear-fit): کنارهٔ سر اندازه گرفته می‌شود، دسته روی
+  // همان دیواره می‌لغزد، بالای گوش می‌نشیند و پشتِ لاله خم می‌شود. چرخشِ
+  // پَنتو فقط روی جلوی فریم (حلقه/پل/عدسی) می‌ماند؛ دسته به گوش بسته است،
+  // نه به عدسی — وگرنه نوکِ دسته در نیم‌رخ چند سانتی‌متر پایین می‌افتد.
+  const tipStart = 0.74;
+  const templeRole = metalTemple ? "metal" : "frame";
+  // پروفیل دسته: x = ضخامت (در راستای سر)، y = ارتفاعِ دیده‌شده از روبه‌رو
+  const profFrame = (t) => {
+    const k = 1 - (1 - s.templeTaper) * t;
+    return roundedRectProfile(s.templeT * k, s.templeW * k, s.templeT * 0.42 * k, 3);
+  };
+  const profWire = (t) => {
+    const k = 1 - (1 - s.templeTaper) * t;
+    return ellipseProfile(1.7 * k + 0.4, 1.45 * k + 0.35, 8);
+  };
+  const swT = Math.max(s.templeW, s.templeT);
+  for (const { side, hinge } of hingeQueue) {
+    const guide = templePath({ side, spec: s, hinge: rotateXYZ(hinge, panto), origin, vd: origin.oz - EYE.corneaZ });
+    const tp = cr3(guide, 9);
+    if (metalTemple) {
+      const metalEnd = Math.floor(tp.length * tipStart) + 1;
+      const metalPart = tp.slice(0, metalEnd);
+      add(side > 0 ? "templeR" : "templeL", "metal", sweep(metalPart, profWire(0), { closed: false }), {
+        path: metalPart,
+        sw: 1.8,
+        temple: true,
+      });
+      const tipPart = tp.slice(metalEnd - 1);
+      if (tipPart.length > 3)
+        add(side > 0 ? "tipR" : "tipL", "frame", sweep(tipPart, profFrame(0.8), { closed: false }), {
+          path: tipPart,
+          sw: s.templeW,
+          temple: true,
+        });
+    } else {
+      const mainEnd = Math.floor(tp.length * tipStart) + 1;
+      const main = tp.slice(0, mainEnd);
+      add(side > 0 ? "templeR" : "templeL", templeRole, sweep(main, profFrame(0), { closed: false }), {
+        path: main,
+        sw: swT,
+        temple: true,
+      });
+      const tipPart = tp.slice(mainEnd - 1);
+      if (tipPart.length > 3)
+        add(
+          side > 0 ? "tipR" : "tipL",
+          "frameTip",
+          sweep(tipPart, roundedRectProfile(s.templeT * 1.42, s.templeW * 1.08, s.templeT * 0.6, 3), { closed: false }),
+          { path: tipPart, sw: swT * 1.15, temple: true },
+        );
+    }
+  }
+
   // ── ۴. تراز و چرخش‌های کلی ────────────────────────────────────────────
   const roles = {};
   const meta = {
@@ -608,9 +606,12 @@ export function buildFrame(rawSpec = {}) {
   let bridgeMinY = null, bridgeMinZ = null, padMinZ = null;
   for (const part of parts) {
     let g = part.geo;
-    g = rotateX(g, panto);
-    part.geo = g;
-    if (part.path) part.path = part.path.map((p) => rotateXYZ(p, panto));
+    if (!part.temple) {
+      // دسته در فضایِ سر ساخته شده و به گوش بسته است ⇒ با پَنتوی جلوی فریم نمی‌چرخد
+      g = rotateX(g, panto);
+      part.geo = g;
+      if (part.path) part.path = part.path.map((p) => rotateXYZ(p, panto));
+    }
     if (part.name === "bridge" || part.role === "pad") {
       const b = bounds(g);
       if (part.name === "bridge") {
