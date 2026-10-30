@@ -35,16 +35,19 @@ export const DEFAULT_CONFIG = {
   mode: "overlay", // overlay | inline
   products: null, // آرایه یا URL به JSON
   features: {
-    faceScan: true,
+    // شِلِ پیش‌فرض = همان چیزی که مشتری لازم دارد.
+    photo: true,
+    cart: true,
+    thumbnails: true,
     hairLayer: true,
     contactShadow: true,
     lightMatch: true,
-    thumbnails: true,
-    photo: true,
-    fitSheet: true,
-    snapshot: true,
-    cart: true,
-    pd: true,
+    // پنل‌های تحلیلی (برگهٔ فیت، اسکن صورت، عکس‌گرفتن، PD) پیش‌فرض خاموش‌اند
+    // تا دیدِ مشتری خلوت بماند؛ فروشگاه با features روشنشان می‌کند.
+    fitSheet: false,
+    faceScan: false,
+    snapshot: false,
+    pd: false,
   },
   quality: "auto", // auto | high | lite
   cart: { mode: "event" }, // event | whatsapp | link
@@ -96,6 +99,9 @@ export class VirtualTryOn extends Native {
   build() {
     const c = this.cfg;
     const L = (k) => t(c.lang, k);
+    const f = c.features;
+    // برگهٔ اختیاری فقط وقتی ساخته می‌شود که فروشگاه یکی از پنل‌ها را خواسته باشد.
+    const panel = !!(f.fitSheet || f.faceScan);
     this.root.innerHTML = `<style>${cssText}</style>
 <div class="wrap stage-wrap">
   <div class="stage" part="stage">
@@ -104,75 +110,53 @@ export class VirtualTryOn extends Native {
     <canvas id="gl"></canvas>
     <canvas id="oc"></canvas>
     <canvas id="mesh"></canvas>
-    <div class="scanline"></div>
     <div class="faceGuide" aria-hidden="true"><span></span></div>
-    <div class="tryControls" id="tryControls" aria-label="کنترل نمایش پرو">
-      <div class="lightToggle" role="group" aria-label="نمایش عدسی">
-        <button type="button" id="indoor" aria-pressed="true">داخل</button>
-        <button type="button" id="outdoor" aria-pressed="false">بیرون</button>
-      </div>
-      <div class="zoomControls" role="group" aria-label="اندازهٔ نمایش فریم">
-        <button type="button" id="zoomOut" aria-label="کوچک‌تر کردن فریم">−</button>
-        <output id="zoomValue" aria-live="polite">۱۰۰٪</output>
-        <button type="button" id="zoomIn" aria-label="بزرگ‌تر کردن فریم">+</button>
-      </div>
+    <div class="scanline"></div>
+    <div class="bar">
+      ${c.mode === "overlay" ? `<button class="ghost" id="close" type="button" aria-label="${L("close")}"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M3.4 3.4l9.2 9.2M12.6 3.4l-9.2 9.2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></button>` : ""}
+      <button class="ghost wide" id="camReturn" type="button" hidden><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M3.5 8.5h3.2L8.4 6h7.2l1.7 2.5h3.2v10H3.5z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="13.2" r="3.4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>${L("liveCam")}</span></button>
+      <span class="mark" id="mark"></span>
     </div>
+    <div class="status" id="status" data-state="idle" role="status" aria-live="polite"><span></span></div>
+    <div class="hint" id="hint" role="status" aria-live="polite"></div>
   </div>
-  <header class="top">
-    <div class="brand">${esc(c.brand.name || "")}<small>${esc(c.brand.tagline || "")}</small></div>
-    <div class="topR">
-      <div class="camTools" id="camTools" hidden>
-        <button class="xbtn camBtn" id="camSwitch" type="button" aria-label="switch camera" title="تغییر دوربین"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M20 12c0 4.4-3.6 8-8 8s-8-3.6-8-8 3.6-8 8-8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M20 4v6h-6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-        <button class="xbtn camBtn" id="camTorch" type="button" aria-label="torch" title="چراغ" hidden><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-7 7c0 3 2 5 4 6v3h6v-3c2-1 4-3 4-6a7 7 0 0 0-7-7z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>
-      </div>
-      <div class="status" id="status" data-state="idle"><i></i><span>${L("statusIdle")}</span></div>
-      ${c.mode === "overlay" ? '<button class="xbtn" id="close" aria-label="' + L("close") + '"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M3.2 3.2l9.6 9.6M12.8 3.2l-9.6 9.6" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>' : ""}
+
+  <div class="shelf" part="shelf">
+    <div class="shelfHead">
+      <span class="prod" id="pName"></span>
+      <span class="price" id="pPrice"></span>
     </div>
-  </header>
-  <div class="hint" id="hint" role="status" aria-live="polite"></div>
-  <nav class="dock" part="dock">
-    <button class="pull" id="openFit" type="button" aria-expanded="false">
-      <span><b id="pName">${L("selectFrame")}</b><span id="pFit">${L("fitPending")}</span></span>
-      <span class="price" id="pPrice">—</span>
-    </button>
-    <div class="rail" id="rail" role="listbox" aria-label="${L("frames")}" tabindex="0"></div>
+    <span class="fitline" id="pFit" data-state="idle"><i></i><em></em></span>
+    <div class="rail" id="rail" role="group" aria-label="${L("frames")}" tabindex="0"></div>
     <div class="swatches" id="swatches"></div>
-    <div class="actions" id="actions"></div>
-  </nav>
-  <section class="sheet" id="sheet" role="dialog" aria-modal="false" aria-labelledby="sheetTitle">
+    <button class="cta" id="addToCart" type="button">${L("addToCart")}</button>
+  </div>
+
+  <section class="gate" id="gate">
+    <div class="gateCard" part="gate">
+      <span class="gateMark" aria-hidden="true">${ICONS.cateye}</span>
+      <h2>${esc(c.brand.name || L("title"))}</h2>
+      <p class="sub">${L("gateSub")}</p>
+      <div id="gateBody">
+        <p class="gateProd" id="gateProduct" hidden></p>
+        <div id="gateBusy"></div>
+        <div class="gateActions">
+          <button class="cta" id="start" type="button">${L("startCam")}</button>
+          ${f.photo ? `<button class="link" id="photoStart" type="button">${L("photoLink")}</button>` : ""}
+        </div>
+      </div>
+      <p class="priv"><span aria-hidden="true">✓</span>${L("privacy")}</p>
+    </div>
+  </section>
+${panel ? `  <section class="sheet" id="sheet" role="dialog" aria-modal="false" aria-labelledby="sheetTitle">
     <h3 id="sheetTitle">${L("fitTitle")}</h3>
-    <p class="lead" id="sheetLead">${L("fitLead")}</p>
+    <p class="lead">${L("fitLead")}</p>
     <div class="specgrid" id="specGrid"></div>
     <div id="fitRows"></div>
     <div id="pdBox"></div>
-    <div id="shapeBox"></div>
-    <div class="rowEnd">
-      <button class="btn" id="scanBtn">${L("scanFace")}</button>
-      <button class="btn primary" id="sheetClose">${L("close")}</button>
-    </div>
-  </section>
-  <section class="gate" id="gate">
-    <div class="card2">
-      <div class="gateKicker">VIRTUAL FIT STUDIO</div>
-      <div class="mark">${ICONS.cateye}</div>
-      <h2>${esc(c.brand.name || L("title"))}</h2>
-      <p class="sub">${L("gateSub")}</p>
-      <p class="gateProd" id="gateProduct" hidden></p>
-      <div id="gateBody">
-        <div class="steps">
-          <div><b>۱</b><span>${L("step1")}</span></div>
-          <div><b>۲</b><span>${L("step2")}</span></div>
-          <div><b>۳</b><span>${L("step3")}</span></div>
-        </div>
-        <div id="gateBusy"></div>
-        <div class="startChoices">
-          <button class="go" id="start"><span class="choiceIcon">●</span><span>${L("start")}<small>${L("live")}</small></span></button>
-          ${c.features.photo ? `<button class="btn photoChoice" id="photoStart"><span class="choiceIcon">▧</span><span>${L("photoTry")}<small>${L("photoSub")}</small></span></button>` : ""}
-        </div>
-        <p class="priv"><span>✓</span>${L("privacy")}</p>
-      </div>
-    </div>
-  </section>
+    ${f.faceScan ? '<div id="shapeBox"></div>' : ""}
+    <div class="rowEnd"><button class="btn" id="sheetClose" type="button">${L("close")}</button></div>
+  </section>` : ""}
 </div>`;
 
     this.$ = (id) => this.root.getElementById(id);
@@ -186,18 +170,19 @@ export class VirtualTryOn extends Native {
       mesh: this.$("mesh"),
       rail: this.$("rail"),
       sw: this.$("swatches"),
-      actions: this.$("actions"),
       gate: this.$("gate"),
+      sheet: this.$("sheet"),
       hint: this.$("hint"),
       status: this.$("status"),
-      sheet: this.$("sheet"),
-      camTools: this.$("camTools"),
-      camSwitch: this.$("camSwitch"),
-      camTorch: this.$("camTorch"),
-      tryControls: this.$("tryControls"),
-      indoor: this.$("indoor"),
-      outdoor: this.$("outdoor"),
-      zoomValue: this.$("zoomValue"),
+      close: this.$("close"),
+      camReturn: this.$("camReturn"),
+      mark: this.$("mark"),
+      cta: this.$("addToCart"),
+      start: this.$("start"),
+      photoStart: this.$("photoStart"),
+      gateBody: this.$("gateBody"),
+      gateBusy: this.$("gateBusy"),
+      gateProduct: this.$("gateProduct"),
     };
     this.ctx = {
       cv: this.el.cv.getContext("2d", { alpha: false }),
@@ -209,6 +194,7 @@ export class VirtualTryOn extends Native {
     // اسکن حرفه‌ای: چند ده فریمِ باکیفیت ⇒ PD/پل/عرض در میلی‌متر + مشِ سه‌بعدی
     this.faceScan = new FaceScan({ need: 45, shapeClassify: (m) => classifyShape(m) });
     this.scanner = this.faceScan; // نام قدیمیِ نقطهٔ ورودِ اسکن
+    this.el.mark.textContent = c.brand.name || "";
 
     this.classList.add(c.mode === "inline" ? "mode-inline" : "mode-overlay");
     if (c.brand.accent) {
@@ -238,21 +224,12 @@ export class VirtualTryOn extends Native {
     if (c.theme === "auto") this.detectHostTheme();
   }
 
+  /** دکمهٔ اصلیِ قفسه؛ با فلگِ سبد خاموش/روشن می‌شود. */
   buildActions() {
-    const c = this.cfg,
-      L = (k) => t(c.lang, k);
-    const list = [];
-    if (c.features.pd) list.push(["fit", L("fit"), "", "secondary"]);
-    if (c.features.faceScan) list.push(["scan", L("faceShape"), "", "secondary"]);
-    if (c.features.photo) list.push(["photo", L("photoTry"), "", "secondary"]);
-    if (c.features.snapshot) list.push(["snap", L("snapshot"), "", "primary"]);
-    if (c.features.cart) list.push(["cart", L("addToCart"), "", "buy"]);
-    this.el.actions.innerHTML = list
-      .map(
-        ([id, label, sub, cls]) =>
-          `<button class="btn ${cls}" data-a="${id}">${esc(label)}${sub ? `<small>${esc(sub)}</small>` : ""}</button>`,
-      )
-      .join("");
+    const cta = this.el?.cta;
+    if (!cta) return;
+    cta.hidden = !this.cfg.features.cart;
+    cta.textContent = t(this.cfg.lang, "addToCart");
   }
 
   detectHostTheme() {
@@ -347,12 +324,14 @@ export class VirtualTryOn extends Native {
     this.cards = this.products.map((p, i) => {
       const b = document.createElement("button");
       b.className = "card";
-      b.setAttribute("role", "option");
+      b.type = "button";
       b.setAttribute("aria-pressed", "false");
-      b.setAttribute("aria-label", `${p.brand ? p.brand + " " : ""}${p.name || p.id}`);
+      b.dataset.i = String(i);
       b.dataset.fidelity = assetFidelity(p).level;
-      b.innerHTML = (ICONS[p.shape] || ICONS.square) + `<em>${esc(p.brand ? p.brand + " · " + p.name : p.name || p.id)}</em>`;
-      b.addEventListener("click", () => this.select(i));
+      const label = `${p.brand ? p.brand + " · " : ""}${p.name || p.id}`;
+      b.title = label;
+      b.setAttribute("aria-label", label);
+      b.innerHTML = ICONS[p.shape] || ICONS.square;
       rail.appendChild(b);
       return b;
     });
@@ -370,7 +349,7 @@ export class VirtualTryOn extends Native {
       const count = Math.min(8, this.products.length);
       const urls = await renderThumbnails(this.products.slice(0, count), {
         THREE,
-        size: 128,
+        size: 160,
         quality: this.cfg.quality === "lite" ? "lite" : "high",
       });
       this.cards.slice(0, count).forEach((card, index) => {
@@ -398,6 +377,7 @@ export class VirtualTryOn extends Native {
     if (String(previousId || "") !== String(p.id)) {
       this.fitSummary = "";
       this.fitRows = [];
+      this.fitState = ["fitPending", "idle"]; // حکمِ فریمِ قبلی به فریمِ تازه نچسبد
       this.samples = [];
       this.$("fitRows") && (this.$("fitRows").innerHTML = "");
     }
@@ -407,6 +387,15 @@ export class VirtualTryOn extends Native {
       c.setAttribute("aria-pressed", k === i ? "true" : "false");
       c.classList.toggle("rec", !!this.recommended?.includes(String(this.products[k].id)));
     });
+    // کارتِ انتخاب‌شده به وسطِ ریل می‌آید تا لبه‌ها بریده به نظر نرسند.
+    const card = this.cards?.[i];
+    if (card && typeof card.scrollIntoView === "function") {
+      try {
+        card.scrollIntoView({ inline: "center", block: "nearest", behavior: silent ? "auto" : "smooth" });
+      } catch {
+        /* مرورگرِ قدیمی */
+      }
+    }
     if (this.cfg.deepLink && typeof location !== "undefined" && location.hash !== "#f=" + p.id) {
       try {
         history.replaceState(null, "", "#f=" + p.id);
@@ -431,36 +420,11 @@ export class VirtualTryOn extends Native {
     this.emit("variant", { id: this.product.id, variant: this.variants[v], product: p });
   }
 
-  /** محصول جاری با شبیه‌سازی رفتاری داخل/بیرون؛ asset خارجی استفاده نمی‌شود. */
+  /** محصولِ جاری: خودِ فریم با رنگِ انتخاب‌شده؛ هیچ افکتِ نمایشیِ اضافه‌ای روی عدسی. */
   displayProduct() {
     const product = { ...(this.product || {}), ...(this.variants?.[this.variant] || {}) };
-    if (this.lightMode === "outdoor") {
-      product.lens = product.lens && product.lens !== "clear"
-        ? product.lens
-        : { type: "gradient", color: "#68737a", tint: 0.58 };
-    } else if (product.lens && product.lens !== "clear") {
-      const source = typeof product.lens === "object" ? product.lens : {};
-      product.lens = { type: "solid", color: source.color || "#b8c2c7", tint: 0.14 };
-    } else product.lens = "clear";
+    if (!product.lens) product.lens = "clear";
     return product;
-  }
-
-  setLightMode(mode) {
-    this.lightMode = mode === "outdoor" ? "outdoor" : "indoor";
-    this.el.indoor?.setAttribute("aria-pressed", String(this.lightMode === "indoor"));
-    this.el.outdoor?.setAttribute("aria-pressed", String(this.lightMode === "outdoor"));
-    this.stage?.setProduct(this.displayProduct());
-    this.renderPhoto();
-    this.emit("view", { mode: this.lightMode, zoom: this.tryOnZoom || 1 });
-  }
-
-  changeTryOnZoom(delta) {
-    this.tryOnZoom = Math.max(0.86, Math.min(1.18, (this.tryOnZoom || 1) + delta));
-    this.tryOnZoom = Math.round(this.tryOnZoom * 100) / 100;
-    this.stage?.setTryOnZoom(this.tryOnZoom);
-    if (this.el.zoomValue) this.el.zoomValue.textContent = `${Math.round(this.tryOnZoom * 100)}٪`;
-    if (this.pose) this.stage?.place(this.pose);
-    this.emit("view", { mode: this.lightMode || "indoor", zoom: this.tryOnZoom });
   }
 
   renderSwatches() {
@@ -489,23 +453,31 @@ export class VirtualTryOn extends Native {
     const p = this.product;
     if (!p) return;
     const v = this.variants?.[this.variant] || {};
-    const fidelity = assetFidelity(p);
-    this.$("pName").textContent = `${p.brand ? p.brand + " · " : ""}${p.name}${v.name ? " · " + v.name : ""}`;
-    this.$("openFit")?.setAttribute("data-fidelity", fidelity.level);
-    this.$("openFit")?.setAttribute("title", fidelity.label);
+    const name = `${p.brand ? p.brand + " · " : ""}${p.name}${v.name ? " · " + v.name : ""}`;
+    this.$("pName").textContent = name;
+    this.el.cta?.setAttribute("aria-label", `${t(this.lang, "addToCart")} — ${name}`);
     const price = p.price;
     this.$("pPrice").innerHTML = price
       ? `${new Intl.NumberFormat(this.lang === "fa" ? "fa-IR" : "en-US").format(price)}<small> ${esc(p.currency || t(this.lang, "toman"))}</small>`
       : esc(p.size || "");
-    this.$("pFit").textContent = this.fitSummary || fidelity.label;
+    this.setFitLine();
     const gp = this.$("gateProduct");
     if (gp) {
       gp.hidden = false;
-      gp.innerHTML = `<span>${esc(t(this.lang, "selectedFrame"))}</span><b>${esc(p.name)}${v.name ? " · " + esc(v.name) : ""}</b>${
+      gp.innerHTML = `<b>${esc(p.name)}${v.name ? " · " + esc(v.name) : ""}</b>${
         p.size ? `<small>${esc(String(p.size))}</small>` : ""
       }`;
     }
     this.renderSpec();
+  }
+
+  /** یک خطِ حکمِ فیت: همیشه یک جمله، هیچ عددی روی صورت. */
+  setFitLine() {
+    const el = this.$("pFit");
+    if (!el) return;
+    const [key, state] = this.fitState || ["fitPending", "idle"];
+    el.dataset.state = state;
+    el.querySelector("em").textContent = t(this.lang, key);
   }
 
   renderSpec() {
@@ -615,7 +587,6 @@ export class VirtualTryOn extends Native {
         // بعد از باز شدن دوربین، stage را به دوربین جدید وصل کن
         this.stage.updateVideoRef(this.tracker.camera);
         this.stage.setMirrored(this.tracker.camera.isMirrored);
-        this.updateCameraUI();
         return stream;
       });
 
@@ -644,7 +615,6 @@ export class VirtualTryOn extends Native {
       this.el.gate.hidden = true;
       this.state = "live";
       this.setStatus("live", t(cfg.lang, "live"));
-      this.el.camTools && (this.el.camTools.hidden = false);
       this.loop();
       requestAnimationFrame(() => this.stage?.buildEnv());
       if (cfg.features.hairLayer && this.quality !== "lite") setTimeout(() => this.tracker?.initHair?.().catch(() => {}), 4000);
@@ -677,58 +647,6 @@ export class VirtualTryOn extends Native {
       this.tracker.camera.on("resize", () => this.syncSize());
     }
   }
-
-  updateCameraUI() {
-    const cam = this.tracker?.camera;
-    if (!cam || !this.el.camTools) return;
-    // دکمه تغییر دوربین فقط اگر بیش از یک دوربین داریم یا facing قابل تغییر است
-    const showSwitch = cam.devices?.length > 1 || true; // همیشه نشان بده برای تجربه بهتر
-    this.el.camSwitch.hidden = !showSwitch;
-    this.el.camTools.hidden = false;
-    if (cam.torchSupported) {
-      this.el.camTorch.hidden = false;
-      this.el.camTorch.dataset.on = cam.torchOn ? "1" : "0";
-      this.el.camTorch.style.opacity = cam.torchOn ? "1" : "0.7";
-    } else {
-      this.el.camTorch.hidden = true;
-    }
-  }
-
-  async handleCameraSwitch() {
-    if (this._switching) return;
-    this._switching = true;
-    const btn = this.el.camSwitch;
-    btn && (btn.disabled = true);
-    try {
-      this.hint(t(this.cfg.lang, "loading"), true);
-      await this.tracker.switchCamera();
-      this.stage.updateVideoRef(this.tracker.camera);
-      this.stage.setMirrored(this.tracker.camera.isMirrored);
-      this.syncSize();
-      this.updateCameraUI();
-      this.hint("", true);
-    } catch (e) {
-      this.hint(t(this.cfg.lang, "genericError"), true);
-      this.emit("error", { where: "switchCamera", message: String(e.message || e) });
-    } finally {
-      btn && (btn.disabled = false);
-      this._switching = false;
-    }
-  }
-
-  async handleTorchToggle() {
-    const cam = this.tracker?.camera;
-    if (!cam?.torchSupported) return;
-    try {
-      const next = !cam.torchOn;
-      await cam.setTorch(next);
-      this.el.camTorch.dataset.on = next ? "1" : "0";
-      this.el.camTorch.style.opacity = next ? "1" : "0.7";
-    } catch (e) {
-      this.hint(t(this.cfg.lang, "genericError"), true);
-    }
-  }
-
 
   syncSize() {
     if (this.tracker?.photoMode) return;
@@ -782,8 +700,13 @@ export class VirtualTryOn extends Native {
 
   setStatus(state, text) {
     const s = this.el.status;
+    if (!s) return;
+    const show = state !== "live";
+    if (s.dataset.state === state && s.dataset.text === String(text) && s.classList.contains("show") === show) return;
     s.dataset.state = state;
-    s.querySelector("span").textContent = text;
+    s.dataset.text = String(text || "");
+    s.querySelector("span").textContent = text || "";
+    s.classList.toggle("show", show);
   }
 
   hint(text, force) {
@@ -898,7 +821,7 @@ export class VirtualTryOn extends Native {
       this.hairCv = this.hairCv || document.createElement("canvas");
       tr.segmentHair(this.hairCv);
     }
-    this.scan.draw(pose);
+    if (this.cfg.features.faceScan) this.scan.draw(pose);
     // schedule next frame - use rVFC if available for better sync
     if (this.tracker?.camera?.video?.requestVideoFrameCallback) {
       this.frameRequest = this.tracker.camera.video.requestVideoFrameCallback(() => this.loop());
@@ -944,16 +867,21 @@ export class VirtualTryOn extends Native {
         const seatSelf = this.stage?.seat?.report;
         if (seatSelf) rows.push(...seatRows(seatSelf, this.cfg.lang));
         const statuses = rows.map((row) => row.status);
-        const summary = statuses.every((status) => status === "good")
-          ? t(this.cfg.lang, "fitGreat")
-          : statuses.includes("warn") || statuses.includes("bad")
-            ? t(this.cfg.lang, "fitCheck")
-            : t(this.cfg.lang, "fitOff");
+        const grade = statuses.every((status) => status === "good")
+          ? "good"
+          : statuses.includes("bad")
+            ? "bad"
+            : statuses.includes("warn")
+              ? "warn"
+              : "";
+        const verdict = grade === "good" ? "verdictGood" : grade === "bad" ? "verdictOff" : grade === "warn" ? "verdictCheck" : "fitPending";
+        const summary = grade === "good" ? t(this.cfg.lang, "fitGreat") : grade ? t(this.cfg.lang, "fitCheck") : t(this.cfg.lang, "fitOff");
         this.fitRows = rows;
-        if (summary !== this.fitSummary) {
+        if (verdict !== this.fitState?.[0]) {
+          this.fitState = [verdict, grade || "idle"];
           this.fitSummary = summary;
-          this.renderMeta();
-          this.emit("fit", { rows, ...measurements, summary, product: this.product });
+          this.setFitLine();
+          this.emit("fit", { rows, ...measurements, summary, grade, product: this.product });
         }
       }
     } else {
@@ -1167,35 +1095,30 @@ export class VirtualTryOn extends Native {
 
   /* ─────────────────────────── تعامل ────────────────────────────── */
   bindUI() {
-    this.$("start").addEventListener("click", () => {
-      this.$("start").disabled = true;
-      this.$("start").textContent = t(this.cfg.lang, "starting");
+    const startBtn = this.$("start");
+    startBtn.addEventListener("click", () => {
+      startBtn.disabled = true;
+      startBtn.textContent = t(this.cfg.lang, "starting");
       this.boot().catch(() => {});
     });
     // inline: با اولین نشانهٔ قصد (هاور/لمس/فوکوس روی کارت شروع) مدل در پس‌زمینه بار می‌شود
     const intent = () => this.prewarm()?.catch(() => {});
     for (const ev of ["pointerenter", "touchstart", "focusin"]) this.el.gate.addEventListener(ev, intent, { once: true, passive: true });
     this.$("photoStart")?.addEventListener("click", () => this.pickPhoto());
-    this.$("camSwitch")?.addEventListener("click", () => this.handleCameraSwitch());
-    this.$("camTorch")?.addEventListener("click", () => this.handleTorchToggle());
-    this.$("indoor")?.addEventListener("click", () => this.setLightMode("indoor"));
-    this.$("outdoor")?.addEventListener("click", () => this.setLightMode("outdoor"));
-    this.$("zoomOut")?.addEventListener("click", () => this.changeTryOnZoom(-0.04));
-    this.$("zoomIn")?.addEventListener("click", () => this.changeTryOnZoom(0.04));
+    this.$("camReturn")?.addEventListener("click", () => this.resumeCamera());
+    this.$("addToCart")?.addEventListener("click", () => this.addToCart());
     this.$("close")?.addEventListener("click", () => this.close());
-    this.$("openFit").addEventListener("click", () => this.openSheet());
-    this.$("sheetClose").addEventListener("click", () => this.openSheet(false));
-    this.$("scanBtn").addEventListener("click", () => this.runFaceScan());
-    this.el.actions.addEventListener("click", (e) => {
-      const b = e.target.closest("[data-a]");
-      if (b) this.action(b.dataset.a);
+    this.$("sheetClose")?.addEventListener("click", () => this.openSheet(false));
+    // انتخابِ فریم با واگذاریِ رویداد (کارت‌ها از نو ساخته می‌شوند)
+    this.el.rail.addEventListener("click", (e) => {
+      const b = e.target.closest(".card");
+      if (b && b.dataset.i !== undefined) this.select(+b.dataset.i);
     });
     this.el.rail.addEventListener("keydown", (e) => {
       const d = e.key === "ArrowRight" ? (this.dir === "rtl" ? -1 : 1) : e.key === "ArrowLeft" ? (this.dir === "rtl" ? 1 : -1) : 0;
       if (!d) return;
       e.preventDefault();
       this.select(Math.max(0, Math.min(this.products.length - 1, this.byIndex + d)));
-      this.cards[this.byIndex].scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
     });
     this.onVisibilityChange = () => {
       if (document.hidden && this.state === "live") {
@@ -1229,10 +1152,11 @@ export class VirtualTryOn extends Native {
 
   openSheet(force) {
     const s = this.el.sheet;
+    if (!s) return false; // برگهٔ فیت فقط با features.fitSheet ساخته می‌شود
     const open = force !== undefined ? force : !s.classList.contains("open");
     s.classList.toggle("open", open);
-    this.$("openFit").setAttribute("aria-expanded", String(open));
     if (open) this.renderFitSheet();
+    return open;
   }
 
   renderFitSheet() {
@@ -1292,6 +1216,7 @@ export class VirtualTryOn extends Native {
   }
 
   runFaceScan() {
+    if (!this.cfg.features.faceScan) return;
     if (!this.pose) return this.hint(t(this.cfg.lang, "needCamera"), true);
     this.faceScan.start(performance.now());
     this.scanner = this.faceScan;
@@ -1476,15 +1401,8 @@ export class VirtualTryOn extends Native {
   }
 
   showCameraReturn(show) {
-    let button = this.el.actions.querySelector('[data-a="camera"]');
-    if (show && !button) {
-      button = document.createElement("button");
-      button.className = "btn secondary";
-      button.dataset.a = "camera";
-      button.textContent = t(this.cfg.lang, "backToCamera");
-      this.el.actions.appendChild(button);
-    }
-    if (button) button.hidden = !show;
+    const b = this.el.camReturn;
+    if (b) b.hidden = !show;
   }
 
   async resumeCamera() {
@@ -1554,7 +1472,6 @@ export class VirtualTryOn extends Native {
         await this.tracker.startCamera({ light: this.quality === "lite", portrait: this.portraitCamera() });
         this.stage.updateVideoRef(this.tracker.camera);
         this.stage.setMirrored(this.tracker.camera.isMirrored);
-        this.updateCameraUI();
       }
       this.tracker.photoMode = false;
       this.el.stage.classList.remove("photo-mode");
@@ -1571,7 +1488,6 @@ export class VirtualTryOn extends Native {
       this.state = "live";
       this.wasLive = false;
       this.el.gate.hidden = true;
-      this.el.camTools && (this.el.camTools.hidden = false);
       this.setStatus("live", t(this.cfg.lang, "live"));
       this._loopScheduled = false;
       this.loop();
@@ -1590,7 +1506,6 @@ export class VirtualTryOn extends Native {
     this.hidden = true;
     this.wasLive = false;
     this._loopScheduled = false;
-    if (this.el.camTools) this.el.camTools.hidden = true;
     const wasStarting = this.starting;
     this.starting = false;
     if (wasStarting) {
