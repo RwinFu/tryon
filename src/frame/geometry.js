@@ -547,7 +547,7 @@ export function buildFrame(rawSpec = {}, opts = {}) {
   const swT = Math.max(s.templeW, s.templeT);
   for (const { side, hinge } of hingeQueue) {
     const guide = templePath({ side, spec: s, hinge: rotateXYZ(hinge, panto), origin, vd: origin.oz - EYE.corneaZ });
-    const tp = cr3(guide, 9);
+    const tp = cr3(guide, 30);
     if (metalTemple) {
       const metalEnd = Math.floor(tp.length * tipStart) + 1;
       const metalPart = tp.slice(0, metalEnd);
