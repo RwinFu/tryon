@@ -87,7 +87,7 @@ virtual-tryon {
   border: 1px solid #e5e5e5;
 }
 virtual-tryon::part(stage) { background: #fff; }
-virtual-tryon::part(dock) { backdrop-filter: none; }
+virtual-tryon::part(shelf) { background: #fff; }
 ```
 
 ---
@@ -220,7 +220,10 @@ const tryon = window.TryOn.init({
   quality: "auto",                 // auto | high | lite
   brand: { name: "اپتیک آروین", tagline: "پرو هوشمند", accent: "#d8b478", whatsapp: "989190051635", url: "https://…" },
   cart: { mode: "event", add: (item) => myCart.add(item) },
-  features: { faceScan: true, hairLayer: true, contactShadow: true, lightMatch: true, thumbnails: true, photo: true, fitSheet: true, snapshot: true, cart: true, pd: true },
+  // پیش‌فرض‌ها همان شِلِ خلوت است:
+  features: { photo: true, cart: true, thumbnails: true, hairLayer: true, contactShadow: true, lightMatch: true },
+  // اختیاری — پنل‌ها را دوباره به رابط اضافه می‌کند:
+  // features: { fitSheet: true, faceScan: true, pd: true, snapshot: true },
   tracking: { pd: 63, autoPd: true, focalScale: 0.75, vertexDistance: 13 },
   deepLink: false,                 // نشانی صفحه را با #f= عوض نکند
   watermark: true,

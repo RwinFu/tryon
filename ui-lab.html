@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>آزمایشگاه رابط — پرو با دوربین</title>
+    <link rel="stylesheet" href="./site/fonts.css" />
+    <style>
+      :root {
+        color-scheme: dark;
+        --ink: #f5f1ea;
+        --muted: rgba(245, 241, 234, 0.55);
+        --line: rgba(245, 241, 234, 0.14);
+        --accent: #9d2c1a;
+      }
+      * { box-sizing: border-box; margin: 0; }
+      body {
+        min-height: 100vh;
+        padding: 28px 20px 48px;
+        background: #0b0c0c;
+        color: var(--ink);
+        font-family: Vazirmatn, "IRANSans", system-ui, Tahoma, sans-serif;
+      }
+      header { max-width: 1000px; margin: 0 auto 22px; }
+      header h1 { font-size: 19px; font-weight: 800; letter-spacing: -0.3px; }
+      header p { margin-top: 8px; font-size: 12.5px; line-height: 1.9; color: var(--muted); max-width: 640px; }
+      header code { direction: ltr; padding: 1px 5px; border-radius: 5px; background: rgba(255,255,255,.06); font-size: 11px; }
+      .board { display: flex; flex-wrap: wrap; gap: 26px; justify-content: center; align-items: flex-start; max-width: 1000px; margin: 0 auto; }
+      .col { display: grid; gap: 10px; justify-items: center; }
+      .label { font-size: 11.5px; font-weight: 700; color: var(--muted); letter-spacing: 0.2px; }
+      .phone {
+        position: relative;
+        width: 390px;
+        height: 844px;
+        border-radius: 30px;
+        overflow: hidden;
+        background: #070808;
+        border: 1px solid var(--line);
+        box-shadow: 0 40px 90px rgba(0, 0, 0, 0.55);
+        max-width: calc(100vw - 40px);
+      }
+      .phone.small { width: 360px; height: 640px; }
+      .tools { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 1000px; margin: 0 auto 24px; }
+      .tools button {
+        min-height: 40px;
+        padding: 0 15px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        background: #171a1a;
+        color: var(--ink);
+        font: inherit;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .tools button:hover { background: #202424; }
+      .note { max-width: 1000px; margin: 26px auto 0; font-size: 11.5px; line-height: 2; color: var(--muted); }
+      .note b { color: var(--ink); }
+    </style>
+    <script src="./dist/tryon.js" defer></script>
+  </head>
+  <body>
+    <header>
+      <h1>آزمایشگاه رابط — «پرو با دوربین»</h1>
+      <p>
+        دو قابِ واقعیِ کامپوننت، درست با همان کدی که فروشگاه بار می‌کند (`dist/tryon.js`). قابِ اول صفحهٔ
+        خوش‌آمد است؛ قابِ دوم پروی روی عکس با همان قفسه. اندازهٔ هر قاب همان اندازهٔ گوشی است تا نسبت‌ها
+        گمراه‌کننده نباشند. مشخصه: <code>docs/UI-SPEC.md</code>
+      </p>
+    </header>
+
+    <div class="tools">
+      <button id="btnGate" type="button">۱ · خوش‌آمد</button>
+      <button id="btnPhoto" type="button">۲ · پرو روی عکس</button>
+      <button id="btnDeep" type="button">۳ · تصویرِ پهن (۳۹۰px)</button>
+    </div>
+
+    <div class="board">
+      <div class="col">
+        <span class="label">خوش‌آمد · ۳۹۰×۸۴۴</span>
+        <div class="phone" id="p1"></div>
+      </div>
+      <div class="col">
+        <span class="label">قفسه روی عکس · ۳۹۰×۸۴۴</span>
+        <div class="phone" id="p2"></div>
+      </div>
+      <div class="col">
+        <span class="label">گوشیِ کوتاه · ۳۶۰×۶۴۰</span>
+        <div class="phone small" id="p3"></div>
+      </div>
+    </div>
+
+    <p class="note">
+      <b>چرا این‌جا؟</b> بدون دوربین هم می‌شود شِل را دید: قابِ دوم تصویرِ نمونهٔ مخزن را به همان مسیر
+      آپلود می‌دهد و نشستنِ فریم روی صورت را نشان می‌دهد. برای مسیرِ واقعیِ دوربین،
+      <code>index.html</code> → «پرو با دوربین».
+    </p>
+
+    <script type="module">
+      const PHOTO = "./test/fixtures/astronaut.jpg";
+      const mk = (mount, extra = {}) =>
+        window.TryOn.init({
+          mount,
+          mode: "inline",
+          baseURL: ".",
+          lang: "fa",
+          quality: "high",
+          products: "./products.json",
+          cart: { mode: "event" },
+          ...extra,
+        });
+
+      // ۱ و ۳: فقط صفحهٔ خوش‌آمد (دوربین روشن نمی‌شود تا پیش‌نمایش خراب نشود)
+      // در قاب‌های خوش‌آمد، قفسه پشتِ گیت است؛ تامبنیلِ سه‌بعدی لازم ندارد.
+      const gateOnly = (mount) => mk(mount, { features: { thumbnails: false } });
+
+      async function photoPanel(mount) {
+        const api = mk(mount);
+        await api.el.loadProducts();
+        const img = new Image();
+        img.src = PHOTO;
+        await img.decode();
+        await api.el.loadPhoto(img);
+        return api;
+      }
+
+      const whenReady = (fn) => (window.TryOn ? fn() : setTimeout(() => whenReady(fn), 60));
+      const boot = async () => {
+        gateOnly(document.getElementById("p1"));
+        gateOnly(document.getElementById("p3"));
+        try {
+          await photoPanel(document.getElementById("p2"));
+        } catch (e) {
+          document.getElementById("p2").innerHTML =
+            '<p style="padding:20px;font:12px/1.9 system-ui;color:#f99">بارگذاری نمونه ناموفق بود: ' + e.message + "</p>";
+        }
+      };
+
+      if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot, { once: true });
+      else boot();
+
+      document.getElementById("btnDeep").addEventListener("click", () => {
+        document.getElementById("p3").scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+      document.getElementById("btnGate").addEventListener("click", () => {
+        document.getElementById("p1").scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+      document.getElementById("btnPhoto").addEventListener("click", () => {
+        document.getElementById("p2").scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+    </script>
+  </body>
+</html>
