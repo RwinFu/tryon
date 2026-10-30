@@ -130,11 +130,14 @@ test("نشستن: پل روی پوست، مردمک در پنجرهٔ لنز و 
     if (r.bridgeGap >= 5) assert.ok(r.warnings.includes("bridge-float"), `${product.id} شناوری بدونِ هشدار`);
     // ۲) مردمک در پنجرهٔ دیداریِ لنز (مرکز ± ۵mm)
     assert.ok(Math.abs(r.pupilOffset) <= 5, `${product.id} pupilOffset ${r.pupilOffset}`);
-    // ۳) هیچ رأسی بیش از ۱mm داخلِ پوست نباشد (حسابرسیِ چگال)
-    assert.ok(r.penetration === 0 || r.minClearance > -1.2, `${product.id} pen ${r.penetration} min ${r.minClearance}`);
+    // ۳) هیچ رأسی بیش از ۱mm فراتر از فشارِ مجازِ همان نقطه نباشد؛ و اگر
+    //    رفت، گزارش *باید* بگوید (پلِ تنگ)، نه اینکه بی‌صدا رد شود.
+    assert.ok(r.minMargin > -1.2 || r.warnings.includes("nose-pressure"), `${product.id} margin ${r.minMargin} بدونِ هشدار`);
+    assert.ok(r.minMargin > -5.5, `${product.id} فرورفتگیِ عمیق ${r.minMargin}`);
+    assert.ok(r.penetration === 0 || r.warnings.length > 0, `${product.id} pen ${r.penetration} بدونِ هشدار`);
     // ۴) فاصلهٔ رأس در بازهٔ فیزیکی
     assert.ok(r.vd > 8 && r.vd < 30, `${product.id} vd ${r.vd}`);
-    for (const v of [r.vd, r.seatY, r.pupilOffset, r.bridgeGap, r.minClearance])
+    for (const v of [r.vd, r.seatY, r.pupilOffset, r.bridgeGap, r.minClearance, r.minMargin])
       assert.ok(Number.isFinite(v), `${product.id} مقدارِ غیرِ finite`);
   }
 });
@@ -157,14 +160,18 @@ test("آفستِ نشستن به pose مستقل از اندازهٔ تصویر 
   assert.ok(off && off.report);
   const pose = { x: 320, y: 260, z: 0, camZ: 360, scale: 0.63, q: [0, 0, 0, 1], vgMm: 13 };
   const a = seatToPose(off, pose, 640, 480, { camZ: 360, vgMm: 13, scale: 0.63 });
-  // همان pose روی تصویرِ دو برابر بزرگ‌تر
-  const pose2 = { ...pose, x: 640, y: 520 };
-  const b = seatToPose(off, pose2, 1280, 960, { camZ: 360, vgMm: 13, scale: 1.26 });
+  // همان صحنه در دو برابر رزولوشن: فاصلهٔ کانونی (camZ) هم دو برابر می‌شود،
+  // وگرنه دوربین زاویهٔ دیدِ دیگری دارد و مقایسه بی‌معنی است.
+  const pose2 = { ...pose, x: 640, y: 520, camZ: 720 };
+  const b = seatToPose(off, pose2, 1280, 960, { camZ: 720, vgMm: 13, scale: 1.26 });
   assert.ok(Math.abs(b.x - 2 * a.x) < 1e-6, "جابه‌جایی باید با مقیاسِ صورت بخورد");
   assert.ok(Math.abs(b.y - 2 * a.y) < 1e-6);
   assert.ok(Math.abs(b.scale - 2 * a.scale) < 1e-9);
   assert.ok(Math.abs(b.z - 2 * a.z) < 1e-6, "عمق هم با مقیاسِ صورت می‌رود (نه با اندازهٔ تصویر)");
-  assert.ok(Math.abs(a.scale - 0.63 * ((360 - 0) / 360)) < 1e-6);
+  // اندازهٔ *دیده‌شده* فریم باید همان px/میلی‌مترِ صورت باشد، نه بزرگ‌تر:
+  // گروهِ فریم جلوتر از صفحهٔ صورت است و پرسپکتیو بزرگ‌نمایی می‌کند.
+  const apparent = a.scale * (360 / (360 - a.z));
+  assert.ok(Math.abs(apparent - 0.63) < 1e-6, `apparent ${apparent} != 0.63`);
 
   // با چرخشِ سر، آفست هم باید بچرخد (نه اینکه ثابت بماند)
   const turned = { ...pose, q: quatFromEuler(0, 30 * DEG, 0) };
