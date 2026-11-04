@@ -18,6 +18,7 @@
 
 import { earAnchor, headSideX } from "./ear-fit.js";
 import { EYE } from "./head-fit.js";
+import { surfaceZ } from "./face-surface.js";
 
 /** جلوی سر نسبت به قرنیه (mm) — همیشه عقب‌تر از صفحهٔ عدسی */
 export const HEAD = {
@@ -169,6 +170,59 @@ function wallGeometry(THREE) {
   return geo;
 }
 
+/**
+ * «ورقهٔ صورت»: سطحِ جلوییِ پوست از خودِ مشِ کانونیک، برای اینکه بینی و گونه
+ * هر چیزی را که عقب‌تر از پوست است بپوشانند.
+ *
+ * مسئله‌ای که حل می‌کند: پیش از این اکلوژن فقط دیوارهٔ کناریِ سر بود؛ هیچ
+ * هندسه‌ای جلوی صورت نبود. پس اگر لبهٔ حلقه یا گوشهٔ عدسی چند میلی‌متر در
+ * پوستِ کنارِ بینی فرو می‌رفت (که با نشستنِ تماسیِ درست اجتناب‌ناپذیر است)،
+ * حلقه روی بینیِ ویدیو کشیده می‌شد و عینک «داخلِ صورت» دیده می‌شد. حالا
+ * همان تکه به‌درستی پشتِ بینی پنهان می‌شود، در همهٔ زوایا (قبلاً فقط یک
+ * چسباندنِ دوبعدیِ بینی در نیم‌رخ با |yaw|>۹° وجود داشت).
+ */
+const FACE_SHEET = { step: 2.6, halfX: 76, y0: -64, y1: 64, back: 0.45, cache: null };
+
+export function faceSheetGeometry(THREE) {
+  if (FACE_SHEET.cache) return FACE_SHEET.cache;
+  const { step, halfX, y0, y1, back } = FACE_SHEET;
+  const nx = Math.round((2 * halfX) / step) + 1;
+  const ny = Math.round((y1 - y0) / step) + 1;
+  const position = new Float32Array(nx * ny * 3);
+  const valid = new Uint8Array(nx * ny);
+  for (let j = 0; j < ny; j++) {
+    for (let i = 0; i < nx; i++) {
+      const x = -halfX + i * step;
+      const y = y0 + j * step;
+      const z = surfaceZ(x, y);
+      const k = j * nx + i;
+      if (!Number.isFinite(z)) continue;
+      // ۰٫۴۵mm عقب‌تر از پوست: لبه‌ای که *روی* پوست نشسته (فشردگیِ مجاز)
+      // نباید پنهان شود؛ فقط آن‌چه واقعاً داخلِ پوست است پوشیده می‌شود.
+      position[k * 3] = x;
+      position[k * 3 + 1] = y;
+      position[k * 3 + 2] = z - back;
+      valid[k] = 1;
+    }
+  }
+  const index = [];
+  for (let j = 0; j < ny - 1; j++) {
+    for (let i = 0; i < nx - 1; i++) {
+      const a = j * nx + i, b = a + 1, c = a + nx, d = c + 1;
+      if (valid[a] && valid[b] && valid[c] && valid[d]) index.push(a, c, b, b, c, d);
+    }
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.BufferAttribute(position, 3));
+  geo.setIndex(index);
+  geo.computeBoundingSphere();
+  // ماسکِ اعتبار برای بازرسی/تست: رأسِ نامعتبر (بیرون از صورت) صفر می‌ماند و
+  // نباید با نقطهٔ واقعیِ (۰،۰) اشتباه شود.
+  geo.userData = { nx, ny, valid, step, halfX, y0, back };
+  FACE_SHEET.cache = geo;
+  return geo;
+}
+
 /** مشِ فقط‌عمق (رنگ نمی‌نویسد) که پیش از فریم رندر می‌شود */
 export function createHeadOccluder(THREE, params = headOccluderParams()) {
   const group = new THREE.Group();
@@ -178,6 +232,9 @@ export function createHeadOccluder(THREE, params = headOccluderParams()) {
   const head = new THREE.Mesh(wallGeometry(THREE), mat);
   head.name = "occluderHead";
   group.add(head);
+  const face = new THREE.Mesh(faceSheetGeometry(THREE), mat);
+  face.name = "occluderFace";
+  group.add(face);
   const earGeo = superellipsoidGeometry(THREE, 3, 20, 14);
   for (const side of ["L", "R"]) {
     const m = new THREE.Mesh(earGeo, mat);

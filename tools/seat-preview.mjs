@@ -144,7 +144,10 @@ function faceMesh() {
   for (let i = 0; i < 468; i++) {
     const p = [fit.canonical[i * 3], fit.canonical[i * 3 + 1], fit.canonical[i * 3 + 2]];
     const [u, v, zRel] = headToPx(fit, p);
-    const kk = camZ / (camZ - zRel);
+    // پیکسلِ لندمارک (u,v) از قبل تصویرِ پرسپکتیو است؛ برای بازسازیِ صحنه
+    // باید معکوسِ بزرگ‌نماییِ دوربین ضرب شود، نه خودش (قبلاً دو بار پرسپکتیو
+    // اعمال می‌شد و صورت ~۷٪ کوچک‌تر از فریم دیده می‌شد ⇒ بازبینیِ گمراه‌کننده).
+    const kk = (camZ - zRel) / camZ;
     // مختصاتِ صحنه: (u-W/2)*kk، y بالا، z = zRel — همان قراردادِ Stage
     pos[i * 3] = (u - W / 2) * kk;
     pos[i * 3 + 1] = (v - H / 2) * kk;
